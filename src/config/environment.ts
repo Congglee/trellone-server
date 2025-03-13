@@ -30,5 +30,9 @@ export const isProduction = env === 'production'
 
 export const envConfig = {
   port: (process.env.PORT as string) || '8000',
-  host: (process.env.HOST as string) || 'http://localhost'
+  host: (process.env.HOST as string) || 'http://localhost',
+
+  dbName: process.env.DB_NAME as string,
+  dbUsername: process.env.DB_USERNAME as string,
+  dbPassword: process.env.DB_PASSWORD as string
 }

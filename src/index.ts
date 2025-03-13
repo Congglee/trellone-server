@@ -2,13 +2,16 @@ import { Server } from 'http'
 import app from '~/app'
 import { envConfig } from '~/config/environment'
 import logger from '~/config/logger'
+import databaseService from '~/services/database.services'
 
 let server: Server
 
-// Connect to MongoDB database
+databaseService.connect().then(async () => {
+  logger.success('Connected to MongoDB database')
 
-server = app.listen(envConfig.port, () => {
-  logger.success(`Listening to port ${envConfig.port}`)
+  server = app.listen(envConfig.port, () => {
+    logger.success(`Listening to port ${envConfig.port}`)
+  })
 })
 
 const exitHandler = async () => {
@@ -16,13 +19,13 @@ const exitHandler = async () => {
     server.close(async () => {
       logger.info('Server closed')
 
-      // Close database connection if needed
+      await databaseService.disconnect()
       logger.info('Database connection closed')
 
       process.exit(1)
     })
   } else {
-    // Close database connection if needed
+    await databaseService.disconnect()
     logger.info('Database connection closed')
 
     process.exit(1)
@@ -44,6 +47,6 @@ process.on('SIGTERM', async () => {
     server.close()
   }
 
-  // Close database connection if needed
+  await databaseService.disconnect()
   logger.info('Database connection closed')
 })
