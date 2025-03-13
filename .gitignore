@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# TypeScript
+dist/
+
+# Environment varibales
+.env
+.env.test
+.env.development
+.env.production
+.env.staging
+
+# Files uploaded
+uploads/
+
+# Test coverage
+coverage/
+
+# Markdown
+mdx/
+
