@@ -34,5 +34,7 @@ export const envConfig = {
 
   dbName: process.env.DB_NAME as string,
   dbUsername: process.env.DB_USERNAME as string,
-  dbPassword: process.env.DB_PASSWORD as string
+  dbPassword: process.env.DB_PASSWORD as string,
+
+  dbBoardsCollection: process.env.DB_BOARDS_COLLECTION as string
 }
