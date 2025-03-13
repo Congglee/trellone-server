@@ -7,8 +7,6 @@ import databaseService from '~/services/database.services'
 let server: Server
 
 databaseService.connect().then(async () => {
-  logger.success('Connected to MongoDB database')
-
   server = app.listen(envConfig.port, () => {
     logger.success(`Listening to port ${envConfig.port}`)
   })
