@@ -3,6 +3,9 @@ import { checkSchema } from 'express-validator'
 import { BOARDS_MESSAGES } from '~/constants/messages'
 import { stringEnumToArray } from '~/utils/commons'
 import { BoardType } from '~/constants/enums'
+import { ObjectId } from 'mongodb'
+import { ErrorWithStatus } from '~/models/Errors'
+import HTTP_STATUS from '~/constants/httpStatus'
 
 const boardTypes = stringEnumToArray(BoardType)
 
@@ -35,5 +38,27 @@ export const createBoardValidator = validate(
       }
     },
     ['body']
+  )
+)
+
+export const boardIdValidator = validate(
+  checkSchema(
+    {
+      board_id: {
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: BOARDS_MESSAGES.INVALID_BOARD_ID
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
   )
 )

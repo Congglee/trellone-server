@@ -10,5 +10,9 @@ export const BOARDS_MESSAGES = {
   BOARD_DESCRIPTION_MUST_BE_BETWEEN_3_AND_256: 'Board description must be between 3 and 256 characters',
   BOARD_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Board type must be public or private',
 
-  CREATE_BOARD_SUCCESS: 'Board created successfully'
+  CREATE_BOARD_SUCCESS: 'Board created successfully',
+
+  INVALID_BOARD_ID: 'Invalid board id',
+
+  GET_BOARD_SUCCESS: 'Get board successfully'
 }
