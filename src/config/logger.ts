@@ -8,15 +8,13 @@ const logLevels = {
   debug: chalk.cyan
 }
 
-const environment = process.env.NODE_ENV || 'development'
-
 const logger = {
   log(level: 'error' | 'warn' | 'info' | 'success' | 'debug', message: string) {
     const colorize = logLevels[level] || chalk.white
     const logMessage = colorize(`${level.toUpperCase()}: ${message}`)
 
     // Only show debug logs in development
-    if (environment !== 'development' && level === 'debug') return
+    if (process.env.NODE_ENV !== 'development' && level === 'debug') return
 
     if (level === 'error') {
       console.error(logMessage)

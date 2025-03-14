@@ -26,7 +26,7 @@ if (!fs.existsSync(path.resolve(envFilename))) {
 
 config({ path: envFilename })
 
-export const isProduction = env === 'production'
+export const environment = process.env.NODE_ENV || 'development'
 
 export const envConfig = {
   port: (process.env.PORT as string) || '8000',
