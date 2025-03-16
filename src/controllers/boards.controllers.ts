@@ -10,8 +10,7 @@ export const createBoardController = async (req: Request<ParamsDictionary, any, 
 }
 
 export const getBoardController = async (req: Request<BoardParams>, res: Response) => {
-  const { board_id } = req.params
-  const result = await boardsService.getBoard(board_id)
+  const result = { ...req.board }
 
   return res.json({ message: BOARDS_MESSAGES.GET_BOARD_SUCCESS, result })
 }

@@ -6,6 +6,8 @@ import { BoardType } from '~/constants/enums'
 import { ObjectId } from 'mongodb'
 import { ErrorWithStatus } from '~/models/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
+import databaseService from '~/services/database.services'
+import { Request } from 'express'
 
 const boardTypes = stringEnumToArray(BoardType)
 
@@ -46,13 +48,24 @@ export const boardIdValidator = validate(
     {
       board_id: {
         custom: {
-          options: async (value) => {
+          options: async (value, { req }) => {
             if (!ObjectId.isValid(value)) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.BAD_REQUEST,
                 message: BOARDS_MESSAGES.INVALID_BOARD_ID
               })
             }
+
+            const board = await databaseService.boards.findOne({ _id: new ObjectId(value) })
+
+            if (!board) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: BOARDS_MESSAGES.BOARD_NOT_FOUND
+              })
+            }
+
+            ;(req as Request).board = board
 
             return true
           }

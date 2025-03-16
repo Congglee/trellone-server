@@ -13,6 +13,7 @@ export const BOARDS_MESSAGES = {
   CREATE_BOARD_SUCCESS: 'Board created successfully',
 
   INVALID_BOARD_ID: 'Invalid board id',
+  BOARD_NOT_FOUND: 'Board not found',
 
   GET_BOARD_SUCCESS: 'Get board successfully'
 }

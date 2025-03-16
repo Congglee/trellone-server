@@ -4,7 +4,7 @@ node_modules/
 # TypeScript
 dist/
 
-# Environment varibales
+# Environment variables
 .env
 .env.test
 .env.development
