@@ -8,6 +8,8 @@ import { ErrorWithStatus } from '~/models/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import databaseService from '~/services/database.services'
 import { Request } from 'express'
+import Board from '~/models/schemas/Board.schema'
+import { envConfig } from '~/config/environment'
 
 const boardTypes = stringEnumToArray(BoardType)
 
@@ -56,7 +58,59 @@ export const boardIdValidator = validate(
               })
             }
 
-            const board = await databaseService.boards.findOne({ _id: new ObjectId(value) })
+            const [board] = await databaseService.boards
+              .aggregate<Board>([
+                {
+                  $match: {
+                    _id: new ObjectId(value),
+                    _destroy: false
+                  }
+                },
+                {
+                  $lookup: {
+                    from: envConfig.dbColumnsCollection,
+                    localField: '_id',
+                    foreignField: 'board_id',
+                    as: 'columns'
+                  }
+                },
+                {
+                  $lookup: {
+                    from: envConfig.dbCardsCollection,
+                    localField: '_id',
+                    foreignField: 'board_id',
+                    as: 'cards'
+                  }
+                },
+                {
+                  $addFields: {
+                    columns: {
+                      $map: {
+                        input: '$columns',
+                        as: 'column',
+                        in: {
+                          $mergeObjects: [
+                            '$$column',
+                            {
+                              cards: {
+                                $filter: {
+                                  input: '$cards',
+                                  as: 'card',
+                                  cond: { $eq: ['$$card.column_id', '$$column._id'] }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                {
+                  $project: { cards: 0 }
+                }
+              ])
+              .toArray()
 
             if (!board) {
               throw new ErrorWithStatus({

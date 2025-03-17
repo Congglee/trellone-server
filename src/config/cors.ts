@@ -2,7 +2,6 @@ import { CorsOptions } from 'cors'
 import { environment } from '~/config/environment'
 import { WHITELIST_DOMAINS } from '~/constants/domains'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { ErrorWithStatus } from '~/models/Errors'
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
@@ -15,9 +14,8 @@ export const corsOptions: CorsOptions = {
     }
 
     return callback(
-      new ErrorWithStatus({
-        status: HTTP_STATUS.FORBIDDEN,
-        message: `The domain ${origin} is not allowed to access this resource`
+      Object.assign(new Error(`The domain ${origin} is not allowed to access this resource`), {
+        status: HTTP_STATUS.FORBIDDEN
       })
     )
   },
