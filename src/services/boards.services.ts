@@ -1,4 +1,3 @@
-import { ObjectId } from 'mongodb'
 import { CreateBoardReqBody } from '~/models/requests/Board.requests'
 import Board from '~/models/schemas/Board.schema'
 import databaseService from '~/services/database.services'
@@ -15,11 +14,6 @@ class BoardsService {
 
     const board = await databaseService.boards.findOne({ _id: result.insertedId })
 
-    return board
-  }
-
-  async getBoard(board_id: string) {
-    const board = await databaseService.boards.findOne({ _id: new ObjectId(board_id) })
     return board
   }
 }
