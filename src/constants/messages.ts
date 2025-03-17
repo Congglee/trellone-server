@@ -29,3 +29,19 @@ export const COLUMNS_MESSAGES = {
 
   CREATE_COLUMN_SUCCESS: 'Column created successfully'
 }
+
+export const CARDS_MESSAGES = {
+  CARD_TITLE_IS_REQUIRED: 'Card title is required',
+  CARD_TITLE_MUST_BE_STRING: 'Card title must be a string',
+  CARD_TITLE_LENGTH_MUST_BE_BETWEEN_3_AND_50: 'Card title length must be between 3 and 50 characters',
+  BOARD_ID_IS_REQUIRED: 'Board id is required',
+  BOARD_ID_MUST_BE_STRING: 'Board id must be a string',
+  INVALID_BOARD_ID: 'Invalid board id',
+  BOARD_NOT_FOUND: 'Board not found',
+  COLUMN_ID_IS_REQUIRED: 'Column id is required',
+  COLUMN_ID_MUST_BE_STRING: 'Column id must be a string',
+  INVALID_COLUMN_ID: 'Invalid column id',
+  COLUMN_NOT_FOUND: 'Column not found',
+
+  CREATE_CARD_SUCCESS: 'Card created successfully'
+}
