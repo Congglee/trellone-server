@@ -4,6 +4,7 @@ import cors from 'cors'
 
 // Routes import
 import boardsRouter from '~/routes/boards.routes'
+import columnsRouter from '~/routes/columns.routes'
 
 // Middlewares import
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
@@ -19,6 +20,7 @@ app.use(cors(corsOptions))
 
 // Use app routes
 app.use('/boards', boardsRouter)
+app.use('/columns', columnsRouter)
 
 // Error handling middleware
 app.use(defaultErrorHandler)
