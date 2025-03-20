@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { BOARDS_MESSAGES } from '~/constants/messages'
-import { BoardParams, CreateBoardReqBody } from '~/models/requests/Board.requests'
+import { BoardParams, CreateBoardReqBody, UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import boardsService from '~/services/boards.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 
@@ -13,4 +13,11 @@ export const getBoardController = async (req: Request<BoardParams>, res: Respons
   const result = { ...req.board }
 
   return res.json({ message: BOARDS_MESSAGES.GET_BOARD_SUCCESS, result })
+}
+
+export const updateBoardController = async (req: Request<BoardParams, any, UpdateBoardReqBody>, res: Response) => {
+  const { board_id } = req.params
+  const result = await boardsService.updateBoard(board_id, req.body)
+
+  return res.json({ message: BOARDS_MESSAGES.UPDATE_BOARD_SUCCESS, result })
 }

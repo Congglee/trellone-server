@@ -10,3 +10,7 @@ export interface CreateBoardReqBody {
 export interface BoardParams extends ParamsDictionary {
   board_id: string
 }
+
+export interface UpdateBoardReqBody extends CreateBoardReqBody {
+  column_order_ids: string[]
+}
