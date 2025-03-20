@@ -1,4 +1,5 @@
-import { CreateBoardReqBody } from '~/models/requests/Board.requests'
+import { ObjectId } from 'mongodb'
+import { CreateBoardReqBody, UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import Board from '~/models/schemas/Board.schema'
 import databaseService from '~/services/database.services'
 
@@ -13,6 +14,21 @@ class BoardsService {
     )
 
     const board = await databaseService.boards.findOne({ _id: result.insertedId })
+
+    return board
+  }
+
+  async updateBoard(board_id: string, body: UpdateBoardReqBody) {
+    const payload = body as UpdateBoardReqBody & { column_order_ids: ObjectId[] }
+
+    const board = await databaseService.boards.findOneAndUpdate(
+      { _id: new ObjectId(board_id) },
+      {
+        $set: { ...payload },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
 
     return board
   }

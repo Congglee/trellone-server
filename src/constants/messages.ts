@@ -15,7 +15,12 @@ export const BOARDS_MESSAGES = {
   INVALID_BOARD_ID: 'Invalid board id',
   BOARD_NOT_FOUND: 'Board not found',
 
-  GET_BOARD_SUCCESS: 'Get board successfully'
+  GET_BOARD_SUCCESS: 'Get board successfully',
+
+  COLUMN_ORDER_IDS_MUST_BE_AN_ARRAY: 'Column order ids must be an array of strings',
+  COLUMN_ORDER_IDS_CANNOT_BE_EMPTY: 'Column order ids cannot be empty',
+
+  UPDATE_BOARD_SUCCESS: 'Board updated successfully'
 }
 
 export const COLUMNS_MESSAGES = {
