@@ -1,10 +1,20 @@
 import { Router } from 'express'
-import { createColumnController } from '~/controllers/columns.controllers'
-import { createColumnValidator } from '~/middlewares/columns.middlewares'
+import { createColumnController, updateColumnController } from '~/controllers/columns.controllers'
+import { columnIdValidator, createColumnValidator, updateColumnValidator } from '~/middlewares/columns.middlewares'
+import { filterMiddleware } from '~/middlewares/common.middlewares'
+import { UpdateColumnReqBody } from '~/models/requests/Column.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const columnsRouter = Router()
 
 columnsRouter.post('/', createColumnValidator, wrapRequestHandler(createColumnController))
+
+columnsRouter.put(
+  '/:column_id',
+  columnIdValidator,
+  updateColumnValidator,
+  filterMiddleware<UpdateColumnReqBody>(['title', 'card_order_ids']),
+  wrapRequestHandler(updateColumnController)
+)
 
 export default columnsRouter

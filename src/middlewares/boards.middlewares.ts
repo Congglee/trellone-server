@@ -144,6 +144,7 @@ export const updateBoardValidator = validate(
       description: boardDescriptionSchema,
       type: { ...boardTypeSchema, optional: true },
       column_order_ids: {
+        optional: true,
         isArray: { errorMessage: BOARDS_MESSAGES.COLUMN_ORDER_IDS_MUST_BE_AN_ARRAY },
         custom: {
           options: async (value, { req }) => {
@@ -155,12 +156,13 @@ export const updateBoardValidator = validate(
               if (!isEmpty(board.column_order_ids)) {
                 throw new Error(BOARDS_MESSAGES.COLUMN_ORDER_IDS_CANNOT_BE_EMPTY)
               }
+
               return true
             }
 
             // Check if all IDs are valid ObjectIds
             if (value.some((id: string) => !ObjectId.isValid(id))) {
-              throw new Error(BOARDS_MESSAGES.INVALID_BOARD_ID)
+              throw new Error(BOARDS_MESSAGES.INVALID_COLUMN_ID)
             }
 
             // Ensure no new elements added or removed (only reordering allowed)
