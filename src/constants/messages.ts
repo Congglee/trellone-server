@@ -19,6 +19,7 @@ export const BOARDS_MESSAGES = {
 
   COLUMN_ORDER_IDS_MUST_BE_AN_ARRAY: 'Column order ids must be an array of strings',
   COLUMN_ORDER_IDS_CANNOT_BE_EMPTY: 'Column order ids cannot be empty',
+  INVALID_COLUMN_ID: 'Invalid column id',
 
   UPDATE_BOARD_SUCCESS: 'Board updated successfully'
 }
@@ -32,7 +33,15 @@ export const COLUMNS_MESSAGES = {
   INVALID_BOARD_ID: 'Invalid board id',
   BOARD_NOT_FOUND: 'Board not found',
 
-  CREATE_COLUMN_SUCCESS: 'Column created successfully'
+  CREATE_COLUMN_SUCCESS: 'Column created successfully',
+
+  INVALID_COLUMN_ID: 'Invalid column id',
+  COLUMN_NOT_FOUND: 'Column not found',
+  CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Card order ids must be an array of strings',
+  CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Card order ids cannot be empty',
+  INVALID_CARD_ID: 'Invalid card id',
+
+  UPDATE_COLUMN_SUCCESS: 'Column updated successfully'
 }
 
 export const CARDS_MESSAGES = {

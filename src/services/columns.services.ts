@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { CreateColumnReqBody } from '~/models/requests/Column.requests'
+import { CreateColumnReqBody, UpdateColumnReqBody } from '~/models/requests/Column.requests'
 import Column from '~/models/schemas/Column.schema'
 import databaseService from '~/services/database.services'
 
@@ -20,6 +20,21 @@ class ColumnsService {
     )
 
     return { ...column, cards: [] }
+  }
+
+  async updateColumn(column_id: string, body: UpdateColumnReqBody) {
+    const payload = body as UpdateColumnReqBody & { card_order_ids: ObjectId[] }
+
+    const column = await databaseService.columns.findOneAndUpdate(
+      { _id: new ObjectId(column_id) },
+      {
+        $set: { ...payload },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return column
   }
 }
 
