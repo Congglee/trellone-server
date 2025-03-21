@@ -19,12 +19,14 @@ class BoardsService {
   }
 
   async updateBoard(board_id: string, body: UpdateBoardReqBody) {
-    const payload = body as UpdateBoardReqBody & { column_order_ids: ObjectId[] }
+    const payload = body.column_order_ids
+      ? { ...body, column_order_ids: body.column_order_ids.map((id) => new ObjectId(id)) }
+      : (body as UpdateBoardReqBody & { column_order_ids: ObjectId[] })
 
     const board = await databaseService.boards.findOneAndUpdate(
       { _id: new ObjectId(board_id) },
       {
-        $set: { ...payload },
+        $set: payload,
         $currentDate: { updated_at: true }
       },
       { returnDocument: 'after' }

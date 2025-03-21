@@ -113,25 +113,6 @@ export const updateColumnValidator = validate(
               throw new Error(COLUMNS_MESSAGES.INVALID_CARD_ID)
             }
 
-            // Ensure no new elements added or removed (only reordering allowed)
-            if (!isEmpty(column.card_order_ids)) {
-              // Convert both arrays to sets of string IDs and compare
-              const existingIds = new Set(column.card_order_ids.map((id) => id.toString()))
-              const newIds = new Set(value.map((id: string) => id.toString()))
-
-              // Check if both sets have the same size and elements
-              if (existingIds.size !== newIds.size) {
-                throw new Error('You can only reorder cards, not add or remove them')
-              }
-
-              // Check if every element in newIds exists in existingIds
-              for (const id of newIds) {
-                if (!existingIds.has(id as string)) {
-                  throw new Error('You can only reorder cards, not add or remove them')
-                }
-              }
-            }
-
             return true
           }
         }

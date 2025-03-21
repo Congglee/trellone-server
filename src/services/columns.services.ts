@@ -23,12 +23,14 @@ class ColumnsService {
   }
 
   async updateColumn(column_id: string, body: UpdateColumnReqBody) {
-    const payload = body as UpdateColumnReqBody & { card_order_ids: ObjectId[] }
+    const payload = body.card_order_ids
+      ? { ...body, card_order_ids: body.card_order_ids.map((id) => new ObjectId(id)) }
+      : (body as UpdateColumnReqBody & { card_order_ids: ObjectId[] })
 
     const column = await databaseService.columns.findOneAndUpdate(
       { _id: new ObjectId(column_id) },
       {
-        $set: { ...payload },
+        $set: payload,
         $currentDate: { updated_at: true }
       },
       { returnDocument: 'after' }
