@@ -17,7 +17,11 @@ export const AUTH_MESSAGES = {
     'Confirm password must be 6-50 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 special character',
   CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD: 'Confirm password must be the same as password',
 
-  REGISTER_SUCCESS: 'Register successfully'
+  REGISTER_SUCCESS: 'Register successfully',
+
+  EMAIL_OR_PASSWORD_IS_INCORRECT: 'Email or password is incorrect',
+
+  LOGIN_SUCCESS: 'Login successfully'
 }
 
 export const BOARDS_MESSAGES = {

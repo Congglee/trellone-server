@@ -91,6 +91,21 @@ class AuthService {
 
     return { access_token, refresh_token }
   }
+
+  async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+      user_id: user_id.toString(),
+      verify
+    })
+
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token)
+
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
+    )
+
+    return { access_token, refresh_token }
+  }
 }
 
 const authService = new AuthService()
