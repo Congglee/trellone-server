@@ -38,6 +38,21 @@ class ColumnsService {
 
     return column
   }
+
+  async deleteColumn(column_id: string, board_id: string) {
+    // Delete column
+    await databaseService.columns.deleteOne({ _id: new ObjectId(column_id) })
+
+    // Delete all cards in this column
+    await databaseService.cards.deleteMany({ column_id: new ObjectId(column_id) })
+
+    // Delete column_id in the column_order_ids of this board containing column
+    await databaseService.boards.findOneAndUpdate(
+      { _id: new ObjectId(board_id) },
+      { $pull: { column_order_ids: new ObjectId(column_id) } },
+      { returnDocument: 'after' }
+    )
+  }
 }
 
 const columnsService = new ColumnsService()
