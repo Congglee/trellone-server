@@ -6,6 +6,7 @@ import cors from 'cors'
 import boardsRouter from '~/routes/boards.routes'
 import columnsRouter from '~/routes/columns.routes'
 import cardsRouter from '~/routes/cards.routes'
+import authRouter from '~/routes/auth.routes'
 
 // Middlewares import
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
@@ -20,6 +21,7 @@ app.use(express.json())
 app.use(cors(corsOptions))
 
 // Use app routes
+app.use('/auth', authRouter)
 app.use('/boards', boardsRouter)
 app.use('/columns', columnsRouter)
 app.use('/cards', cardsRouter)
