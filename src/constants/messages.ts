@@ -57,7 +57,9 @@ export const COLUMNS_MESSAGES = {
   CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Card order ids cannot be empty',
   INVALID_CARD_ID: 'Invalid card id',
 
-  UPDATE_COLUMN_SUCCESS: 'Column updated successfully'
+  UPDATE_COLUMN_SUCCESS: 'Column updated successfully',
+
+  DELETE_COLUMN_SUCCESS: 'Column deleted successfully'
 }
 
 export const CARDS_MESSAGES = {
