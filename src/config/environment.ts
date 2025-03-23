@@ -26,7 +26,7 @@ if (!fs.existsSync(path.resolve(envFilename))) {
 
 config({ path: envFilename })
 
-export const isProduction = env === 'production'
+export const environment = process.env.NODE_ENV || 'development'
 
 export const envConfig = {
   port: (process.env.PORT as string) || '8000',
@@ -34,5 +34,9 @@ export const envConfig = {
 
   dbName: process.env.DB_NAME as string,
   dbUsername: process.env.DB_USERNAME as string,
-  dbPassword: process.env.DB_PASSWORD as string
+  dbPassword: process.env.DB_PASSWORD as string,
+
+  dbBoardsCollection: process.env.DB_BOARDS_COLLECTION as string,
+  dbColumnsCollection: process.env.DB_COLUMNS_COLLECTION as string,
+  dbCardsCollection: process.env.DB_CARDS_COLLECTION as string
 }
