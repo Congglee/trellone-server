@@ -4,6 +4,8 @@ import logger from '~/config/logger'
 import Board from '~/models/schemas/Board.schema'
 import Card from '~/models/schemas/Card.schema'
 import Column from '~/models/schemas/Column.schema'
+import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import User from '~/models/schemas/User.schema'
 
 const URI = `mongodb+srv://${envConfig.dbUsername}:${envConfig.dbPassword}@trellone-cluster0.nnecc.mongodb.net/?retryWrites=true&w=majority&appName=${envConfig.dbName}`
 
@@ -45,7 +47,15 @@ class DatabaseService {
   }
 
   get cards(): Collection<Card> {
-    return this.db.collection(envConfig.dbCardsCollection as string)
+    return this.db.collection<Card>(envConfig.dbCardsCollection as string)
+  }
+
+  get users(): Collection<User> {
+    return this.db.collection<User>(envConfig.dbUsersCollection as string)
+  }
+
+  get refreshTokens(): Collection<RefreshToken> {
+    return this.db.collection<RefreshToken>(envConfig.dbRefreshTokensCollection as string)
   }
 }
 
