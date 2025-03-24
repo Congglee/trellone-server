@@ -34,3 +34,14 @@ export const loginController = async (req: Request<ParamsDictionary, any, LoginR
 
   return res.json({ message: AUTH_MESSAGES.LOGIN_SUCCESS, result })
 }
+
+export const logoutController = async (req: Request, res: Response) => {
+  const { refresh_token } = req.cookies
+
+  const result = await authService.logout(refresh_token)
+
+  res.clearCookie('access_token')
+  res.clearCookie('refresh_token')
+
+  return res.json(result)
+}

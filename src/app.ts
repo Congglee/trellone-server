@@ -11,6 +11,7 @@ import authRouter from '~/routes/auth.routes'
 // Middlewares import
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
 import { corsOptions } from '~/config/cors'
+import cookieParser from 'cookie-parser'
 
 const app = express()
 
@@ -18,6 +19,7 @@ const app = express()
 app.use(express.json())
 
 // Use middleware
+app.use(cookieParser())
 app.use(cors(corsOptions))
 
 // Use app routes
