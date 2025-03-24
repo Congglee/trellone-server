@@ -30,6 +30,10 @@ export const AUTH_MESSAGES = {
   LOGOUT_SUCCESS: 'Logout successfully'
 }
 
+export const USERS_MESSAGES = {
+  GET_ME_SUCCESS: 'Get my profile successfully'
+}
+
 export const BOARDS_MESSAGES = {
   BOARD_TITLE_IS_REQUIRED: 'Board title is required',
   BOARD_TITLE_MUST_BE_STRING: 'Board title must be a string',
