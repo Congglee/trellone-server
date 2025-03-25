@@ -5,6 +5,7 @@ import {
   moveCardToDifferentColumnController,
   updateBoardController
 } from '~/controllers/boards.controllers'
+import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import {
   boardIdValidator,
   createBoardValidator,
@@ -19,7 +20,7 @@ const boardsRouter = Router()
 
 boardsRouter.post('/', createBoardValidator, wrapRequestHandler(createBoardController))
 
-boardsRouter.get('/:board_id', boardIdValidator, wrapRequestHandler(getBoardController))
+boardsRouter.get('/:board_id', boardIdValidator, accessTokenValidator, wrapRequestHandler(getBoardController))
 
 boardsRouter.put(
   '/:board_id',

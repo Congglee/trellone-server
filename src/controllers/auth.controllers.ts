@@ -1,7 +1,7 @@
 import { ParamsDictionary } from 'express-serve-static-core'
 import { Request, Response } from 'express'
 import { AUTH_MESSAGES } from '~/constants/messages'
-import { LoginReqBody, RegisterReqBody } from '~/models/requests/User.requests'
+import { LoginReqBody, RegisterReqBody, TokenPayload } from '~/models/requests/User.requests'
 import authService from '~/services/auth.services'
 import User from '~/models/schemas/User.schema'
 import { ObjectId } from 'mongodb'
@@ -44,4 +44,27 @@ export const logoutController = async (req: Request, res: Response) => {
   res.clearCookie('refresh_token')
 
   return res.json(result)
+}
+
+export const refreshTokenController = async (req: Request, res: Response) => {
+  const { refresh_token } = req.cookies
+  const { user_id, verify, exp } = req.decoded_refresh_token as TokenPayload
+
+  const result = await authService.refreshToken({ user_id, verify, refresh_token, exp })
+
+  res.cookie('access_token', result.access_token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: ms('7 days')
+  })
+
+  res.cookie('refresh_token', result.refresh_token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: ms('7 days')
+  })
+
+  return res.json({ message: AUTH_MESSAGES.REFRESH_TOKEN_SUCCESS, result })
 }
