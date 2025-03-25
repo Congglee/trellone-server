@@ -1,6 +1,7 @@
 // Libraries import
 import express from 'express'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 
 // Routes import
 import boardsRouter from '~/routes/boards.routes'
@@ -12,7 +13,6 @@ import usersRouter from '~/routes/users.routes'
 // Middlewares import
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
 import { corsOptions } from '~/config/cors'
-import cookieParser from 'cookie-parser'
 
 const app = express()
 
