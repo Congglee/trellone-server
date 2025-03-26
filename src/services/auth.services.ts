@@ -5,6 +5,7 @@ import { AUTH_MESSAGES } from '~/constants/messages'
 import { RegisterReqBody } from '~/models/requests/User.requests'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
+import { sendVerifyRegisterEmail } from '~/providers/resend'
 import databaseService from '~/services/database.services'
 import { hashPassword } from '~/utils/crypto'
 import { signToken, verifyToken } from '~/utils/jwt'
@@ -86,8 +87,7 @@ class AuthService {
       new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
     )
 
-    // Send verify email to user
-    // await sendVerifyRegisterEmail(body.email, email_verify_token)
+    await sendVerifyRegisterEmail(body.email, email_verify_token)
 
     return { access_token, refresh_token }
   }
@@ -140,6 +140,29 @@ class AuthService {
     )
 
     return { access_token: new_access_token, refresh_token: new_refresh_token }
+  }
+
+  async verifyEmail(user_id: string) {
+    const [token] = await Promise.all([
+      this.signAccessAndRefreshToken({ user_id, verify: UserVerifyStatus.Verified }),
+      await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+        {
+          $set: {
+            email_verify_token: '',
+            verify: UserVerifyStatus.Verified,
+            updated_at: '$$NOW'
+          }
+        }
+      ])
+    ])
+    const [access_token, refresh_token] = token
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token)
+
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
+    )
+
+    return { access_token, refresh_token }
   }
 }
 

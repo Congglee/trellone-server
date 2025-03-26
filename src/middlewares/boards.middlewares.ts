@@ -11,6 +11,7 @@ import { Request } from 'express'
 import Board from '~/models/schemas/Board.schema'
 import { envConfig } from '~/config/environment'
 import { isEmpty } from 'lodash'
+import { TokenPayload } from '~/models/requests/User.requests'
 
 const boardTypes = stringEnumToArray(BoardType)
 
@@ -65,13 +66,25 @@ export const boardIdValidator = validate(
               })
             }
 
+            const { user_id } = (req as Request).decoded_authorization as TokenPayload
+
+            const queryConditions = [
+              { _id: new ObjectId(value) },
+              { _destroy: false },
+              {
+                $or: [
+                  {
+                    owners: { $all: [new ObjectId(user_id)] }
+                  },
+                  { members: { $all: [new ObjectId(user_id)] } }
+                ]
+              }
+            ]
+
             const [board] = await databaseService.boards
               .aggregate<Board>([
                 {
-                  $match: {
-                    _id: new ObjectId(value),
-                    _destroy: false
-                  }
+                  $match: { $and: queryConditions }
                 },
                 {
                   $lookup: {
@@ -87,6 +100,40 @@ export const boardIdValidator = validate(
                     localField: '_id',
                     foreignField: 'board_id',
                     as: 'cards'
+                  }
+                },
+                {
+                  $lookup: {
+                    from: envConfig.dbUsersCollection,
+                    localField: 'members',
+                    foreignField: '_id',
+                    as: 'members',
+                    pipeline: [
+                      {
+                        $project: {
+                          password: 0,
+                          email_verify_token: 0,
+                          forgot_password_token: 0
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  $lookup: {
+                    from: envConfig.dbUsersCollection,
+                    localField: 'owners',
+                    foreignField: '_id',
+                    as: 'owners',
+                    pipeline: [
+                      {
+                        $project: {
+                          password: 0,
+                          email_verify_token: 0,
+                          forgot_password_token: 0
+                        }
+                      }
+                    ]
                   }
                 },
                 {

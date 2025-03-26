@@ -8,12 +8,13 @@ import Board from '~/models/schemas/Board.schema'
 import databaseService from '~/services/database.services'
 
 class BoardsService {
-  async createBoard(body: CreateBoardReqBody) {
+  async createBoard(user_id: string, body: CreateBoardReqBody) {
     const result = await databaseService.boards.insertOne(
       new Board({
         title: body.title,
         description: body.description,
-        type: body.type
+        type: body.type,
+        owners: [new ObjectId(user_id)]
       })
     )
 

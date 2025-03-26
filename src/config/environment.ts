@@ -52,5 +52,10 @@ export const envConfig = {
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN as string,
   refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN as string,
   emailVerifyTokenExpiresIn: process.env.EMAIL_VERIFY_TOKEN_EXPIRES_IN as string,
-  forgotPasswordTokenExpiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN as string
+  forgotPasswordTokenExpiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN as string,
+
+  clientUrl: process.env.CLIENT_URL as string,
+
+  resendApiKey: process.env.RESEND_API_KEY as string,
+  resendEmailFromAddress: process.env.RESEND_EMAIL_FROM_ADDRESS as string
 }
