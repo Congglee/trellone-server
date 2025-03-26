@@ -10,7 +10,9 @@ import boardsService from '~/services/boards.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 
 export const createBoardController = async (req: Request<ParamsDictionary, any, CreateBoardReqBody>, res: Response) => {
-  const result = await boardsService.createBoard(req.body)
+  const user_id = req.decoded_authorization?.user_id as string
+  const result = await boardsService.createBoard(user_id, req.body)
+
   return res.json({ message: BOARDS_MESSAGES.CREATE_BOARD_SUCCESS, result })
 }
 

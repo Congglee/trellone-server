@@ -29,7 +29,13 @@ export const AUTH_MESSAGES = {
 
   LOGOUT_SUCCESS: 'Logout successfully',
 
-  REFRESH_TOKEN_SUCCESS: 'Refresh token successfully'
+  REFRESH_TOKEN_SUCCESS: 'Refresh token successfully',
+
+  EMAIL_VERIFY_TOKEN_IS_REQUIRED: 'Email verify token is required',
+  USER_NOT_FOUND: 'User not found',
+  EMAIL_ALREADY_VERIFIED_BEFORE: 'Email already verified before',
+
+  EMAIL_VERIFY_SUCCESS: 'Email verify successfully'
 }
 
 export const USERS_MESSAGES = {

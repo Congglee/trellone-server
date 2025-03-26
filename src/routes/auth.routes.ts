@@ -3,9 +3,15 @@ import {
   loginController,
   logoutController,
   refreshTokenController,
-  registerController
+  registerController,
+  verifyEmailController
 } from '~/controllers/auth.controllers'
-import { loginValidator, refreshTokenValidator, registerValidator } from '~/middlewares/auth.middlewares'
+import {
+  emailVerifyTokenValidator,
+  loginValidator,
+  refreshTokenValidator,
+  registerValidator
+} from '~/middlewares/auth.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const authRouter = Router()
@@ -17,5 +23,7 @@ authRouter.post('/login', loginValidator, wrapRequestHandler(loginController))
 authRouter.post('/logout', wrapRequestHandler(logoutController))
 
 authRouter.post('/refresh-token', refreshTokenValidator, wrapRequestHandler(refreshTokenController))
+
+authRouter.post('/verify-email', emailVerifyTokenValidator, wrapRequestHandler(verifyEmailController))
 
 export default authRouter

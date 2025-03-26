@@ -18,12 +18,13 @@ import { wrapRequestHandler } from '~/utils/handlers'
 
 const boardsRouter = Router()
 
-boardsRouter.post('/', createBoardValidator, wrapRequestHandler(createBoardController))
+boardsRouter.post('/', accessTokenValidator, createBoardValidator, wrapRequestHandler(createBoardController))
 
-boardsRouter.get('/:board_id', boardIdValidator, accessTokenValidator, wrapRequestHandler(getBoardController))
+boardsRouter.get('/:board_id', accessTokenValidator, boardIdValidator, wrapRequestHandler(getBoardController))
 
 boardsRouter.put(
   '/:board_id',
+  accessTokenValidator,
   boardIdValidator,
   updateBoardValidator,
   filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type', 'column_order_ids']),
@@ -32,6 +33,7 @@ boardsRouter.put(
 
 boardsRouter.put(
   '/supports/moving-card',
+  accessTokenValidator,
   moveCardToDifferentColumnValidator,
   filterMiddleware([
     'current_card_id',
