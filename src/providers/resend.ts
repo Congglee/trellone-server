@@ -28,6 +28,6 @@ export const sendVerifyRegisterEmail = (
       .replace('{{title}}', 'Account registration confirmation')
       .replace('{{content}}', `Hi ${toAddress},`)
       .replace('{{title_link}}', 'Confirm your email')
-      .replace('{{link}}', `${envConfig.clientUrl}/verify-email?token=${email_verify_token}`)
+      .replace('{{link}}', `${envConfig.clientUrl}/account/verification?token=${email_verify_token}&email=${toAddress}`)
   )
 }

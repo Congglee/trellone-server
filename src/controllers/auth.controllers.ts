@@ -71,11 +71,7 @@ export const refreshTokenController = async (req: Request, res: Response) => {
   return res.json({ message: AUTH_MESSAGES.REFRESH_TOKEN_SUCCESS, result })
 }
 
-export const verifyEmailController = async (
-  req: Request<ParamsDictionary, any, VerifyEmailReqBody>,
-  res: Response,
-  next: NextFunction
-) => {
+export const verifyEmailController = async (req: Request<ParamsDictionary, any, VerifyEmailReqBody>, res: Response) => {
   const { user_id } = req.decoded_email_verify_token as TokenPayload
   const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
 
@@ -91,5 +87,5 @@ export const verifyEmailController = async (
 
   const result = await authService.verifyEmail(user_id)
 
-  return res.json({ message: AUTH_MESSAGES.EMAIL_VERIFY_SUCCESS, result })
+  return res.json(result)
 }

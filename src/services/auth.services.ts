@@ -76,20 +76,9 @@ class AuthService {
       })
     )
 
-    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
-      user_id: user_id.toString(),
-      verify: UserVerifyStatus.Unverified
-    })
-
-    const { iat, exp } = await this.decodeRefreshToken(refresh_token)
-
-    await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
-    )
-
     await sendVerifyRegisterEmail(body.email, email_verify_token)
 
-    return { access_token, refresh_token }
+    return { message: AUTH_MESSAGES.REGISTER_SUCCESS }
   }
 
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
@@ -143,26 +132,17 @@ class AuthService {
   }
 
   async verifyEmail(user_id: string) {
-    const [token] = await Promise.all([
-      this.signAccessAndRefreshToken({ user_id, verify: UserVerifyStatus.Verified }),
-      await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
-        {
-          $set: {
-            email_verify_token: '',
-            verify: UserVerifyStatus.Verified,
-            updated_at: '$$NOW'
-          }
+    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+      {
+        $set: {
+          email_verify_token: '',
+          verify: UserVerifyStatus.Verified,
+          updated_at: '$$NOW'
         }
-      ])
+      }
     ])
-    const [access_token, refresh_token] = token
-    const { iat, exp } = await this.decodeRefreshToken(refresh_token)
 
-    await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
-    )
-
-    return { access_token, refresh_token }
+    return { message: AUTH_MESSAGES.EMAIL_VERIFY_SUCCESS }
   }
 }
 
