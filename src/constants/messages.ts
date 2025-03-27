@@ -44,7 +44,9 @@ export const AUTH_MESSAGES = {
 
   VERIFY_FORGOT_PASSWORD_SUCCESS: 'Verify forgot password successfully',
 
-  RESET_PASSWORD_SUCCESS: 'Reset password successfully'
+  RESET_PASSWORD_SUCCESS: 'Reset password successfully',
+
+  GMAIL_NOT_VERIFIED: 'Gmail not verified'
 }
 
 export const USERS_MESSAGES = {

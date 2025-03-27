@@ -54,6 +54,11 @@ export const envConfig = {
   emailVerifyTokenExpiresIn: process.env.EMAIL_VERIFY_TOKEN_EXPIRES_IN as string,
   forgotPasswordTokenExpiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN as string,
 
+  googleClientId: process.env.GOOGLE_CLIENT_ID as string,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI as string,
+  clientRedirectCallback: process.env.CLIENT_REDIRECT_CALLBACK as string,
+
   clientUrl: process.env.CLIENT_URL as string,
 
   resendApiKey: process.env.RESEND_API_KEY as string,
