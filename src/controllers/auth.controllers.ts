@@ -16,6 +16,7 @@ import { ObjectId } from 'mongodb'
 import ms from 'ms'
 import databaseService from '~/services/database.services'
 import HTTP_STATUS from '~/constants/httpStatus'
+import { envConfig } from '~/config/environment'
 
 export const registerController = async (req: Request<ParamsDictionary, any, RegisterReqBody>, res: Response) => {
   const result = await authService.register(req.body)
@@ -125,4 +126,27 @@ export const resetPasswordController = async (
   const result = await authService.resetPassword(user_id, password)
 
   return res.json(result)
+}
+
+export const OAuthController = async (req: Request, res: Response) => {
+  const { code } = req.query
+  const result = await authService.oauth(code as string)
+
+  const urlRedirect = `${envConfig.clientRedirectCallback}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}&verify=${result.verify}`
+
+  res.cookie('access_token', result.access_token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: ms('7 days')
+  })
+
+  res.cookie('refresh_token', result.refresh_token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: ms('7 days')
+  })
+
+  return res.redirect(urlRedirect)
 }

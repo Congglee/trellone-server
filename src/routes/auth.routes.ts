@@ -3,6 +3,7 @@ import {
   forgotPasswordController,
   loginController,
   logoutController,
+  OAuthController,
   refreshTokenController,
   registerController,
   resetPasswordController,
@@ -41,5 +42,7 @@ authRouter.post(
 )
 
 authRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordController))
+
+authRouter.get('/oauth/google', wrapRequestHandler(OAuthController))
 
 export default authRouter
