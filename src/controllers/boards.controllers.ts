@@ -8,9 +8,10 @@ import {
 } from '~/models/requests/Board.requests'
 import boardsService from '~/services/boards.services'
 import { ParamsDictionary } from 'express-serve-static-core'
+import { TokenPayload } from '~/models/requests/User.requests'
 
 export const createBoardController = async (req: Request<ParamsDictionary, any, CreateBoardReqBody>, res: Response) => {
-  const user_id = req.decoded_authorization?.user_id as string
+  const { user_id } = req.decoded_authorization as TokenPayload
   const result = await boardsService.createBoard(user_id, req.body)
 
   return res.json({ message: BOARDS_MESSAGES.CREATE_BOARD_SUCCESS, result })

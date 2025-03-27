@@ -5,7 +5,7 @@ import { AUTH_MESSAGES } from '~/constants/messages'
 import { RegisterReqBody } from '~/models/requests/User.requests'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
-import { sendVerifyRegisterEmail } from '~/providers/resend'
+import { sendForgotPasswordEmail, sendVerifyRegisterEmail } from '~/providers/resend'
 import databaseService from '~/services/database.services'
 import { hashPassword } from '~/utils/crypto'
 import { signToken, verifyToken } from '~/utils/jwt'
@@ -43,6 +43,14 @@ class AuthService {
       payload: { user_id, token_type: TokenType.EmailVerifyToken, verify },
       privateKey: envConfig.jwtSecretEmailVerifyToken as string,
       options: { expiresIn: envConfig.emailVerifyTokenExpiresIn }
+    })
+  }
+
+  private signForgotPasswordToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    return signToken({
+      payload: { user_id, token_type: TokenType.ForgotPasswordToken, verify },
+      privateKey: envConfig.jwtSecretForgotPasswordToken as string,
+      options: { expiresIn: envConfig.forgotPasswordTokenExpiresIn }
     })
   }
 
@@ -143,6 +151,30 @@ class AuthService {
     ])
 
     return { message: AUTH_MESSAGES.EMAIL_VERIFY_SUCCESS }
+  }
+
+  async forgotPassword({ user_id, email, verify }: { user_id: string; email: string; verify: UserVerifyStatus }) {
+    const forgot_password_token = await this.signForgotPasswordToken({ user_id, verify })
+
+    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+      { $set: { forgot_password_token, updated_at: '$$NOW' } }
+    ])
+
+    await sendForgotPasswordEmail(email, forgot_password_token)
+
+    return { message: AUTH_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD }
+  }
+
+  async resetPassword(user_id: string, password: string) {
+    databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: { forgot_password_token: '', password: hashPassword(password) },
+        $currentDate: { updated_at: true }
+      }
+    )
+
+    return { message: AUTH_MESSAGES.RESET_PASSWORD_SUCCESS }
   }
 }
 
