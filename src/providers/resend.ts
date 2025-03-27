@@ -4,6 +4,7 @@ import path from 'path'
 import fs from 'fs'
 
 const verifyEmailTemplate = fs.readFileSync(path.resolve('src/templates/verify-email.html'), 'utf-8')
+const forgotPasswordTemplate = fs.readFileSync(path.resolve('src/templates/forgot-password.html'), 'utf-8')
 
 const resend = new Resend(envConfig.resendApiKey)
 
@@ -29,5 +30,21 @@ export const sendVerifyRegisterEmail = (
       .replace('{{content}}', `Hi ${toAddress},`)
       .replace('{{title_link}}', 'Confirm your email')
       .replace('{{link}}', `${envConfig.clientUrl}/account/verification?token=${email_verify_token}&email=${toAddress}`)
+  )
+}
+
+export const sendForgotPasswordEmail = (
+  toAddress: string,
+  forgot_password_token: string,
+  template: string = forgotPasswordTemplate
+) => {
+  return sendVerifyEmail(
+    toAddress,
+    'Reset your password',
+    template
+      .replace('{{title}}', 'Forgot your password?')
+      .replace('{{content}}', `Hi ${toAddress},`)
+      .replace('{{title_link}}', 'Reset your password')
+      .replace('{{link}}', `${envConfig.clientUrl}/forgot-password/verification?token=${forgot_password_token}`)
   )
 }
