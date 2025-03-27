@@ -2,6 +2,57 @@ export const COMMON_MESSAGES = {
   VALIDATION_ERROR: 'Validation error'
 }
 
+export const AUTH_MESSAGES = {
+  EMAIL_IS_INVALID: 'Email is invalid',
+  EMAIL_ALREADY_EXISTS: 'Email already exists',
+  PASSWORD_IS_REQUIRED: 'Password is required',
+  PASSWORD_MUST_BE_STRING: 'Password must be a string',
+  PASSWORD_LENGTH_MUST_BE_BETWEEN_6_AND_50: 'Password length must be between 6 and 50 characters',
+  PASSWORD_MUST_BE_STRONG:
+    'Password must be 6-50 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 special character',
+  CONFIRM_PASSWORD_IS_REQUIRED: 'Confirm password is required',
+  CONFIRM_PASSWORD_MUST_BE_STRING: 'Confirm password must be a string',
+  CONFIRM_PASSWORD_LENGTH_MUST_BE_BETWEEN_6_AND_50: 'Confirm password length must be between 6 and 50 characters',
+  CONFIRM_PASSWORD_MUST_BE_STRONG:
+    'Confirm password must be 6-50 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 special character',
+  CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD: 'Confirm password must be the same as password',
+
+  REGISTER_SUCCESS: 'Register successfully, please check your email to verify your account',
+
+  EMAIL_OR_PASSWORD_IS_INCORRECT: 'Email or password is incorrect',
+
+  LOGIN_SUCCESS: 'Login successfully',
+
+  ACCESS_TOKEN_IS_REQUIRED: 'Access token is required',
+  REFRESH_TOKEN_IS_REQUIRED: 'Refresh token is required',
+  USED_REFRESH_TOKEN_OR_NOT_EXIST: 'Used refresh token or not exist',
+
+  LOGOUT_SUCCESS: 'Logout successfully',
+
+  REFRESH_TOKEN_SUCCESS: 'Refresh token successfully',
+
+  EMAIL_VERIFY_TOKEN_IS_REQUIRED: 'Email verify token is required',
+  USER_NOT_FOUND: 'User not found',
+  EMAIL_ALREADY_VERIFIED_BEFORE: 'Email already verified before',
+
+  EMAIL_VERIFY_SUCCESS: 'Email verify successfully',
+
+  CHECK_EMAIL_TO_RESET_PASSWORD: 'Check email to reset password',
+
+  FORGOT_PASSWORD_TOKEN_IS_REQUIRED: 'Forgot password token is required',
+  INVALID_FORGOT_PASSWORD_TOKEN: 'Invalid forgot password token',
+
+  VERIFY_FORGOT_PASSWORD_SUCCESS: 'Verify forgot password successfully',
+
+  RESET_PASSWORD_SUCCESS: 'Reset password successfully',
+
+  GMAIL_NOT_VERIFIED: 'Gmail not verified'
+}
+
+export const USERS_MESSAGES = {
+  GET_ME_SUCCESS: 'Get my profile successfully'
+}
+
 export const BOARDS_MESSAGES = {
   BOARD_TITLE_IS_REQUIRED: 'Board title is required',
   BOARD_TITLE_MUST_BE_STRING: 'Board title must be a string',

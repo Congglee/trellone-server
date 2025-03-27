@@ -9,7 +9,7 @@ interface BoardSchema {
   cover_photo?: string
   // workspace_id: ObjectId
   column_order_ids?: ObjectId[]
-  owners?: ObjectId[]
+  owners: ObjectId[]
   members?: ObjectId[]
   _destroy?: boolean
   created_at?: Date
