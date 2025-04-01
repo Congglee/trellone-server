@@ -42,3 +42,7 @@ export interface UpdateMeReqBody {
   display_name?: string
   avatar?: string
 }
+
+export interface ChangePasswordReqBody {
+  password: string
+}

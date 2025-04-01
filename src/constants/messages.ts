@@ -59,7 +59,12 @@ export const USERS_MESSAGES = {
   IMAGE_URL_MUST_BE_STRING: 'Image url must be a string',
   IMAGE_URL_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Image url length must be between 1 and 400 characters',
 
-  UPDATE_ME_SUCCESS: 'Update my profile successfully'
+  UPDATE_ME_SUCCESS: 'Update my profile successfully',
+
+  USER_NOT_FOUND: 'User not found',
+  OLD_PASSWORD_NOT_MATCH: 'Old password not match',
+
+  CHANGE_PASSWORD_SUCCESS: 'Change password successfully, please login again'
 }
 
 export const BOARDS_MESSAGES = {
