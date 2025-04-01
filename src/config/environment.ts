@@ -62,5 +62,7 @@ export const envConfig = {
   clientUrl: process.env.CLIENT_URL as string,
 
   resendApiKey: process.env.RESEND_API_KEY as string,
-  resendEmailFromAddress: process.env.RESEND_EMAIL_FROM_ADDRESS as string
+  resendEmailFromAddress: process.env.RESEND_EMAIL_FROM_ADDRESS as string,
+
+  uploadthingToken: process.env.UPLOADTHING_TOKEN as string
 }

@@ -50,7 +50,16 @@ export const AUTH_MESSAGES = {
 }
 
 export const USERS_MESSAGES = {
-  GET_ME_SUCCESS: 'Get my profile successfully'
+  GET_ME_SUCCESS: 'Get my profile successfully',
+
+  DISPLAY_NAME_IS_REQUIRED: 'Display name is required',
+  DISPLAY_NAME_MUST_BE_STRING: 'Display name must be a string',
+  DISPLAY_NAME_LENGTH_MUST_BE_BETWEEN_1_AND_100: 'Display name length must be between 1 and 100 characters',
+
+  IMAGE_URL_MUST_BE_STRING: 'Image url must be a string',
+  IMAGE_URL_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Image url length must be between 1 and 400 characters',
+
+  UPDATE_ME_SUCCESS: 'Update my profile successfully'
 }
 
 export const BOARDS_MESSAGES = {
@@ -127,4 +136,8 @@ export const CARDS_MESSAGES = {
   COLUMN_NOT_FOUND: 'Column not found',
 
   CREATE_CARD_SUCCESS: 'Card created successfully'
+}
+
+export const MEDIAS_MESSAGES = {
+  UPLOAD_SUCCESS: 'Upload successfully'
 }
