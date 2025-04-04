@@ -1,11 +1,22 @@
 import { Router } from 'express'
-import { createCardController } from '~/controllers/cards.controllers'
+import { createCardController, updateCardController } from '~/controllers/cards.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
-import { createCardValidator } from '~/middlewares/cards.middlewares'
+import { cardIdValidator, createCardValidator, updateCardValidator } from '~/middlewares/cards.middlewares'
+import { filterMiddleware } from '~/middlewares/common.middlewares'
+import { UpdateCardReqBody } from '~/models/requests/Card.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const cardsRouter = Router()
 
 cardsRouter.post('/', accessTokenValidator, createCardValidator, wrapRequestHandler(createCardController))
+
+cardsRouter.put(
+  '/:card_id',
+  accessTokenValidator,
+  cardIdValidator,
+  updateCardValidator,
+  filterMiddleware<UpdateCardReqBody>(['title', 'description', 'cover_photo', 'comment', 'member']),
+  wrapRequestHandler(updateCardController)
+)
 
 export default cardsRouter
