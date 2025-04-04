@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { COLUMNS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
+import { TokenPayload } from '~/models/requests/User.requests'
 import Column from '~/models/schemas/Column.schema'
 import databaseService from '~/services/database.services'
 import { validate } from '~/utils/validation'
@@ -73,6 +74,28 @@ export const columnIdValidator = validate(
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.NOT_FOUND,
                 message: COLUMNS_MESSAGES.COLUMN_NOT_FOUND
+              })
+            }
+
+            const { user_id } = (req as Request).decoded_authorization as TokenPayload
+
+            const checkUserColumnAccess = await databaseService.boards.countDocuments({
+              _id: column.board_id,
+              $or: [
+                {
+                  owners: { $in: [new ObjectId(user_id)] }
+                },
+                {
+                  members: { $in: [new ObjectId(user_id)] }
+                }
+              ],
+              _destroy: false
+            })
+
+            if (!checkUserColumnAccess) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.FORBIDDEN,
+                message: COLUMNS_MESSAGES.COLUMN_NOT_BELONG_TO_USER
               })
             }
 

@@ -24,3 +24,8 @@ export enum TokenType {
 export enum MediaType {
   Image
 }
+
+export enum CardMemberAction {
+  Add = 'ADD',
+  Remove = 'REMOVE'
+}

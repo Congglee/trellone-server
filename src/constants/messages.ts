@@ -118,6 +118,8 @@ export const COLUMNS_MESSAGES = {
 
   INVALID_COLUMN_ID: 'Invalid column id',
   COLUMN_NOT_FOUND: 'Column not found',
+  COLUMN_NOT_BELONG_TO_USER: 'Column not belong to user',
+
   CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Card order ids must be an array of strings',
   CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Card order ids cannot be empty',
   INVALID_CARD_ID: 'Invalid card id',
@@ -140,7 +142,27 @@ export const CARDS_MESSAGES = {
   INVALID_COLUMN_ID: 'Invalid column id',
   COLUMN_NOT_FOUND: 'Column not found',
 
-  CREATE_CARD_SUCCESS: 'Card created successfully'
+  CREATE_CARD_SUCCESS: 'Card created successfully',
+
+  INVALID_CARD_ID: 'Invalid card id',
+  CARD_NOT_FOUND: 'Card not found',
+  CARD_NOT_BELONG_TO_USER: 'Card not belong to user',
+
+  CARD_DESCRIPTION_MUST_BE_STRING: 'Card description must be a string',
+  COVER_PHOTO_MUST_BE_STRING: 'Cover photo must be a string',
+  COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
+  COMMENT_MUST_BE_OBJECT: 'Comment must be an object',
+  COMMENT_MISSING_REQUIRED_FIELDS: 'Comment missing required fields',
+  COMMENT_INVALID_USER_ID: 'Comment invalid user id',
+  COMMENT_CONTENT_MUST_BE_STRING: 'Comment content must be a string',
+  MEMBER_MUST_BE_OBJECT: 'Member must be an object',
+  MEMBER_MISSING_REQUIRED_FIELDS: 'Member missing required fields',
+  INVALID_MEMBER_ACTION: 'Invalid member action',
+  INVALID_MEMBER_ID: 'Invalid member id',
+  MEMBER_ALREADY_EXISTS: 'Member already exists',
+  MEMBER_NOT_FOUND: 'Member not found',
+
+  UPDATE_CARD_SUCCESS: 'Card updated successfully'
 }
 
 export const MEDIAS_MESSAGES = {

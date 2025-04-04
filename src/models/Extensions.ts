@@ -1,7 +1,5 @@
-import { ObjectId } from 'mongodb'
-
 export interface Comment {
-  user_id: ObjectId
+  user_id: string
   user_email: string
   user_avatar: string
   user_display_name: string
