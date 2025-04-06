@@ -10,6 +10,7 @@ import cardsRouter from '~/routes/cards.routes'
 import authRouter from '~/routes/auth.routes'
 import usersRouter from '~/routes/users.routes'
 import mediasRouter from '~/routes/medias.routes'
+import invitationsRouter from '~/routes/invitations.routes'
 
 // Middlewares import
 import { defaultErrorHandler } from '~/middlewares/error.middlewares'
@@ -37,6 +38,7 @@ app.use('/boards', boardsRouter)
 app.use('/columns', columnsRouter)
 app.use('/cards', cardsRouter)
 app.use('/medias', mediasRouter)
+app.use('/invitations', invitationsRouter)
 
 // Error handling middleware
 app.use(defaultErrorHandler)

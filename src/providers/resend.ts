@@ -5,6 +5,7 @@ import fs from 'fs'
 
 const verifyEmailTemplate = fs.readFileSync(path.resolve('src/templates/verify-email.html'), 'utf-8')
 const forgotPasswordTemplate = fs.readFileSync(path.resolve('src/templates/forgot-password.html'), 'utf-8')
+const boardInvitationTemplate = fs.readFileSync(path.resolve('src/templates/board-invitation.html'), 'utf-8')
 
 const resend = new Resend(envConfig.resendApiKey)
 
@@ -46,5 +47,25 @@ export const sendForgotPasswordEmail = (
       .replace('{{content}}', `Hi ${toAddress},`)
       .replace('{{title_link}}', 'Reset your password')
       .replace('{{link}}', `${envConfig.clientUrl}/forgot-password/verification?token=${forgot_password_token}`)
+  )
+}
+
+export const sendBoardInvitationEmail = (
+  toAddress: string,
+  invitationToken: string,
+  boardName: string,
+  inviterName: string,
+  template: string = boardInvitationTemplate
+) => {
+  return sendVerifyEmail(
+    toAddress,
+    `You've been invited to join a board on Trellone`,
+    template
+      .replace('{{title}}', 'Board Invitation')
+      .replace('{{content}}', `Hi ${toAddress},`)
+      .replace('{{board_name}}', boardName)
+      .replace('{{inviter_name}}', inviterName)
+      .replace('{{title_link}}', 'Join this board')
+      .replace('{{link}}', `${envConfig.clientUrl}/board/invitation?token=${invitationToken}&email=${toAddress}`)
   )
 }
