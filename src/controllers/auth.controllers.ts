@@ -17,6 +17,7 @@ import ms from 'ms'
 import databaseService from '~/services/database.services'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { envConfig } from '~/config/environment'
+import { UserVerifyStatus } from '~/constants/enums'
 
 export const registerController = async (req: Request<ParamsDictionary, any, RegisterReqBody>, res: Response) => {
   const result = await authService.register(req.body)
@@ -96,6 +97,27 @@ export const verifyEmailController = async (req: Request<ParamsDictionary, any, 
 
   const result = await authService.verifyEmail(user_id)
 
+  return res.json(result)
+}
+
+export const resendVerifyEmailController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+
+  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+
+  if (!user) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      message: AUTH_MESSAGES.USER_NOT_FOUND
+    })
+  }
+
+  if (user.verify === UserVerifyStatus.Verified) {
+    return res.json({
+      message: AUTH_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE
+    })
+  }
+
+  const result = await authService.resendVerifyEmail(user_id, user.email)
   return res.json(result)
 }
 
