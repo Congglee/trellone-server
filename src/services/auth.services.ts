@@ -190,6 +190,25 @@ class AuthService {
     return { message: AUTH_MESSAGES.EMAIL_VERIFY_SUCCESS }
   }
 
+  async resendVerifyEmail(user_id: string, email: string) {
+    const email_verify_token = await this.signEmailVerifyToken({
+      user_id,
+      verify: UserVerifyStatus.Unverified
+    })
+
+    await sendVerifyRegisterEmail(email, email_verify_token)
+
+    await databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: { email_verify_token },
+        $currentDate: { updated_at: true }
+      }
+    )
+
+    return { message: AUTH_MESSAGES.RESEND_EMAIL_VERIFY_SUCCESS }
+  }
+
   async forgotPassword({ user_id, email, verify }: { user_id: string; email: string; verify: UserVerifyStatus }) {
     const forgot_password_token = await this.signForgotPasswordToken({ user_id, verify })
 
