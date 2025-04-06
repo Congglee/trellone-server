@@ -170,3 +170,14 @@ export const CARDS_MESSAGES = {
 export const MEDIAS_MESSAGES = {
   UPLOAD_SUCCESS: 'Upload successfully'
 }
+
+export const INVITATIONS_MESSAGES = {
+  INVITEE_EMAIL_IS_INVALID: 'Invitee email is invalid',
+  INVITEE_NOT_FOUND: 'Invitee not found',
+  BOARD_ID_IS_REQUIRED: 'Board id is required',
+  BOARD_ID_MUST_BE_STRING: 'Board id must be a string',
+  INVALID_BOARD_ID: 'Invalid board id',
+  BOARD_NOT_FOUND: 'Board not found',
+
+  CREATE_NEW_BOARD_INVITATION_SUCCESS: 'User invited to board successfully'
+}

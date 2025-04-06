@@ -4,6 +4,7 @@ import logger from '~/config/logger'
 import Board from '~/models/schemas/Board.schema'
 import Card from '~/models/schemas/Card.schema'
 import Column from '~/models/schemas/Column.schema'
+import Invitation from '~/models/schemas/Invitation.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
 
@@ -56,6 +57,10 @@ class DatabaseService {
 
   get refreshTokens(): Collection<RefreshToken> {
     return this.db.collection<RefreshToken>(envConfig.dbRefreshTokensCollection as string)
+  }
+
+  get invitations(): Collection<Invitation> {
+    return this.db.collection<Invitation>(envConfig.dbInvitationsCollection as string)
   }
 }
 

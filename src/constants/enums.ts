@@ -29,3 +29,13 @@ export enum CardMemberAction {
   Add = 'ADD',
   Remove = 'REMOVE'
 }
+
+export enum InvitationType {
+  BoardInvitation = 'BOARD_INVITATION'
+}
+
+export enum BoardInvitationStatus {
+  Pending = 'PENDING',
+  Accepted = 'ACCEPTED',
+  Rejected = 'REJECTED'
+}
