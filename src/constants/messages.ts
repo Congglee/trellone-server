@@ -173,11 +173,14 @@ export const MEDIAS_MESSAGES = {
 
 export const INVITATIONS_MESSAGES = {
   INVITEE_EMAIL_IS_INVALID: 'Invitee email is invalid',
-  INVITEE_NOT_FOUND: 'Invitee not found',
+  INVITEE_NOT_FOUND_OR_NOT_REGISTERED_AN_ACCOUNT: 'Invitee not found or not registered an account',
   BOARD_ID_IS_REQUIRED: 'Board id is required',
   BOARD_ID_MUST_BE_STRING: 'Board id must be a string',
   INVALID_BOARD_ID: 'Invalid board id',
   BOARD_NOT_FOUND: 'Board not found',
+  USER_DOES_NOT_HAVE_ACCESS_TO_BOARD: 'User does not have access to board',
 
-  CREATE_NEW_BOARD_INVITATION_SUCCESS: 'User invited to board successfully'
+  CREATE_NEW_BOARD_INVITATION_SUCCESS: 'User invited to board successfully',
+
+  GET_INVITATIONS_SUCCESS: "Get user's invitations successfully"
 }
