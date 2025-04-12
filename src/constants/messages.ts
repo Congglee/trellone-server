@@ -183,5 +183,11 @@ export const INVITATIONS_MESSAGES = {
 
   CREATE_NEW_BOARD_INVITATION_SUCCESS: 'User invited to board successfully',
 
+  INVITE_TOKEN_IS_REQUIRED: 'Invite token is required',
+  INVITER_NOT_FOUND: 'Inviter not found',
+  INVALID_INVITE_TOKEN: 'Invalid invite token',
+
+  VERIFY_BOARD_INVITATION_SUCCESS: 'Verify board invitation successfully',
+
   GET_INVITATIONS_SUCCESS: "Get user's invitations successfully"
 }

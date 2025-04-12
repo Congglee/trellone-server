@@ -10,9 +10,9 @@ import databaseService from '~/services/database.services'
 import { signToken } from '~/utils/jwt'
 
 class InvitationsService {
-  private signInvitationToken({ user_id, board_id }: { user_id: string; board_id: string }) {
+  private signInvitationToken({ inviter_id, invitation_id }: { inviter_id: string; invitation_id: string }) {
     return signToken({
-      payload: { user_id, board_id },
+      payload: { inviter_id, invitation_id },
       privateKey: envConfig.jwtSecretInviteToken as string,
       options: { expiresIn: envConfig.inviteTokenExpiresIn }
     })
@@ -24,7 +24,12 @@ class InvitationsService {
     invitee: User,
     board: Board
   ) {
-    const invite_token = await this.signInvitationToken({ user_id: inviter_id, board_id: body.board_id })
+    const invitation_id = new ObjectId()
+
+    const invite_token = await this.signInvitationToken({
+      inviter_id,
+      invitation_id: invitation_id.toString()
+    })
 
     const inviter = (await databaseService.users.findOne({ _id: new ObjectId(inviter_id) })) as User
 
@@ -35,12 +40,21 @@ class InvitationsService {
       board_invitation: {
         board_id: new ObjectId(body.board_id),
         status: BoardInvitationStatus.Pending
-      }
+      },
+      invite_token
     }
 
-    const result = await databaseService.invitations.insertOne(new Invitation(payload))
+    const result = await databaseService.invitations.insertOne(
+      new Invitation({
+        ...payload,
+        _id: invitation_id
+      })
+    )
 
-    const invitation = await databaseService.invitations.findOne({ _id: result.insertedId })
+    const invitation = await databaseService.invitations.findOne(
+      { _id: result.insertedId },
+      { projection: { invite_token: 0 } }
+    )
 
     await sendBoardInvitationEmail(invitee.email, invite_token, board.title, inviter.display_name)
 

@@ -221,6 +221,14 @@ class AuthService {
     return { message: AUTH_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD }
   }
 
+  async verifyForgotPassword(user_id: string) {
+    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+      { $set: { forgot_password_token: '', updated_at: '$$NOW' } }
+    ])
+
+    return { message: AUTH_MESSAGES.VERIFY_FORGOT_PASSWORD_SUCCESS }
+  }
+
   async resetPassword(user_id: string, password: string) {
     databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
