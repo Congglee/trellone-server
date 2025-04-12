@@ -2,7 +2,7 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { INVITATIONS_MESSAGES } from '~/constants/messages'
 import { Pagination } from '~/models/requests/Common.requests'
-import { CreateNewBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
+import { CreateNewBoardInvitationReqBody, VerifyBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
 import { TokenPayload } from '~/models/requests/User.requests'
 import Board from '~/models/schemas/Board.schema'
 import User from '~/models/schemas/User.schema'
@@ -39,4 +39,11 @@ export const getInvitationsController = async (req: Request<ParamsDictionary, an
       total_page: Math.ceil(result.total / limit)
     }
   })
+}
+
+export const verifyBoardInvitationController = async (
+  req: Request<ParamsDictionary, any, VerifyBoardInvitationReqBody>,
+  res: Response
+) => {
+  return res.json({ message: INVITATIONS_MESSAGES.VERIFY_BOARD_INVITATION_SUCCESS })
 }

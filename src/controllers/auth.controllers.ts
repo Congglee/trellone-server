@@ -135,7 +135,11 @@ export const verifyForgotPasswordController = async (
   req: Request<ParamsDictionary, any, VerifyForgotPasswordReqBody>,
   res: Response
 ) => {
-  return res.json({ message: AUTH_MESSAGES.VERIFY_FORGOT_PASSWORD_SUCCESS })
+  const { user_id } = req.decoded_forgot_password_token as TokenPayload
+
+  const result = await authService.verifyForgotPassword(user_id)
+
+  return res.json(result)
 }
 
 export const resetPasswordController = async (

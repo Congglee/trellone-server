@@ -68,7 +68,7 @@ export const sendBoardInvitationEmail = (
       .replace('{{board_title}}', boardTitle)
       .replace('{{inviter_name}}', inviterName)
       .replace('{{title_link}}', 'Join this board')
-      .replace('{{link}}', `${envConfig.clientUrl}/board/invitation?token=${invitation_token}&email=${toAddress}`),
+      .replace('{{link}}', `${envConfig.clientUrl}/board-invitation/verification?token=${invitation_token}`),
     `'${inviterName}' ${emailSenderAddress}`
   )
 }
