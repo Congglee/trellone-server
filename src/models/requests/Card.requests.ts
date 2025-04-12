@@ -12,6 +12,7 @@ export interface UpdateCardReqBody {
   title: string
   description?: string
   cover_photo?: string
+  _destroy?: boolean
   comment?: Comment
   member?: {
     action: CardMemberAction

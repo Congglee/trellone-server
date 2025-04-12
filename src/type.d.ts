@@ -15,5 +15,6 @@ declare module 'express' {
     board?: Board
     column?: Column
     card?: Card
+    invitee?: User
   }
 }

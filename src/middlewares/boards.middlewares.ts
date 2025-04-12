@@ -254,8 +254,7 @@ export const moveCardToDifferentColumnValidator = validate(
             }
 
             const card = await databaseService.cards.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!card) {
@@ -277,8 +276,7 @@ export const moveCardToDifferentColumnValidator = validate(
             }
 
             const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!column) {
@@ -312,8 +310,7 @@ export const moveCardToDifferentColumnValidator = validate(
             }
 
             const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!column) {

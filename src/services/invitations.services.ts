@@ -2,16 +2,35 @@ import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
 import { BoardInvitationStatus, InvitationType } from '~/constants/enums'
 import { CreateNewBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
+import Board from '~/models/schemas/Board.schema'
 import Invitation from '~/models/schemas/Invitation.schema'
+import User from '~/models/schemas/User.schema'
+import { sendBoardInvitationEmail } from '~/providers/resend'
 import databaseService from '~/services/database.services'
+import { signToken } from '~/utils/jwt'
 
 class InvitationsService {
-  async createNewBoardInvitation(body: CreateNewBoardInvitationReqBody, inviter_id: string) {
-    const invitee = await databaseService.users.findOne({ email: body.invitee_email })
+  private signInvitationToken({ user_id, board_id }: { user_id: string; board_id: string }) {
+    return signToken({
+      payload: { user_id, board_id },
+      privateKey: envConfig.jwtSecretInviteToken as string,
+      options: { expiresIn: envConfig.inviteTokenExpiresIn }
+    })
+  }
+
+  async createNewBoardInvitation(
+    body: CreateNewBoardInvitationReqBody,
+    inviter_id: string,
+    invitee: User,
+    board: Board
+  ) {
+    const invite_token = await this.signInvitationToken({ user_id: inviter_id, board_id: body.board_id })
+
+    const inviter = (await databaseService.users.findOne({ _id: new ObjectId(inviter_id) })) as User
 
     const payload = {
       inviter_id: new ObjectId(inviter_id),
-      invitee_id: new ObjectId(invitee?._id),
+      invitee_id: new ObjectId(invitee._id),
       type: InvitationType.BoardInvitation,
       board_invitation: {
         board_id: new ObjectId(body.board_id),
@@ -22,6 +41,8 @@ class InvitationsService {
     const result = await databaseService.invitations.insertOne(new Invitation(payload))
 
     const invitation = await databaseService.invitations.findOne({ _id: result.insertedId })
+
+    await sendBoardInvitationEmail(invitee.email, invite_token, board.title, inviter.display_name)
 
     return invitation
   }

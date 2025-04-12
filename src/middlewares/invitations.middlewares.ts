@@ -13,12 +13,14 @@ export const createNewBoardInvitationValidator = validate(
         isEmail: { errorMessage: INVITATIONS_MESSAGES.INVITEE_EMAIL_IS_INVALID },
         trim: true,
         custom: {
-          options: async (value) => {
+          options: async (value, { req }) => {
             const invitee = await databaseService.users.findOne({ email: value })
 
             if (invitee === null) {
               throw new Error(INVITATIONS_MESSAGES.INVITEE_NOT_FOUND_OR_NOT_REGISTERED_AN_ACCOUNT)
             }
+
+            ;(req as Request).invitee = invitee
 
             return true
           }
@@ -35,13 +37,14 @@ export const createNewBoardInvitationValidator = validate(
             }
 
             const board = await databaseService.boards.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!board) {
               throw new Error(INVITATIONS_MESSAGES.BOARD_NOT_FOUND)
             }
+
+            ;(req as Request).board = board
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
@@ -54,8 +57,7 @@ export const createNewBoardInvitationValidator = validate(
                 {
                   members: { $in: [new ObjectId(user_id)] }
                 }
-              ],
-              _destroy: false
+              ]
             })
 
             if (!checkUserBoardAccess) {

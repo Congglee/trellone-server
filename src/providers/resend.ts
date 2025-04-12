@@ -9,9 +9,9 @@ const boardInvitationTemplate = fs.readFileSync(path.resolve('src/templates/boar
 
 const resend = new Resend(envConfig.resendApiKey)
 
-const sendVerifyEmail = (toAddress: string, subject: string, body: string) => {
+const sendVerifyEmail = (toAddress: string, subject: string, body: string, fromAddress?: string) => {
   return resend.emails.send({
-    from: envConfig.resendEmailFromAddress,
+    from: fromAddress || envConfig.resendEmailFromAddress,
     to: toAddress,
     subject,
     html: body
@@ -52,20 +52,23 @@ export const sendForgotPasswordEmail = (
 
 export const sendBoardInvitationEmail = (
   toAddress: string,
-  invitationToken: string,
-  boardName: string,
+  invitation_token: string,
+  boardTitle: string,
   inviterName: string,
   template: string = boardInvitationTemplate
 ) => {
+  const emailSenderAddress = envConfig.resendEmailFromAddress.split(' ')[1]
+
   return sendVerifyEmail(
     toAddress,
     `You've been invited to join a board on Trellone`,
     template
       .replace('{{title}}', 'Board Invitation')
       .replace('{{content}}', `Hi ${toAddress},`)
-      .replace('{{board_name}}', boardName)
+      .replace('{{board_title}}', boardTitle)
       .replace('{{inviter_name}}', inviterName)
       .replace('{{title_link}}', 'Join this board')
-      .replace('{{link}}', `${envConfig.clientUrl}/board/invitation?token=${invitationToken}&email=${toAddress}`)
+      .replace('{{link}}', `${envConfig.clientUrl}/board/invitation?token=${invitation_token}&email=${toAddress}`),
+    `'${inviterName}' ${emailSenderAddress}`
   )
 }

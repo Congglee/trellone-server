@@ -35,8 +35,7 @@ export const createColumnValidator = validate(
             }
 
             const board = await databaseService.boards.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!board) {
@@ -66,8 +65,7 @@ export const columnIdValidator = validate(
             }
 
             const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!column) {
@@ -88,8 +86,7 @@ export const columnIdValidator = validate(
                 {
                   members: { $in: [new ObjectId(user_id)] }
                 }
-              ],
-              _destroy: false
+              ]
             })
 
             if (!checkUserColumnAccess) {

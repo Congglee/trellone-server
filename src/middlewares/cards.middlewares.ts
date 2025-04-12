@@ -34,8 +34,7 @@ export const createCardValidator = validate(
             }
 
             const board = await databaseService.boards.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!board) {
@@ -57,8 +56,7 @@ export const createCardValidator = validate(
             }
 
             const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!column) {
@@ -88,8 +86,7 @@ export const cardIdValidator = validate(
             }
 
             const card = await databaseService.cards.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!card) {
@@ -110,8 +107,7 @@ export const cardIdValidator = validate(
                 {
                   members: { $in: [new ObjectId(user_id)] }
                 }
-              ],
-              _destroy: false
+              ]
             })
 
             if (!checkUserCardAccess) {
@@ -148,6 +144,19 @@ export const updateCardValidator = validate(
           options: { min: 1, max: 400 },
           errorMessage: CARDS_MESSAGES.COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400
         }
+      },
+      _destroy: {
+        optional: true,
+        custom: {
+          options: (value) => {
+            if (typeof value !== 'boolean' && typeof value !== 'undefined') {
+              throw new Error(CARDS_MESSAGES.CARD_DESTROY_MUST_BE_BOOLEAN)
+            }
+
+            return true
+          }
+        },
+        toBoolean: true
       },
       comment: {
         optional: true,

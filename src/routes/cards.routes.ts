@@ -15,7 +15,7 @@ cardsRouter.put(
   accessTokenValidator,
   cardIdValidator,
   updateCardValidator,
-  filterMiddleware<UpdateCardReqBody>(['title', 'description', 'cover_photo', 'comment', 'member']),
+  filterMiddleware<UpdateCardReqBody>(['title', 'description', 'cover_photo', 'comment', 'member', '_destroy']),
   wrapRequestHandler(updateCardController)
 )
 

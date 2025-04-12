@@ -153,6 +153,7 @@ export const CARDS_MESSAGES = {
   CARD_DESCRIPTION_MUST_BE_STRING: 'Card description must be a string',
   COVER_PHOTO_MUST_BE_STRING: 'Cover photo must be a string',
   COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
+  CARD_DESTROY_MUST_BE_BOOLEAN: 'Card destroy must be boolean',
   COMMENT_MUST_BE_OBJECT: 'Comment must be an object',
   COMMENT_MISSING_REQUIRED_FIELDS: 'Comment missing required fields',
   COMMENT_INVALID_USER_ID: 'Comment invalid user id',
