@@ -2,9 +2,7 @@ import { UTApi } from 'uploadthing/server'
 import fs from 'fs'
 import { envConfig } from '~/config/environment'
 
-export const utapi = new UTApi({
-  token: envConfig.uploadthingToken
-})
+export const utapi = new UTApi({ token: envConfig.uploadthingToken })
 
 export const uploadFileToUploadthing = async (filePath: string, fileName: string, mimeType: string) => {
   // Read the file as Buffer

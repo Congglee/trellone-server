@@ -1,17 +1,25 @@
-import { Request } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { checkSchema } from 'express-validator'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { capitalize } from 'lodash'
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
+import { BoardInvitationStatus } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { INVITATIONS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
 import { InviteTokenPayload } from '~/models/requests/Invitation.requests'
 import { TokenPayload } from '~/models/requests/User.requests'
+import Board from '~/models/schemas/Board.schema'
+import Invitation from '~/models/schemas/Invitation.schema'
+import User from '~/models/schemas/User.schema'
 import databaseService from '~/services/database.services'
+import { stringEnumToArray } from '~/utils/commons'
+import { wrapRequestHandler } from '~/utils/handlers'
 import { verifyToken } from '~/utils/jwt'
 import { validate } from '~/utils/validation'
+
+const boardInvitationStatus = stringEnumToArray(BoardInvitationStatus)
 
 export const createNewBoardInvitationValidator = validate(
   checkSchema(
@@ -80,6 +88,25 @@ export const createNewBoardInvitationValidator = validate(
   )
 )
 
+export const checkInviteeMembershipValidator = wrapRequestHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const invitee = req.invitee as User
+    const board = req.board as Board
+
+    // Check if invitee is already an owner or member of the board
+    const isAlreadyMember = [...board.owners, ...board.members].some((id) => id.toString() === invitee._id?.toString())
+
+    if (isAlreadyMember) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.BAD_REQUEST,
+        message: INVITATIONS_MESSAGES.USER_IS_ALREADY_MEMBER_OF_BOARD
+      })
+    }
+
+    next()
+  }
+)
+
 export const verifyInviteTokenValidator = validate(
   checkSchema(
     {
@@ -90,7 +117,7 @@ export const verifyInviteTokenValidator = validate(
             if (!value) {
               throw new ErrorWithStatus({
                 message: INVITATIONS_MESSAGES.INVITE_TOKEN_IS_REQUIRED,
-                status: HTTP_STATUS.UNAUTHORIZED
+                status: HTTP_STATUS.BAD_REQUEST
               })
             }
 
@@ -108,7 +135,7 @@ export const verifyInviteTokenValidator = validate(
               if (inviter === null) {
                 throw new ErrorWithStatus({
                   message: INVITATIONS_MESSAGES.INVITER_NOT_FOUND,
-                  status: HTTP_STATUS.UNAUTHORIZED
+                  status: HTTP_STATUS.NOT_FOUND
                 })
               }
 
@@ -120,7 +147,7 @@ export const verifyInviteTokenValidator = validate(
               if (!invitation) {
                 throw new ErrorWithStatus({
                   message: INVITATIONS_MESSAGES.INVALID_INVITE_TOKEN,
-                  status: HTTP_STATUS.UNAUTHORIZED
+                  status: HTTP_STATUS.BAD_REQUEST
                 })
               }
 
@@ -134,6 +161,102 @@ export const verifyInviteTokenValidator = validate(
               }
 
               throw error
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const boardInvitationIdValidator = validate(
+  checkSchema(
+    {
+      invitation_id: {
+        notEmpty: { errorMessage: INVITATIONS_MESSAGES.BOARD_INVITATION_ID_IS_REQUIRED },
+        isString: { errorMessage: INVITATIONS_MESSAGES.BOARD_INVITATION_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: INVITATIONS_MESSAGES.INVALID_BOARD_INVITATION_ID
+              })
+            }
+
+            const invitation = await databaseService.invitations.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!invitation) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: INVITATIONS_MESSAGES.BOARD_INVITATION_NOT_FOUND
+              })
+            }
+
+            const { user_id } = (req as Request).decoded_authorization as TokenPayload
+
+            const checkUserBoardInvitationAccess = await databaseService.invitations.countDocuments({
+              _id: invitation._id,
+              $or: [
+                {
+                  inviter_id: new ObjectId(user_id)
+                },
+                {
+                  invitee_id: new ObjectId(user_id)
+                }
+              ]
+            })
+
+            if (!checkUserBoardInvitationAccess) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.FORBIDDEN,
+                message: INVITATIONS_MESSAGES.USER_DOES_NOT_HAVE_ACCESS_TO_BOARD_INVITATION
+              })
+            }
+
+            ;(req as Request).invitation = invitation
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+export const updateBoardInvitationValidator = validate(
+  checkSchema(
+    {
+      status: {
+        isIn: {
+          options: [boardInvitationStatus],
+          errorMessage: INVITATIONS_MESSAGES.INVALID_BOARD_INVITATION_STATUS
+        },
+        custom: {
+          options: async (value, { req }) => {
+            const invitation = (req as Request).invitation as Invitation
+            const { user_id } = (req as Request).decoded_authorization as TokenPayload
+
+            const board_id = invitation.board_invitation.board_id
+
+            const board = (await databaseService.boards.findOne({
+              _id: new ObjectId(board_id)
+            })) as Board
+
+            const boardOwnerAndMemberIds = [...board.owners, ...board.members].toString()
+
+            if (value === BoardInvitationStatus.Accepted && boardOwnerAndMemberIds.includes(user_id)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: INVITATIONS_MESSAGES.USER_IS_ALREADY_MEMBER_OF_BOARD
+              })
             }
 
             return true

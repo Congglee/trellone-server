@@ -50,13 +50,21 @@ export const sendForgotPasswordEmail = (
   )
 }
 
-export const sendBoardInvitationEmail = (
-  toAddress: string,
-  invitation_token: string,
-  boardTitle: string,
-  inviterName: string,
-  template: string = boardInvitationTemplate
-) => {
+export const sendBoardInvitationEmail = ({
+  toAddress,
+  invite_token,
+  boardTitle,
+  boardId,
+  inviterName,
+  template = boardInvitationTemplate
+}: {
+  toAddress: string
+  invite_token: string
+  boardTitle: string
+  boardId: string
+  inviterName: string
+  template?: string
+}) => {
   const emailSenderAddress = envConfig.resendEmailFromAddress.split(' ')[1]
 
   return sendVerifyEmail(
@@ -68,7 +76,10 @@ export const sendBoardInvitationEmail = (
       .replace('{{board_title}}', boardTitle)
       .replace('{{inviter_name}}', inviterName)
       .replace('{{title_link}}', 'Join this board')
-      .replace('{{link}}', `${envConfig.clientUrl}/board-invitation/verification?token=${invitation_token}`),
+      .replace(
+        '{{link}}',
+        `${envConfig.clientUrl}/board-invitation/verification?token=${invite_token}&board_id=${boardId}`
+      ),
     `'${inviterName}' ${emailSenderAddress}`
   )
 }

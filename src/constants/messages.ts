@@ -189,5 +189,16 @@ export const INVITATIONS_MESSAGES = {
 
   VERIFY_BOARD_INVITATION_SUCCESS: 'Verify board invitation successfully',
 
-  GET_INVITATIONS_SUCCESS: "Get user's invitations successfully"
+  GET_INVITATIONS_SUCCESS: "Get user's invitations successfully",
+
+  INVALID_BOARD_INVITATION_STATUS: 'Board invitation status must be PENDING, ACCEPTED or REJECTED',
+  USER_IS_ALREADY_MEMBER_OF_BOARD: 'User is already member of board',
+
+  BOARD_INVITATION_ID_IS_REQUIRED: 'Board invitation id is required',
+  BOARD_INVITATION_ID_MUST_BE_STRING: 'Board invitation id must be a string',
+  INVALID_BOARD_INVITATION_ID: 'Invalid board invitation id',
+  BOARD_INVITATION_NOT_FOUND: 'Board invitation not found',
+  USER_DOES_NOT_HAVE_ACCESS_TO_BOARD_INVITATION: 'User does not have access to this board invitation',
+
+  UPDATE_BOARD_INVITATION_SUCCESS: 'Update board invitation successfully'
 }

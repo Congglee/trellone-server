@@ -3,6 +3,7 @@ import { TokenPayload } from '~/models/requests/User.requests'
 import Board from '~/models/schemas/Board.schema'
 import Card from '~/models/schemas/Card.schema'
 import Column from '~/models/schemas/Column.schema'
+import Invitation from '~/models/schemas/Invitation.schema'
 import User from '~/models/schemas/User.schema'
 
 declare module 'express' {
@@ -18,5 +19,6 @@ declare module 'express' {
     column?: Column
     card?: Card
     invitee?: User
+    invitation?: Invitation
   }
 }

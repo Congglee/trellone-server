@@ -18,7 +18,8 @@ export enum TokenType {
   AccessToken,
   RefreshToken,
   ForgotPasswordToken,
-  EmailVerifyToken
+  EmailVerifyToken,
+  InviteToken
 }
 
 export enum MediaType {
