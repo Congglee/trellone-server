@@ -2,9 +2,15 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { INVITATIONS_MESSAGES } from '~/constants/messages'
 import { Pagination } from '~/models/requests/Common.requests'
-import { CreateNewBoardInvitationReqBody, VerifyBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
+import {
+  BoardInvitationParams,
+  CreateNewBoardInvitationReqBody,
+  UpdateBoardInvitationReqBody,
+  VerifyBoardInvitationReqBody
+} from '~/models/requests/Invitation.requests'
 import { TokenPayload } from '~/models/requests/User.requests'
 import Board from '~/models/schemas/Board.schema'
+import Invitation from '~/models/schemas/Invitation.schema'
 import User from '~/models/schemas/User.schema'
 import invitationsService from '~/services/invitations.services'
 
@@ -46,4 +52,22 @@ export const verifyBoardInvitationController = async (
   res: Response
 ) => {
   return res.json({ message: INVITATIONS_MESSAGES.VERIFY_BOARD_INVITATION_SUCCESS })
+}
+
+export const updateBoardInvitationController = async (
+  req: Request<BoardInvitationParams, any, UpdateBoardInvitationReqBody>,
+  res: Response
+) => {
+  const { invitation_id } = req.params
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const invitation = req.invitation as Invitation
+
+  const body = { ...invitation.board_invitation, status: req.body.status }
+
+  const result = await invitationsService.updateBoardInvitation(invitation_id, user_id, body)
+
+  return res.json({
+    message: INVITATIONS_MESSAGES.UPDATE_BOARD_INVITATION_SUCCESS,
+    result
+  })
 }
