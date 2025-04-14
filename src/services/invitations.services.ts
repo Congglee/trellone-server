@@ -52,10 +52,56 @@ class InvitationsService {
       })
     )
 
-    const invitation = await databaseService.invitations.findOne(
-      { _id: result.insertedId },
-      { projection: { invite_token: 0 } }
-    )
+    const [invitation] = await databaseService.invitations
+      .aggregate<Invitation>([
+        { $match: { _id: result.insertedId } },
+        {
+          $lookup: {
+            from: envConfig.dbUsersCollection,
+            localField: 'inviter_id',
+            foreignField: '_id',
+            as: 'inviter',
+            pipeline: [
+              {
+                $project: {
+                  password: 0,
+                  email_verify_token: 0,
+                  forgot_password_token: 0
+                }
+              }
+            ]
+          }
+        },
+        { $unwind: '$inviter' },
+        {
+          $lookup: {
+            from: envConfig.dbUsersCollection,
+            localField: 'invitee_id',
+            foreignField: '_id',
+            as: 'invitee',
+            pipeline: [
+              {
+                $project: {
+                  password: 0,
+                  email_verify_token: 0,
+                  forgot_password_token: 0
+                }
+              }
+            ]
+          }
+        },
+        { $unwind: '$invitee' },
+        {
+          $lookup: {
+            from: envConfig.dbBoardsCollection,
+            localField: 'board_invitation.board_id',
+            foreignField: '_id',
+            as: 'board'
+          }
+        },
+        { $unwind: '$board' }
+      ])
+      .toArray()
 
     await sendBoardInvitationEmail({
       toAddress: invitee.email,
@@ -146,7 +192,7 @@ class InvitationsService {
       { returnDocument: 'after' }
     )
 
-    // Step 2: If the case is a successful invitation, it is necessary to add more information of the user (UserID) to the memberIds record in the Collection Board.
+    // Step 2: If the case is a successful invitation, it is necessary to add more information of the user (UserID) to the memberIds record in the Board Collection.
     if (body.status === BoardInvitationStatus.Accepted) {
       await databaseService.boards.findOneAndUpdate(
         { _id: new ObjectId(body.board_id) },

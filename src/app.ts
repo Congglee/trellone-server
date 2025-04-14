@@ -2,6 +2,7 @@
 import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
+import { createServer } from 'http'
 
 // Routes import
 import boardsRouter from '~/routes/boards.routes'
@@ -18,8 +19,11 @@ import { corsOptions } from '~/config/cors'
 
 // Config import
 import { initFolder } from '~/utils/file'
+import initSocket from '~/utils/socket'
 
 const app = express()
+
+const httpServer = createServer(app)
 
 // Enable JSON parsing for request bodies
 app.use(express.json())
@@ -43,4 +47,7 @@ app.use('/invitations', invitationsRouter)
 // Error handling middleware
 app.use(defaultErrorHandler)
 
-export default app
+// Initialize Socket.IO
+initSocket(httpServer)
+
+export default httpServer
