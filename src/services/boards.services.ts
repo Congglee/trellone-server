@@ -23,6 +23,52 @@ class BoardsService {
     return board
   }
 
+  async getBoards({
+    user_id,
+    limit,
+    page,
+    keyword
+  }: {
+    user_id: string
+    limit: number
+    page: number
+    keyword: string
+  }) {
+    const queryConditions: any[] = [
+      {
+        $or: [
+          {
+            owners: { $all: [new ObjectId(user_id)] }
+          },
+          {
+            members: { $all: [new ObjectId(user_id)] }
+          }
+        ]
+      },
+      { _destroy: false }
+    ]
+
+    if (keyword) {
+      queryConditions.push({
+        title: { $regex: keyword, $options: 'i' }
+      })
+    }
+
+    const [boards, total] = await Promise.all([
+      await databaseService.boards
+        .aggregate<Board>([
+          { $match: { $and: queryConditions } },
+          { $sort: { title: 1 } },
+          { $skip: limit * (page - 1) },
+          { $limit: limit }
+        ])
+        .toArray(),
+      await databaseService.boards.countDocuments({ $and: queryConditions })
+    ])
+
+    return { boards, total }
+  }
+
   async updateBoard(board_id: string, body: UpdateBoardReqBody) {
     const payload = body.column_order_ids
       ? { ...body, column_order_ids: body.column_order_ids.map((id) => new ObjectId(id)) }
