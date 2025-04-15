@@ -53,6 +53,18 @@ export const createBoardValidator = validate(
   )
 )
 
+export const getBoardsValidator = validate(
+  checkSchema(
+    {
+      keyword: {
+        optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.KEYWORD_MUST_BE_STRING }
+      }
+    },
+    ['query']
+  )
+)
+
 export const boardIdValidator = validate(
   checkSchema(
     {

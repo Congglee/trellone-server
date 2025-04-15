@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { BOARDS_MESSAGES } from '~/constants/messages'
 import {
   BoardParams,
+  BoardQuery,
   CreateBoardReqBody,
   MoveCardToDifferentColumnReqBody,
   UpdateBoardReqBody
@@ -15,6 +16,24 @@ export const createBoardController = async (req: Request<ParamsDictionary, any, 
   const result = await boardsService.createBoard(user_id, req.body)
 
   return res.json({ message: BOARDS_MESSAGES.CREATE_BOARD_SUCCESS, result })
+}
+
+export const getBoardsController = async (req: Request<ParamsDictionary, any, any, BoardQuery>, res: Response) => {
+  const user_id = req.decoded_authorization?.user_id as string
+  const limit = Number(req.query.limit)
+  const page = Number(req.query.page)
+
+  const result = await boardsService.getBoards({ user_id, limit, page, keyword: req.query.keyword })
+
+  return res.json({
+    message: BOARDS_MESSAGES.GET_BOARDS_SUCCESS,
+    result: {
+      boards: result.boards,
+      limit,
+      page,
+      total_page: Math.ceil(result.total / limit)
+    }
+  })
 }
 
 export const getBoardController = async (req: Request<BoardParams>, res: Response) => {

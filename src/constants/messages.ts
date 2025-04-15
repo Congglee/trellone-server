@@ -79,6 +79,10 @@ export const BOARDS_MESSAGES = {
 
   CREATE_BOARD_SUCCESS: 'Board created successfully',
 
+  KEYWORD_MUST_BE_STRING: 'Keyword must be a string',
+
+  GET_BOARDS_SUCCESS: 'Get boards successfully',
+
   INVALID_BOARD_ID: 'Invalid board id',
   BOARD_NOT_FOUND: 'Board not found',
 
