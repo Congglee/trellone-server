@@ -246,6 +246,15 @@ export const updateBoardValidator = validate(
             return true
           }
         }
+      },
+      cover_photo: {
+        optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING },
+        trim: true,
+        isLength: {
+          options: { min: 1, max: 400 },
+          errorMessage: BOARDS_MESSAGES.COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400
+        }
       }
     },
     ['body']

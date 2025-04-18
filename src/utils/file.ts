@@ -1,4 +1,4 @@
-import { UPLOAD_IMAGE_DIR, UPLOAD_IMAGE_TEMP_DIR } from '~/config/dir'
+import { UPLOAD_IMAGE_TEMP_DIR } from '~/config/dir'
 import { File } from 'formidable'
 import { Request } from 'express'
 import fs from 'fs'
@@ -15,7 +15,7 @@ export const handleUploadImage = async (req: Request) => {
   const formidable = (await import('formidable')).default
 
   const form = formidable({
-    uploadDir: UPLOAD_IMAGE_DIR,
+    uploadDir: UPLOAD_IMAGE_TEMP_DIR,
     maxFiles: 4,
     keepExtensions: true,
     maxFileSize: 3000 * 1024, // 3MB

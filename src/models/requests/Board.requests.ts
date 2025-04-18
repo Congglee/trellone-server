@@ -18,6 +18,7 @@ export interface BoardParams extends ParamsDictionary {
 
 export interface UpdateBoardReqBody extends CreateBoardReqBody {
   column_order_ids: string[]
+  cover_photo?: string
 }
 
 export interface MoveCardToDifferentColumnReqBody {

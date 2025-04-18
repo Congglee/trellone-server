@@ -90,6 +90,8 @@ export const BOARDS_MESSAGES = {
 
   COLUMN_ORDER_IDS_MUST_BE_AN_ARRAY: 'Column order ids must be an array of strings',
   COLUMN_ORDER_IDS_CANNOT_BE_EMPTY: 'Column order ids cannot be empty',
+  COVER_PHOTO_MUST_BE_STRING: 'Cover photo must be a string',
+  COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
   INVALID_COLUMN_ID: 'Invalid column id',
 
   UPDATE_BOARD_SUCCESS: 'Board updated successfully',
@@ -173,7 +175,12 @@ export const CARDS_MESSAGES = {
 }
 
 export const MEDIAS_MESSAGES = {
-  UPLOAD_SUCCESS: 'Upload successfully'
+  UPLOAD_SUCCESS: 'Upload successfully',
+
+  UNSPLASH_SEARCH_GET_PHOTOS_QUERY_IS_REQUIRED: 'Unsplash search get photos query is required',
+  UNSPLASH_SEARCH_GET_PHOTOS_QUERY_MUST_BE_STRING: 'Unsplash search get photos query must be a string',
+
+  UNSPLASH_SEARCH_GET_PHOTOS_SUCCESS: 'Unsplash search get photos successfully'
 }
 
 export const INVITATIONS_MESSAGES = {
