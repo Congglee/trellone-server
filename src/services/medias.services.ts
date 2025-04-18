@@ -7,6 +7,7 @@ import { uploadFileToUploadthing } from '~/providers/uploadthing'
 import fsPromise from 'fs/promises'
 import { UploadedFileData } from 'uploadthing/types'
 import { MediaType } from '~/constants/enums'
+import { getSearchPhotosFromUnsplash } from '~/providers/unsplash'
 
 class MediasService {
   async uploadImage(req: Request) {
@@ -43,6 +44,13 @@ class MediasService {
     )
 
     return result
+  }
+
+  async unsplashSearchGetPhotos(query: string) {
+    const searchPhotos = await getSearchPhotosFromUnsplash(query)
+    const results = searchPhotos.response?.results
+
+    return results
   }
 }
 

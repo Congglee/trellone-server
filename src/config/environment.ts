@@ -67,5 +67,9 @@ export const envConfig = {
   resendApiKey: process.env.RESEND_API_KEY as string,
   resendEmailFromAddress: process.env.RESEND_EMAIL_FROM_ADDRESS as string,
 
-  uploadthingToken: process.env.UPLOADTHING_TOKEN as string
+  uploadthingToken: process.env.UPLOADTHING_TOKEN as string,
+
+  unsplashAccessKey: process.env.UNSPLASH_ACCESS_KEY as string,
+  unsplashSecretKey: process.env.UNSPLASH_SECRET_KEY as string,
+  unsplashApplicationId: process.env.UNSPLASH_APPLICATION_ID as string
 }

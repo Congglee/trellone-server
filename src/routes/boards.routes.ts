@@ -37,7 +37,7 @@ boardsRouter.put(
   accessTokenValidator,
   boardIdValidator,
   updateBoardValidator,
-  filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type', 'column_order_ids']),
+  filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type', 'column_order_ids', 'cover_photo']),
   wrapRequestHandler(updateBoardController)
 )
 
