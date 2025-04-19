@@ -5,7 +5,7 @@ const unsplash = createApi({
   accessKey: envConfig.unsplashAccessKey
 })
 
-export const getSearchPhotosFromUnsplash = async (query: string, page: number = 1, perPage: number = 30) => {
+export const getSearchPhotosFromUnsplash = async (query: string, page: number = 1, perPage: number = 29) => {
   const getSearchPhotosRes = await unsplash.search.getPhotos({
     query,
     page,
