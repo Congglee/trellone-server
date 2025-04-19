@@ -22,12 +22,7 @@ const displayNameSchema: ParamSchema = {
 
 export const imageSchema: ParamSchema = {
   optional: true,
-  isString: { errorMessage: USERS_MESSAGES.IMAGE_URL_MUST_BE_STRING },
-  trim: true,
-  isLength: {
-    options: { min: 1, max: 400 },
-    errorMessage: USERS_MESSAGES.IMAGE_URL_LENGTH_MUST_BE_BETWEEN_1_AND_400
-  }
+  isString: { errorMessage: USERS_MESSAGES.IMAGE_URL_MUST_BE_STRING }
 }
 
 export const updateMeValidator = validate(
