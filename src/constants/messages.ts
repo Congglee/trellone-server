@@ -37,6 +37,8 @@ export const AUTH_MESSAGES = {
 
   EMAIL_VERIFY_SUCCESS: 'Email verify successfully',
 
+  RESEND_EMAIL_VERIFY_SUCCESS: 'Resend email verify successfully, please check your email',
+
   CHECK_EMAIL_TO_RESET_PASSWORD: 'Check email to reset password',
 
   FORGOT_PASSWORD_TOKEN_IS_REQUIRED: 'Forgot password token is required',
@@ -50,7 +52,21 @@ export const AUTH_MESSAGES = {
 }
 
 export const USERS_MESSAGES = {
-  GET_ME_SUCCESS: 'Get my profile successfully'
+  GET_ME_SUCCESS: 'Get my profile successfully',
+
+  DISPLAY_NAME_IS_REQUIRED: 'Display name is required',
+  DISPLAY_NAME_MUST_BE_STRING: 'Display name must be a string',
+  DISPLAY_NAME_LENGTH_MUST_BE_BETWEEN_1_AND_100: 'Display name length must be between 1 and 100 characters',
+
+  IMAGE_URL_MUST_BE_STRING: 'Image url must be a string',
+  IMAGE_URL_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Image url length must be between 1 and 400 characters',
+
+  UPDATE_ME_SUCCESS: 'Update my profile successfully',
+
+  USER_NOT_FOUND: 'User not found',
+  OLD_PASSWORD_NOT_MATCH: 'Old password not match',
+
+  CHANGE_PASSWORD_SUCCESS: 'Change password successfully, please login again'
 }
 
 export const BOARDS_MESSAGES = {
@@ -63,6 +79,10 @@ export const BOARDS_MESSAGES = {
 
   CREATE_BOARD_SUCCESS: 'Board created successfully',
 
+  KEYWORD_MUST_BE_STRING: 'Keyword must be a string',
+
+  GET_BOARDS_SUCCESS: 'Get boards successfully',
+
   INVALID_BOARD_ID: 'Invalid board id',
   BOARD_NOT_FOUND: 'Board not found',
 
@@ -70,6 +90,8 @@ export const BOARDS_MESSAGES = {
 
   COLUMN_ORDER_IDS_MUST_BE_AN_ARRAY: 'Column order ids must be an array of strings',
   COLUMN_ORDER_IDS_CANNOT_BE_EMPTY: 'Column order ids cannot be empty',
+  COVER_PHOTO_MUST_BE_STRING: 'Cover photo must be a string',
+  COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
   INVALID_COLUMN_ID: 'Invalid column id',
 
   UPDATE_BOARD_SUCCESS: 'Board updated successfully',
@@ -104,6 +126,8 @@ export const COLUMNS_MESSAGES = {
 
   INVALID_COLUMN_ID: 'Invalid column id',
   COLUMN_NOT_FOUND: 'Column not found',
+  COLUMN_NOT_BELONG_TO_USER: 'Column not belong to user',
+
   CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Card order ids must be an array of strings',
   CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Card order ids cannot be empty',
   INVALID_CARD_ID: 'Invalid card id',
@@ -126,5 +150,66 @@ export const CARDS_MESSAGES = {
   INVALID_COLUMN_ID: 'Invalid column id',
   COLUMN_NOT_FOUND: 'Column not found',
 
-  CREATE_CARD_SUCCESS: 'Card created successfully'
+  CREATE_CARD_SUCCESS: 'Card created successfully',
+
+  INVALID_CARD_ID: 'Invalid card id',
+  CARD_NOT_FOUND: 'Card not found',
+  CARD_NOT_BELONG_TO_USER: 'Card not belong to user',
+
+  CARD_DESCRIPTION_MUST_BE_STRING: 'Card description must be a string',
+  COVER_PHOTO_MUST_BE_STRING: 'Cover photo must be a string',
+  COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
+  CARD_DESTROY_MUST_BE_BOOLEAN: 'Card destroy must be boolean',
+  COMMENT_MUST_BE_OBJECT: 'Comment must be an object',
+  COMMENT_MISSING_REQUIRED_FIELDS: 'Comment missing required fields',
+  COMMENT_INVALID_USER_ID: 'Comment invalid user id',
+  COMMENT_CONTENT_MUST_BE_STRING: 'Comment content must be a string',
+  MEMBER_MUST_BE_OBJECT: 'Member must be an object',
+  MEMBER_MISSING_REQUIRED_FIELDS: 'Member missing required fields',
+  INVALID_MEMBER_ACTION: 'Invalid member action',
+  INVALID_MEMBER_ID: 'Invalid member id',
+  MEMBER_ALREADY_EXISTS: 'Member already exists',
+  MEMBER_NOT_FOUND: 'Member not found',
+
+  UPDATE_CARD_SUCCESS: 'Card updated successfully'
+}
+
+export const MEDIAS_MESSAGES = {
+  UPLOAD_SUCCESS: 'Upload successfully',
+
+  UNSPLASH_SEARCH_GET_PHOTOS_QUERY_IS_REQUIRED: 'Unsplash search get photos query is required',
+  UNSPLASH_SEARCH_GET_PHOTOS_QUERY_MUST_BE_STRING: 'Unsplash search get photos query must be a string',
+
+  UNSPLASH_SEARCH_GET_PHOTOS_SUCCESS: 'Unsplash search get photos successfully'
+}
+
+export const INVITATIONS_MESSAGES = {
+  INVITEE_EMAIL_IS_INVALID: 'Invitee email is invalid',
+  INVITEE_NOT_FOUND_OR_NOT_REGISTERED_AN_ACCOUNT: 'Invitee not found or not registered an account',
+  BOARD_ID_IS_REQUIRED: 'Board id is required',
+  BOARD_ID_MUST_BE_STRING: 'Board id must be a string',
+  INVALID_BOARD_ID: 'Invalid board id',
+  BOARD_NOT_FOUND: 'Board not found',
+  USER_DOES_NOT_HAVE_ACCESS_TO_BOARD: 'User does not have access to board',
+
+  CREATE_NEW_BOARD_INVITATION_SUCCESS: 'User invited to board successfully',
+
+  INVITE_TOKEN_IS_REQUIRED: 'Invite token is required',
+  INVITER_NOT_FOUND: 'Inviter not found',
+  INVALID_INVITE_TOKEN: 'Invalid invite token',
+
+  VERIFY_BOARD_INVITATION_SUCCESS: 'Verify board invitation successfully',
+
+  GET_INVITATIONS_SUCCESS: "Get user's invitations successfully",
+
+  INVALID_BOARD_INVITATION_STATUS: 'Board invitation status must be PENDING, ACCEPTED or REJECTED',
+  USER_IS_ALREADY_MEMBER_OF_BOARD: 'User is already member of board',
+
+  BOARD_INVITATION_ID_IS_REQUIRED: 'Board invitation id is required',
+  BOARD_INVITATION_ID_MUST_BE_STRING: 'Board invitation id must be a string',
+  INVALID_BOARD_INVITATION_ID: 'Invalid board invitation id',
+  BOARD_INVITATION_NOT_FOUND: 'Board invitation not found',
+  USER_DOES_NOT_HAVE_ACCESS_TO_BOARD_INVITATION: 'User does not have access to this board invitation',
+
+  UPDATE_BOARD_INVITATION_SUCCESS: 'Update board invitation successfully'
 }

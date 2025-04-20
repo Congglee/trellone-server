@@ -271,7 +271,7 @@ export const forgotPasswordValidator = validate(
               throw new Error(AUTH_MESSAGES.USER_NOT_FOUND)
             }
 
-            req.user = user
+            ;(req as Request).user = user
 
             return true
           }

@@ -5,12 +5,13 @@ import fs from 'fs'
 
 const verifyEmailTemplate = fs.readFileSync(path.resolve('src/templates/verify-email.html'), 'utf-8')
 const forgotPasswordTemplate = fs.readFileSync(path.resolve('src/templates/forgot-password.html'), 'utf-8')
+const boardInvitationTemplate = fs.readFileSync(path.resolve('src/templates/board-invitation.html'), 'utf-8')
 
 const resend = new Resend(envConfig.resendApiKey)
 
-const sendVerifyEmail = (toAddress: string, subject: string, body: string) => {
+const sendVerifyEmail = (toAddress: string, subject: string, body: string, fromAddress?: string) => {
   return resend.emails.send({
-    from: envConfig.resendEmailFromAddress,
+    from: fromAddress || envConfig.resendEmailFromAddress,
     to: toAddress,
     subject,
     html: body
@@ -46,5 +47,39 @@ export const sendForgotPasswordEmail = (
       .replace('{{content}}', `Hi ${toAddress},`)
       .replace('{{title_link}}', 'Reset your password')
       .replace('{{link}}', `${envConfig.clientUrl}/forgot-password/verification?token=${forgot_password_token}`)
+  )
+}
+
+export const sendBoardInvitationEmail = ({
+  toAddress,
+  invite_token,
+  boardTitle,
+  boardId,
+  inviterName,
+  template = boardInvitationTemplate
+}: {
+  toAddress: string
+  invite_token: string
+  boardTitle: string
+  boardId: string
+  inviterName: string
+  template?: string
+}) => {
+  const emailSenderAddress = envConfig.resendEmailFromAddress.split(' ')[1]
+
+  return sendVerifyEmail(
+    toAddress,
+    `You've been invited to join a board on Trellone`,
+    template
+      .replace('{{title}}', 'Board Invitation')
+      .replace('{{content}}', `Hi ${toAddress},`)
+      .replace('{{board_title}}', boardTitle)
+      .replace('{{inviter_name}}', inviterName)
+      .replace('{{title_link}}', 'Join this board')
+      .replace(
+        '{{link}}',
+        `${envConfig.clientUrl}/board-invitation/verification?token=${invite_token}&board_id=${boardId}`
+      ),
+    `'${inviterName}' ${emailSenderAddress}`
   )
 }

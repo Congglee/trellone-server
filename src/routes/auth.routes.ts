@@ -6,11 +6,13 @@ import {
   OAuthController,
   refreshTokenController,
   registerController,
+  resendVerifyEmailController,
   resetPasswordController,
   verifyEmailController,
   verifyForgotPasswordController
 } from '~/controllers/auth.controllers'
 import {
+  accessTokenValidator,
   emailVerifyTokenValidator,
   forgotPasswordValidator,
   loginValidator,
@@ -32,6 +34,8 @@ authRouter.post('/logout', wrapRequestHandler(logoutController))
 authRouter.post('/refresh-token', refreshTokenValidator, wrapRequestHandler(refreshTokenController))
 
 authRouter.post('/verify-email', emailVerifyTokenValidator, wrapRequestHandler(verifyEmailController))
+
+authRouter.post('/resend-verify-email', accessTokenValidator, wrapRequestHandler(resendVerifyEmailController))
 
 authRouter.post('/forgot-password', forgotPasswordValidator, wrapRequestHandler(forgotPasswordController))
 

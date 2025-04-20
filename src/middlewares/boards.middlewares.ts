@@ -53,6 +53,18 @@ export const createBoardValidator = validate(
   )
 )
 
+export const getBoardsValidator = validate(
+  checkSchema(
+    {
+      keyword: {
+        optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.KEYWORD_MUST_BE_STRING }
+      }
+    },
+    ['query']
+  )
+)
+
 export const boardIdValidator = validate(
   checkSchema(
     {
@@ -234,6 +246,10 @@ export const updateBoardValidator = validate(
             return true
           }
         }
+      },
+      cover_photo: {
+        optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING }
       }
     },
     ['body']
@@ -254,8 +270,7 @@ export const moveCardToDifferentColumnValidator = validate(
             }
 
             const card = await databaseService.cards.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!card) {
@@ -277,8 +292,7 @@ export const moveCardToDifferentColumnValidator = validate(
             }
 
             const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!column) {
@@ -312,8 +326,7 @@ export const moveCardToDifferentColumnValidator = validate(
             }
 
             const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value),
-              _destroy: false
+              _id: new ObjectId(value)
             })
 
             if (!column) {
