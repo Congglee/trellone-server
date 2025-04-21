@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { createServer } from 'http'
+import compression from 'compression'
 
 // Routes import
 import boardsRouter from '~/routes/boards.routes'
@@ -30,6 +31,7 @@ app.use(express.json())
 
 // Use middleware
 app.use(cookieParser())
+app.use(compression())
 app.use(cors(corsOptions))
 
 // Initialize folders for file uploads
