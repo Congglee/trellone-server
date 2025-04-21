@@ -1,1 +1,3 @@
-export const WHITELIST_DOMAINS = ['http://localhost:3000']
+export const WHITELIST_DOMAINS: string[] = [
+  // 'http://localhost:3000'
+]
