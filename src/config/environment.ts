@@ -63,6 +63,7 @@ export const envConfig = {
   clientRedirectCallback: process.env.CLIENT_REDIRECT_CALLBACK as string,
 
   clientUrl: process.env.CLIENT_URL as string,
+  serverUrl: process.env.SERVER_URL as string,
 
   resendApiKey: process.env.RESEND_API_KEY as string,
   resendEmailFromAddress: process.env.RESEND_EMAIL_FROM_ADDRESS as string,
