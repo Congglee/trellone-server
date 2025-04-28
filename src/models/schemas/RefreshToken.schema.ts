@@ -12,10 +12,10 @@ interface RefreshTokenSchema {
 export default class RefreshToken {
   _id?: ObjectId
   token: string
-  created_at: Date
   user_id: ObjectId
   iat: Date
   exp: Date
+  created_at?: Date
 
   constructor(refreshToken: RefreshTokenSchema) {
     const date = new Date()
