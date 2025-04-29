@@ -155,17 +155,41 @@ export const loginValidator = validate(
 export const accessTokenValidator = validate(
   checkSchema(
     {
-      access_token: {
+      Authorization: {
+        optional: true,
         custom: {
-          options: async (value: string, { req }) => {
-            const access_token = value
+          options: async (value, { req }) => {
+            // Try to get token from cookies first
+            const cookie_token = req.cookies?.access_token
+
+            // If cookie token exists, use it
+            if (cookie_token) {
+              return await verifyAccessToken(cookie_token, req as Request)
+            }
+
+            // Otherwise, check Authorization header
+            if (!value) {
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+
+            const access_token = (value || '').split(' ')[1]
+
+            if (!access_token) {
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
 
             return await verifyAccessToken(access_token, req as Request)
           }
         }
       }
     },
-    ['cookies']
+    ['cookies', 'headers']
   )
 )
 
@@ -214,7 +238,7 @@ export const refreshTokenValidator = validate(
         }
       }
     },
-    ['cookies']
+    ['cookies', 'body']
   )
 )
 
