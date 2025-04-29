@@ -160,11 +160,17 @@ export const accessTokenValidator = validate(
         custom: {
           options: async (value, { req }) => {
             // Try to get token from cookies first
-            const cookie_token = req.cookies?.access_token
+            const cookie_token = req.headers?.cookie
 
             // If cookie token exists, use it
             if (cookie_token) {
-              return await verifyAccessToken(cookie_token, req as Request)
+              const cookieEntries = cookie_token.split('; ')
+              const accessTokenEntry = cookieEntries.find((entry: string) => entry.startsWith('access_token='))
+
+              if (accessTokenEntry) {
+                const access_token = accessTokenEntry.split('=')[1]
+                return await verifyAccessToken(access_token, req as Request)
+              }
             }
 
             // Otherwise, check Authorization header
