@@ -5,6 +5,10 @@ import HTTP_STATUS from '~/constants/httpStatus'
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true)
+    }
+
     if (environment === 'development') {
       return callback(null, true)
     }
