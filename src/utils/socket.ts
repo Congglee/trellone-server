@@ -4,7 +4,8 @@ import { corsOptions } from '~/config/cors'
 import logger from '~/config/logger'
 import { TokenPayload } from '~/models/requests/User.requests'
 import { inviteUserToBoardSocket } from '~/sockets/invitations.sockets'
-import { updateBoardSocket } from '~/sockets/boards.socket'
+import { manageBoardSocketEvents, updateBoardSocket } from '~/sockets/boards.socket'
+import { updateCardSocket } from '~/sockets/cards.socket'
 import { verifyAccessToken } from '~/utils/jwt'
 
 const initSocket = (httpServer: ServerHttp) => {
@@ -68,7 +69,9 @@ const initSocket = (httpServer: ServerHttp) => {
 
     // Call the socket event handlers here depending on the features
     inviteUserToBoardSocket(socket)
+    manageBoardSocketEvents(socket)
     updateBoardSocket(socket)
+    updateCardSocket(socket)
 
     socket.on('disconnect', () => {
       delete users[user_id]
