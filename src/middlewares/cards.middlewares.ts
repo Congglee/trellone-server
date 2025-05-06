@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb'
 import { CardMemberAction } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { CARDS_MESSAGES } from '~/constants/messages'
+import { ISO8601_REGEX } from '~/constants/regex'
 import { ErrorWithStatus } from '~/models/Errors'
 import { TokenPayload } from '~/models/requests/User.requests'
 import databaseService from '~/services/database.services'
@@ -132,6 +133,43 @@ export const updateCardValidator = validate(
   checkSchema(
     {
       title: { ...cardTitleSchema, optional: true, notEmpty: undefined },
+      due_date: {
+        optional: true,
+        custom: {
+          options: (value) => {
+            // Allow null value for due_date
+            if (value === null) {
+              return true
+            }
+
+            // Check if the value is a valid ISO 8601 date string
+            const isValidDate = ISO8601_REGEX.test(value)
+
+            if (!isValidDate) {
+              throw new Error(CARDS_MESSAGES.CARD_DUE_DATE_MUST_BE_ISO8601)
+            }
+
+            return true
+          }
+        }
+      },
+      is_completed: {
+        optional: true,
+        custom: {
+          options: (value) => {
+            // Allow null value for is_completed
+            if (value === null) {
+              return true
+            }
+
+            if (typeof value !== 'boolean') {
+              throw new Error(CARDS_MESSAGES.CARD_COMPLETION_STATUS_MUST_BE_BOOLEAN)
+            }
+
+            return true
+          }
+        }
+      },
       description: {
         optional: true,
         isString: { errorMessage: CARDS_MESSAGES.CARD_DESCRIPTION_MUST_BE_STRING }
@@ -145,7 +183,7 @@ export const updateCardValidator = validate(
         custom: {
           options: (value) => {
             if (typeof value !== 'boolean' && typeof value !== 'undefined') {
-              throw new Error(CARDS_MESSAGES.CARD_DESTROY_MUST_BE_BOOLEAN)
+              throw new Error(CARDS_MESSAGES.CARD_ARCHIVE_STATUS_MUST_BE_BOOLEAN)
             }
 
             return true

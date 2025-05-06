@@ -10,6 +10,8 @@ export interface CreateCardReqBody {
 
 export interface UpdateCardReqBody {
   title: string
+  due_date?: Date | null
+  is_completed?: boolean | null
   description?: string
   cover_photo?: string
   _destroy?: boolean

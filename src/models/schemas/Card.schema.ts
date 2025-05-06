@@ -7,6 +7,8 @@ interface CardSchema {
   column_id: ObjectId
   title: string
   description?: string
+  due_date?: Date | null
+  is_completed?: boolean | null
   cover_photo?: string
   members?: ObjectId[]
   comments?: Comment[]
@@ -22,6 +24,8 @@ export default class Card {
   column_id: ObjectId
   title: string
   description: string
+  due_date: Date | null
+  is_completed: boolean | null
   cover_photo: string
   members: ObjectId[]
   comments: Comment[]
@@ -38,6 +42,8 @@ export default class Card {
     this.column_id = card.column_id
     this.title = card.title
     this.description = card.description || ''
+    this.due_date = card.due_date || null
+    this.is_completed = card.is_completed || null
     this.cover_photo = card.cover_photo || ''
     this.members = card.members || []
     this.comments = card.comments || []
