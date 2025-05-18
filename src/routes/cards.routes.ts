@@ -3,7 +3,7 @@ import { createCardController, updateCardController } from '~/controllers/cards.
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { cardIdValidator, createCardValidator, updateCardValidator } from '~/middlewares/cards.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
-import { UpdateCardReqBody } from '~/models/requests/Card.requests'
+import { UpdateCardReqBody, updateCardReqBodyFields } from '~/models/requests/Card.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const cardsRouter = Router()
@@ -15,16 +15,7 @@ cardsRouter.put(
   accessTokenValidator,
   cardIdValidator,
   updateCardValidator,
-  filterMiddleware<UpdateCardReqBody>([
-    'title',
-    'due_date',
-    'is_completed',
-    'description',
-    'cover_photo',
-    'comment',
-    'member',
-    '_destroy'
-  ]),
+  filterMiddleware<UpdateCardReqBody>(updateCardReqBodyFields),
   wrapRequestHandler(updateCardController)
 )
 

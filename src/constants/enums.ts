@@ -23,7 +23,8 @@ export enum TokenType {
 }
 
 export enum MediaType {
-  Image
+  Image,
+  Document
 }
 
 export enum CardMemberAction {
@@ -39,4 +40,15 @@ export enum BoardInvitationStatus {
   Pending = 'PENDING',
   Accepted = 'ACCEPTED',
   Rejected = 'REJECTED'
+}
+
+export enum AttachmentType {
+  File = 'FILE',
+  Link = 'LINK'
+}
+
+export enum CardAttachmentAction {
+  Add = 'ADD',
+  Edit = 'EDIT',
+  Remove = 'REMOVE'
 }

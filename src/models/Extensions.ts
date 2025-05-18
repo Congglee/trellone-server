@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { BoardInvitationStatus } from '~/constants/enums'
+import { AttachmentType, BoardInvitationStatus } from '~/constants/enums'
 
 export interface Comment {
   user_id: string
@@ -13,4 +13,23 @@ export interface Comment {
 export interface BoardInvitation {
   board_id: ObjectId
   status: BoardInvitationStatus
+}
+
+export interface Attachment {
+  attachment_id: ObjectId
+  type: AttachmentType
+  uploaded_by: string
+  file: {
+    url: string
+    display_name: string
+    mime_type: string
+    size: number
+    original_name: string
+  }
+  link: {
+    url: string
+    display_name: string
+    favicon_url: string
+  }
+  added_at: Date
 }

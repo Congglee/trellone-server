@@ -1,6 +1,7 @@
 import { ParamsDictionary } from 'express-serve-static-core'
-import { CardMemberAction } from '~/constants/enums'
-import { Comment } from '~/models/Extensions'
+import { CardAttachmentAction, CardMemberAction } from '~/constants/enums'
+import { FilterKeys } from '~/middlewares/common.middlewares'
+import { Attachment, Comment } from '~/models/Extensions'
 
 export interface CreateCardReqBody {
   title: string
@@ -20,7 +21,22 @@ export interface UpdateCardReqBody {
     action: CardMemberAction
     user_id: string
   }
+  attachment?: Omit<Attachment, 'uploaded_by' | 'added_at'> & {
+    action?: CardAttachmentAction
+  }
 }
+
+export const updateCardReqBodyFields = [
+  'title',
+  'due_date',
+  'is_completed',
+  'description',
+  'cover_photo',
+  'comment',
+  'attachment',
+  'member',
+  '_destroy'
+] as FilterKeys<UpdateCardReqBody>
 
 export interface CardParams extends ParamsDictionary {
   card_id: string
