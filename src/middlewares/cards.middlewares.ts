@@ -1,10 +1,10 @@
 import { Request } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
-import { CardMemberAction } from '~/constants/enums'
+import { AttachmentType, CardAttachmentAction, CardMemberAction } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { CARDS_MESSAGES } from '~/constants/messages'
-import { ISO8601_REGEX } from '~/constants/regex'
+import { ISO8601_REGEX, URL_REGEX } from '~/constants/regex'
 import { ErrorWithStatus } from '~/models/Errors'
 import { TokenPayload } from '~/models/requests/User.requests'
 import databaseService from '~/services/database.services'
@@ -196,7 +196,7 @@ export const updateCardValidator = validate(
         isObject: { errorMessage: CARDS_MESSAGES.COMMENT_MUST_BE_OBJECT },
         custom: {
           options: (value) => {
-            // Check if all required fields of Comment interface exist
+            // Ensure all required fields are present
             const requiredFields = ['user_email', 'user_avatar', 'user_display_name', 'content']
             const hasAllRequiredFields = requiredFields.every((field) => field in value)
 
@@ -204,7 +204,6 @@ export const updateCardValidator = validate(
               throw new Error(`${CARDS_MESSAGES.COMMENT_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
             }
 
-            // Validate content is a string
             if (typeof value.content !== 'string') {
               throw new Error(CARDS_MESSAGES.COMMENT_CONTENT_MUST_BE_STRING)
             }
@@ -218,6 +217,7 @@ export const updateCardValidator = validate(
         isObject: { errorMessage: CARDS_MESSAGES.MEMBER_MUST_BE_OBJECT },
         custom: {
           options: (value, { req }) => {
+            // Ensure all required fields are present
             const requiredFields = ['action', 'user_id']
             const hasAllRequiredFields = requiredFields.every((field) => field in value)
 
@@ -225,6 +225,7 @@ export const updateCardValidator = validate(
               throw new Error(`${CARDS_MESSAGES.MEMBER_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
             }
 
+            // Validate action is either Add or Remove
             if (![CardMemberAction.Add, CardMemberAction.Remove].includes(value.action)) {
               throw new Error(CARDS_MESSAGES.INVALID_MEMBER_ACTION)
             }
@@ -244,6 +245,112 @@ export const updateCardValidator = validate(
 
             if (typeof value.user_id !== 'string' || !ObjectId.isValid(value.user_id)) {
               throw new Error(CARDS_MESSAGES.INVALID_MEMBER_ID)
+            }
+
+            return true
+          }
+        }
+      },
+      attachment: {
+        optional: true,
+        isObject: { errorMessage: CARDS_MESSAGES.ATTACHMENT_MUST_BE_OBJECT },
+        custom: {
+          options: (value, { req }) => {
+            // Ensure all required fields are present
+            const requiredFields = ['type', 'action']
+            const hasAllRequiredFields = requiredFields.every((field) => field in value)
+
+            if (!hasAllRequiredFields) {
+              throw new Error(`${CARDS_MESSAGES.ATTACHMENT_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
+            }
+
+            // File-specific required fields
+            const fileRequiredFields = ['url', 'mime_type']
+            const hasAllFileFields = fileRequiredFields.every(
+              (field) => value.file && typeof value.file === 'object' && field in value.file
+            )
+
+            // Link-specific required fields
+            const linkRequiredFields = ['url']
+            const hasAllLinkFields = linkRequiredFields.every(
+              (field) => value.link && typeof value.link === 'object' && field in value.link
+            )
+
+            const card = (req as Request).card
+
+            // Validate action is either Add or Remove
+            if (
+              ![CardAttachmentAction.Add, CardAttachmentAction.Edit, CardAttachmentAction.Remove].includes(value.action)
+            ) {
+              throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ACTION)
+            }
+
+            // Validate type is either File or Link
+            if (![AttachmentType.File, AttachmentType.Link].includes(value.type)) {
+              throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_TYPE)
+            }
+
+            // If action is Add, validate type and required fields
+            if (value.action === CardAttachmentAction.Add) {
+              // If type is File, validate required fields
+              if (value.type === AttachmentType.File) {
+                // Ensure file is an object and has required fields
+                if (!hasAllFileFields) {
+                  throw new Error(
+                    `${CARDS_MESSAGES.ATTACHMENT_FILE_MISSING_REQUIRED_FIELDS}: ${fileRequiredFields.join(', ')}`
+                  )
+                }
+              }
+
+              // If type is Link, validate required fields
+              if (value.type === AttachmentType.Link) {
+                // Ensure link is an object and has required fields
+                if (!hasAllLinkFields) {
+                  throw new Error(
+                    `${CARDS_MESSAGES.ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS}: ${linkRequiredFields.join(', ')}`
+                  )
+                }
+              }
+            }
+
+            if (value.action === CardAttachmentAction.Edit) {
+              if (!ObjectId.isValid(value.attachment_id)) {
+                throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ID)
+              }
+
+              const attachmentExists = card?.attachments?.some((attachment) =>
+                attachment.attachment_id.equals(new ObjectId(value.attachment_id))
+              )
+
+              // Check if attachment exists in the card
+              if (!attachmentExists) {
+                throw new Error(CARDS_MESSAGES.ATTACHMENT_NOT_FOUND)
+              }
+
+              if (value.type === AttachmentType.Link) {
+                // Ensure link is an object and has required fields
+                if (!hasAllLinkFields) {
+                  throw new Error(
+                    `${CARDS_MESSAGES.ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS}: ${linkRequiredFields.join(', ')}`
+                  )
+                }
+              }
+            }
+
+            // If action is Remove, validate attachment_id
+            if (value.action === CardAttachmentAction.Remove) {
+              if (!ObjectId.isValid(value.attachment_id)) {
+                throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ID)
+              }
+
+              const attachmentExists = card?.attachments?.some((attachment) =>
+                attachment.attachment_id.equals(new ObjectId(value.attachment_id))
+              )
+
+              // Check if attachment exists in the card
+              if (!attachmentExists) {
+                throw new Error(CARDS_MESSAGES.ATTACHMENT_NOT_FOUND)
+              }
             }
 
             return true

@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { Comment } from '~/models/Extensions'
+import { Attachment, Comment } from '~/models/Extensions'
 
 interface CardSchema {
   _id?: ObjectId
@@ -12,7 +12,7 @@ interface CardSchema {
   cover_photo?: string
   members?: ObjectId[]
   comments?: Comment[]
-  // attachments?: ObjectId[]
+  attachments?: Attachment[]
   _destroy?: boolean
   created_at?: Date
   updated_at?: Date
@@ -29,7 +29,7 @@ export default class Card {
   cover_photo: string
   members: ObjectId[]
   comments: Comment[]
-  // attachments: ObjectId[]
+  attachments: Attachment[]
   _destroy: boolean
   created_at?: Date
   updated_at?: Date
@@ -47,7 +47,7 @@ export default class Card {
     this.cover_photo = card.cover_photo || ''
     this.members = card.members || []
     this.comments = card.comments || []
-    // this.attachments = card.attachments || []
+    this.attachments = card.attachments || []
     this._destroy = card._destroy || false
     this.created_at = card.created_at || date
     this.updated_at = card.updated_at || date

@@ -3,7 +3,7 @@ import { checkSchema } from 'express-validator'
 import { pick } from 'lodash'
 import { validate } from '~/utils/validation'
 
-type FilterKeys<T> = Array<keyof T>
+export type FilterKeys<T> = Array<keyof T>
 
 // Filter middleware to filter out unwanted keys from request body
 export const filterMiddleware =

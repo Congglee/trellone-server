@@ -7,7 +7,6 @@ interface BoardSchema {
   description?: string
   type: BoardType
   cover_photo?: string
-  // workspace_id: ObjectId
   column_order_ids?: ObjectId[]
   owners: ObjectId[]
   members?: ObjectId[]
@@ -22,7 +21,6 @@ export default class Board {
   description: string
   type: BoardType
   cover_photo: string
-  // workspace_id: ObjectId
   column_order_ids: ObjectId[]
   owners: ObjectId[]
   members: ObjectId[]
