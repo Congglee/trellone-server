@@ -172,6 +172,14 @@ export const CARDS_MESSAGES = {
   INVALID_MEMBER_ID: 'Invalid member id',
   MEMBER_ALREADY_EXISTS: 'Member already exists',
   MEMBER_NOT_FOUND: 'Member not found',
+  ATTACHMENT_MUST_BE_OBJECT: 'Attachment must be an object',
+  ATTACHMENT_MISSING_REQUIRED_FIELDS: 'Attachment missing required fields',
+  INVALID_ATTACHMENT_TYPE: 'Invalid attachment type',
+  ATTACHMENT_FILE_MISSING_REQUIRED_FIELDS: 'Attachment file missing required fields',
+  ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS: 'Attachment link missing required fields',
+  INVALID_ATTACHMENT_ACTION: 'Invalid attachment action',
+  INVALID_ATTACHMENT_ID: 'Invalid attachment id',
+  ATTACHMENT_NOT_FOUND: 'Attachment not found',
 
   UPDATE_CARD_SUCCESS: 'Card updated successfully'
 }

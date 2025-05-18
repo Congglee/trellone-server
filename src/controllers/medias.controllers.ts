@@ -9,6 +9,11 @@ export const uploadImageController = async (req: Request, res: Response) => {
   return res.json({ message: MEDIAS_MESSAGES.UPLOAD_SUCCESS, result })
 }
 
+export const uploadDocumentController = async (req: Request, res: Response) => {
+  const result = await mediasService.uploadDocument(req)
+  return res.json({ message: MEDIAS_MESSAGES.UPLOAD_SUCCESS, result })
+}
+
 export const unsplashSearchGetPhotosController = async (
   req: Request<ParamsDictionary, any, any, UnsplashQuery>,
   res: Response
