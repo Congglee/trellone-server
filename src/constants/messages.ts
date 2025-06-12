@@ -180,6 +180,9 @@ export const CARDS_MESSAGES = {
   INVALID_ATTACHMENT_ACTION: 'Invalid attachment action',
   INVALID_ATTACHMENT_ID: 'Invalid attachment id',
   ATTACHMENT_NOT_FOUND: 'Attachment not found',
+  INVALID_COMMENT_ACTION: 'Invalid comment action',
+  INVALID_COMMENT_ID: 'Invalid comment id',
+  COMMENT_NOT_FOUND: 'Comment not found',
 
   UPDATE_CARD_SUCCESS: 'Card updated successfully'
 }

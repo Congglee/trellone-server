@@ -1,5 +1,5 @@
 import { ParamsDictionary } from 'express-serve-static-core'
-import { CardAttachmentAction, CardMemberAction } from '~/constants/enums'
+import { CardAttachmentAction, CardCommentAction, CardMemberAction } from '~/constants/enums'
 import { FilterKeys } from '~/middlewares/common.middlewares'
 import { Attachment, Comment } from '~/models/Extensions'
 
@@ -16,7 +16,9 @@ export interface UpdateCardReqBody {
   description?: string
   cover_photo?: string
   _destroy?: boolean
-  comment?: Comment
+  comment?: Comment & {
+    action?: CardCommentAction
+  }
   member?: {
     action: CardMemberAction
     user_id: string

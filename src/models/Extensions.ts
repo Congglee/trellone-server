@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb'
 import { AttachmentType, BoardInvitationStatus } from '~/constants/enums'
 
 export interface Comment {
+  comment_id: ObjectId
   user_id: string
   user_email: string
   user_avatar: string

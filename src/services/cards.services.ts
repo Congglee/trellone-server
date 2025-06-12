@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { AttachmentType, CardAttachmentAction, CardMemberAction } from '~/constants/enums'
+import { AttachmentType, CardAttachmentAction, CardCommentAction, CardMemberAction } from '~/constants/enums'
 import { CreateCardReqBody, UpdateCardReqBody } from '~/models/requests/Card.requests'
 import Card from '~/models/schemas/Card.schema'
 import databaseService from '~/services/database.services'
@@ -28,16 +28,59 @@ class CardsService {
     let updatedCard = null
 
     if (body.comment) {
-      // Case 1: Create comment data to add to the Database, need to add necessary fields
-      const comment = { ...body.comment, commented_at: new Date(), user_id }
+      // Case 1: In case of ADD, EDIT or REMOVE comment from Card
+      let updateCondition = {}
+      const updateOptions: any = { returnDocument: 'after' }
+
+      if (body.comment.action === CardCommentAction.Add) {
+        const comment = {
+          ...body.comment,
+          comment_id: new ObjectId(),
+          commented_at: new Date(),
+          user_id
+        }
+
+        // Remove the action property from the comment object
+        delete comment.action
+
+        updateCondition = { $push: { comments: { $each: [comment], $position: 0 } } }
+      }
+
+      if (body.comment.action === CardCommentAction.Edit) {
+        // First, find the comment by its ID
+        const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
+
+        const commentToUpdate = card?.comments?.find((comment) =>
+          comment.comment_id.equals(new ObjectId(body.comment?.comment_id))
+        )
+
+        // Second, put the necessary fields to update the comment into the payload
+        const payload = {
+          ...commentToUpdate,
+          content: body.comment.content
+        }
+
+        // Finally, update the comment in the database
+        // Using `$[elem]` to update the specific element in the array
+        // ?) The `$[elem]` syntax allows you to update an array element that matches the filter criteria
+        updateCondition = { $set: { 'comments.$[elem]': payload } }
+
+        // Add arrayFilters only for EDIT action to find the correct attachment
+        // ?) The `arrayFilters` option allows you to specify conditions for the elements in the array that you want to update
+        updateOptions.arrayFilters = [{ 'elem.comment_id': new ObjectId(body.comment.comment_id) }]
+      }
+
+      if (body.comment.action === CardCommentAction.Remove) {
+        updateCondition = { $pull: { comments: { comment_id: new ObjectId(body.comment.comment_id) } } }
+      }
 
       updatedCard = await databaseService.cards.findOneAndUpdate(
         { _id: new ObjectId(card_id) },
-        { $push: { comments: { $each: [comment], $position: 0 } } },
-        { returnDocument: 'after' }
+        updateCondition,
+        updateOptions
       )
     } else if (body.attachment) {
-      // Case 2: In case of ADD or REMOVE attachment from Card
+      // Case 2: In case of ADD, EDIT or REMOVE attachment from Card
       let updateCondition = {}
       const updateOptions: any = { returnDocument: 'after' }
 
@@ -89,15 +132,10 @@ class CardsService {
           }
         }
 
-        // Finally, update the attachment in the database
-        // Using `$[elem]` to update the specific element in the array
-        // ?) The `$[elem]` syntax allows you to update an array element that matches the filter criteria
         updateCondition = {
           $set: { 'attachments.$[elem]': payload }
         }
 
-        // Add arrayFilters only for EDIT action to find the correct attachment
-        // ?) The `arrayFilters` option allows you to specify conditions for the elements in the array that you want to update
         updateOptions.arrayFilters = [{ 'elem.attachment_id': new ObjectId(body.attachment.attachment_id) }]
       }
 
