@@ -4,8 +4,8 @@ import { corsOptions } from '~/config/cors'
 import logger from '~/config/logger'
 import { TokenPayload } from '~/models/requests/User.requests'
 import { inviteUserToBoardSocket } from '~/sockets/invitations.sockets'
-import { manageBoardSocketEvents, updateBoardSocket } from '~/sockets/boards.socket'
-import { updateCardSocket } from '~/sockets/cards.socket'
+import { manageBoardSocketEvents, updateBoardSocket } from '~/sockets/boards.sockets'
+import { updateCardSocket } from '~/sockets/cards.sockets'
 import { verifyAccessToken } from '~/utils/jwt'
 
 const initSocket = (httpServer: ServerHttp) => {
