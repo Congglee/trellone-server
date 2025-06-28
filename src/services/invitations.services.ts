@@ -182,7 +182,7 @@ class InvitationsService {
   async updateBoardInvitation(invitation_id: string, user_id: string, body: BoardInvitation) {
     const payload = { ...body, board_id: new ObjectId(body.board_id) }
 
-    // Step 1: Update status in the Invitation document
+    // Step 1: Update the status in the Invitation document
     const invitation = await databaseService.invitations.findOneAndUpdate(
       { _id: new ObjectId(invitation_id), invitee_id: new ObjectId(user_id) },
       {
@@ -192,7 +192,7 @@ class InvitationsService {
       { returnDocument: 'after' }
     )
 
-    // Step 2: If the case is a successful invitation, it is necessary to add more information of the user (UserID) to the memberIds record in the Board Collection.
+    // Step 2: If the case is a successful invitation, it is necessary to add more information of the user (UserID) to the member_ids record in the Board collection.
     if (body.status === BoardInvitationStatus.Accepted) {
       await databaseService.boards.findOneAndUpdate(
         { _id: new ObjectId(body.board_id) },

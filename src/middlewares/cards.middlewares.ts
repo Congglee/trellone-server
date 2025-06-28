@@ -99,7 +99,7 @@ export const cardIdValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const checkUserCardAccess = await databaseService.boards.countDocuments({
+            const isUserCardOwner = await databaseService.boards.countDocuments({
               _id: card.board_id,
               $or: [
                 {
@@ -111,7 +111,7 @@ export const cardIdValidator = validate(
               ]
             })
 
-            if (!checkUserCardAccess) {
+            if (!isUserCardOwner) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.FORBIDDEN,
                 message: CARDS_MESSAGES.CARD_NOT_BELONG_TO_USER
@@ -142,7 +142,7 @@ export const updateCardValidator = validate(
               return true
             }
 
-            // Check if the value is a valid ISO 8601 date string
+            // Check if the due_date value is a valid ISO 8601 date string
             const isValidDate = ISO8601_REGEX.test(value)
 
             if (!isValidDate) {
@@ -162,6 +162,7 @@ export const updateCardValidator = validate(
               return true
             }
 
+            // Check if the is_completed value is a boolean
             if (typeof value !== 'boolean') {
               throw new Error(CARDS_MESSAGES.CARD_COMPLETION_STATUS_MUST_BE_BOOLEAN)
             }
@@ -196,7 +197,7 @@ export const updateCardValidator = validate(
         isObject: { errorMessage: CARDS_MESSAGES.COMMENT_MUST_BE_OBJECT },
         custom: {
           options: (value, { req }) => {
-            // Ensure all required fields are present
+            // Ensure all required fields are present in the comment object
             const requiredFields = ['action', 'user_email', 'user_avatar', 'user_display_name', 'content']
             const hasAllRequiredFields = requiredFields.every((field) => field in value)
 
@@ -211,17 +212,18 @@ export const updateCardValidator = validate(
             const card = (req as Request).card
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            // Validate action is either Add, Edit or Remove
+            // Validate the action is either Add, Edit or Remove in the comment object
             if (![CardCommentAction.Add, CardCommentAction.Edit, CardCommentAction.Remove].includes(value.action)) {
               throw new Error(CARDS_MESSAGES.INVALID_COMMENT_ACTION)
             }
 
+            // If the action is Edit or Remove, validate the comment_id
             if (value.action === CardCommentAction.Edit || value.action === CardCommentAction.Remove) {
               if (!ObjectId.isValid(value.comment_id)) {
                 throw new Error(CARDS_MESSAGES.INVALID_COMMENT_ID)
               }
 
-              // Check if the comment is exists in the card and owned by the user
+              // Check if the comment exists in the card and owned by the user
               const comment = card?.comments?.find(
                 (comment) =>
                   comment.comment_id.equals(new ObjectId(value.comment_id)) && comment.user_id.toString() === user_id
@@ -241,7 +243,7 @@ export const updateCardValidator = validate(
         isObject: { errorMessage: CARDS_MESSAGES.MEMBER_MUST_BE_OBJECT },
         custom: {
           options: (value, { req }) => {
-            // Ensure all required fields are present
+            // Ensure all required fields are present in the member object
             const requiredFields = ['action', 'user_id']
             const hasAllRequiredFields = requiredFields.every((field) => field in value)
 
@@ -249,21 +251,21 @@ export const updateCardValidator = validate(
               throw new Error(`${CARDS_MESSAGES.MEMBER_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
             }
 
-            // Validate action is either Add or Remove
+            // Validate the action is either Add or Remove in the member object
             if (![CardMemberAction.Add, CardMemberAction.Remove].includes(value.action)) {
               throw new Error(CARDS_MESSAGES.INVALID_MEMBER_ACTION)
             }
 
             const card = (req as Request).card
-            const memberExists = card?.members?.some((id) => id.equals(new ObjectId(value.user_id)))
+            const isMemberExists = card?.members?.some((id) => id.equals(new ObjectId(value.user_id)))
 
             // For ADD action, check if member already exists
-            if (value.action === CardMemberAction.Add && memberExists) {
+            if (value.action === CardMemberAction.Add && isMemberExists) {
               throw new Error(CARDS_MESSAGES.MEMBER_ALREADY_EXISTS)
             }
 
             // For REMOVE action, check if member doesn't exist
-            if (value.action === CardMemberAction.Remove && !memberExists) {
+            if (value.action === CardMemberAction.Remove && !isMemberExists) {
               throw new Error(CARDS_MESSAGES.MEMBER_NOT_FOUND)
             }
 
@@ -280,7 +282,7 @@ export const updateCardValidator = validate(
         isObject: { errorMessage: CARDS_MESSAGES.ATTACHMENT_MUST_BE_OBJECT },
         custom: {
           options: (value, { req }) => {
-            // Ensure all required fields are present
+            // Ensure all required fields are present in the attachment object
             const requiredFields = ['type', 'action']
             const hasAllRequiredFields = requiredFields.every((field) => field in value)
 
@@ -288,13 +290,13 @@ export const updateCardValidator = validate(
               throw new Error(`${CARDS_MESSAGES.ATTACHMENT_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
             }
 
-            // File-specific required fields
+            // File attachment required fields
             const fileRequiredFields = ['url', 'mime_type']
             const hasAllFileFields = fileRequiredFields.every(
               (field) => value.file && typeof value.file === 'object' && field in value.file
             )
 
-            // Link-specific required fields
+            // Link attachment required fields
             const linkRequiredFields = ['url']
             const hasAllLinkFields = linkRequiredFields.every(
               (field) => value.link && typeof value.link === 'object' && field in value.link
@@ -302,23 +304,23 @@ export const updateCardValidator = validate(
 
             const card = (req as Request).card
 
-            // Validate action is either Add or Remove
+            // Validate the action is either Add or Remove
             if (
               ![CardAttachmentAction.Add, CardAttachmentAction.Edit, CardAttachmentAction.Remove].includes(value.action)
             ) {
               throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ACTION)
             }
 
-            // Validate type is either File or Link
+            // Validate the type is either File or Link
             if (![AttachmentType.File, AttachmentType.Link].includes(value.type)) {
               throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_TYPE)
             }
 
-            // If action is Add, validate type and required fields
+            // If the action is Add, validate the type and required fields
             if (value.action === CardAttachmentAction.Add) {
-              // If type is File, validate required fields
+              // If the type is File, validate the required fields
               if (value.type === AttachmentType.File) {
-                // Ensure file is an object and has required fields
+                // Ensure the file is an object and has required fields
                 if (!hasAllFileFields) {
                   throw new Error(
                     `${CARDS_MESSAGES.ATTACHMENT_FILE_MISSING_REQUIRED_FIELDS}: ${fileRequiredFields.join(', ')}`
@@ -326,9 +328,9 @@ export const updateCardValidator = validate(
                 }
               }
 
-              // If type is Link, validate required fields
+              // If the type is Link, validate the required fields
               if (value.type === AttachmentType.Link) {
-                // Ensure link is an object and has required fields
+                // Ensure the link is an object and has required fields
                 if (!hasAllLinkFields) {
                   throw new Error(
                     `${CARDS_MESSAGES.ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS}: ${linkRequiredFields.join(', ')}`
@@ -342,17 +344,17 @@ export const updateCardValidator = validate(
                 throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ID)
               }
 
-              const attachmentExists = card?.attachments?.some((attachment) =>
+              const isAttachmentExists = card?.attachments?.some((attachment) =>
                 attachment.attachment_id.equals(new ObjectId(value.attachment_id))
               )
 
-              // Check if attachment exists in the card
-              if (!attachmentExists) {
+              // Check if the attachment exists in the card
+              if (!isAttachmentExists) {
                 throw new Error(CARDS_MESSAGES.ATTACHMENT_NOT_FOUND)
               }
 
               if (value.type === AttachmentType.Link) {
-                // Ensure link is an object and has required fields
+                // Ensure the link is an object and has required fields
                 if (!hasAllLinkFields) {
                   throw new Error(
                     `${CARDS_MESSAGES.ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS}: ${linkRequiredFields.join(', ')}`
@@ -361,18 +363,18 @@ export const updateCardValidator = validate(
               }
             }
 
-            // If action is Remove, validate attachment_id
+            // If the action is Remove, validate the attachment_id
             if (value.action === CardAttachmentAction.Remove) {
               if (!ObjectId.isValid(value.attachment_id)) {
                 throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ID)
               }
 
-              const attachmentExists = card?.attachments?.some((attachment) =>
+              const isAttachmentExists = card?.attachments?.some((attachment) =>
                 attachment.attachment_id.equals(new ObjectId(value.attachment_id))
               )
 
-              // Check if attachment exists in the card
-              if (!attachmentExists) {
+              // Check if the attachment exists in the card
+              if (!isAttachmentExists) {
                 throw new Error(CARDS_MESSAGES.ATTACHMENT_NOT_FOUND)
               }
             }

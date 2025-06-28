@@ -21,7 +21,7 @@ export const createNewBoardInvitationController = async (
   const invitee = req.invitee as User
   const board = req.board as Board
 
-  // The user making this request is the Inviter - the person who sends the invitation
+  // The user making this request is the inviter - the person who sends the invitation
   const { user_id: inviter_id } = req.decoded_authorization as TokenPayload
 
   const result = await invitationsService.createNewBoardInvitation(req.body, inviter_id, invitee, board)

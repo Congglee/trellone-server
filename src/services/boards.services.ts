@@ -90,7 +90,7 @@ class BoardsService {
     const prev_card_order_ids = body.prev_card_order_ids.map((id) => new ObjectId(id))
     const next_card_order_ids = body.next_card_order_ids.map((id) => new ObjectId(id))
 
-    // Step 1: Update the card_order_ids of Column originally contained it (understanding the essence of deleting the card of the card out of the array)
+    // Step 1: Update the card_order_ids of Column originally contained it (understand the essence of deleting the card out of the array)
     await databaseService.columns.findOneAndUpdate(
       { _id: new ObjectId(body.prev_column_id) },
       {
@@ -100,7 +100,7 @@ class BoardsService {
       { returnDocument: 'after' }
     )
 
-    // Step 2: Update card_order_ids of the next column (understand the nature is adding the _id of the card to the array)
+    // Step 2: Update card_order_ids of the next column (understand the nature of adding the card's _id to the array)
     await databaseService.columns.findOneAndUpdate(
       { _id: new ObjectId(body.next_column_id) },
       {

@@ -19,13 +19,3 @@ coverage/
 
 # Markdown
 mdx/
-
-# GitHub Copilot instructions
-/.github/copilot-instructions.md
-/.github/instructions/*
-
-# Cursor
-/.cursor
-.cursorrules
-.cursorignore
-/memory-bank

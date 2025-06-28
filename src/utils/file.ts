@@ -16,8 +16,8 @@ export const handleUploadImage = async (req: Request) => {
 
   const form = formidable({
     uploadDir: UPLOAD_IMAGE_TEMP_DIR,
-    maxFiles: 4,
-    keepExtensions: true,
+    maxFiles: 4, // Maximum number of files to upload (4 images)
+    keepExtensions: true, // Keep the original file extension
     maxFileSize: 3000 * 1024, // 3MB
     maxTotalFileSize: 3000 * 1024 * 4, // 12MB
     filter: function ({ name, mimetype }) {
@@ -52,20 +52,20 @@ export const handleUploadDocument = async (req: Request) => {
 
   const form = formidable({
     uploadDir: UPLOAD_DOCUMENT_TEMP_DIR,
-    maxFiles: 4,
-    keepExtensions: true,
+    maxFiles: 4, // Maximum number of files to upload (4 documents)
+    keepExtensions: true, // Keep the original file extension
     maxFileSize: 10 * 1024 * 1024, // 10MB
     maxTotalFileSize: 10 * 1024 * 1024 * 4, // 40MB
     filter: function ({ name, mimetype }) {
-      // Allow common document types and image types
+      // Allow common document types and image types (for documents)
       const allowedDocumentMimeTypes = [
-        'application/pdf',
-        'application/msword',
+        'application/pdf', // .pdf
+        'application/msword', // .doc
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-        'text/plain',
-        'application/vnd.ms-excel',
+        'text/plain', // .txt
+        'application/vnd.ms-excel', // .xls
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.ms-powerpoint',
+        'application/vnd.ms-powerpoint', // .ppt
         'application/vnd.openxmlformats-officedocument.presentationml.presentation' // .pptx
       ]
 
@@ -73,14 +73,14 @@ export const handleUploadDocument = async (req: Request) => {
 
       const allowedMimeTypes = [...allowedDocumentMimeTypes, ...allowedImageMimeTypes]
 
-      const valid = name === 'document' && Boolean(mimetype && allowedMimeTypes.includes(mimetype))
+      const isValid = name === 'document' && Boolean(mimetype && allowedMimeTypes.includes(mimetype))
 
-      if (!valid) {
+      if (!isValid) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         form.emit('error' as any, new Error('File type is not valid for documents or images') as any)
       }
 
-      return valid
+      return isValid
     }
   })
 

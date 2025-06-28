@@ -1,0 +1,490 @@
+---
+description: Utility functions best practices for TrellOne API
+globs: src/utils/**/*
+alwaysApply: true
+---
+# Utility Functions Best Practices - TrellOne API
+
+This document outlines the established patterns and best practices for writing utility functions in the TrellOne API Express.js application.
+
+## File Structure and Naming
+
+### ✅ Correct File Naming
+- Use kebab-case with `.ts` suffix
+- Descriptive names: `socket.ts`, `file.ts`, `crypto.ts`, `jwt.ts`
+- Place all utility files in `src/utils/` directory
+
+### ✅ Function Naming Conventions
+```typescript
+// Good - Descriptive action names
+export const hashPassword = (password: string): string => { }
+export const signToken = ({ payload, privateKey, options }: SignTokenParams) => { }
+export const verifyAccessToken = async (access_token: string, req?: Request) => { }
+export const handleUploadImage = async (req: Request) => { }
+export const initFolder = () => { }
+
+// Good - Utility function patterns
+export const stringEnumToArray = (stringEnum: { [key: string]: string }) => { }
+export const getNameFromFullname = (fullname: string) => { }
+export const wrapRequestHandler = <P>(func: RequestHandler<P, any, any, any>) => { }
+```
+
+## Import Organization
+
+### ✅ Import Order and Grouping
+```typescript
+// 1. External packages - Node.js built-ins first
+import { createHash } from 'crypto'
+import fs from 'fs'
+import { Server as ServerHttp } from 'http'
+
+// 2. External packages - Third-party libraries
+import { Request } from 'express'
+import { File } from 'formidable'
+import jwt from 'jsonwebtoken'
+import { Server } from 'socket.io'
+import { capitalize } from 'lodash'
+
+// 3. Internal config and constants
+import { envConfig } from '~/config/environment'
+import { corsOptions } from '~/config/cors'
+import logger from '~/config/logger'
+import { UPLOAD_DOCUMENT_TEMP_DIR, UPLOAD_IMAGE_TEMP_DIR } from '~/config/dir'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { AUTH_MESSAGES } from '~/constants/messages'
+
+// 4. Error models
+import { ErrorWithStatus, EntityError } from '~/models/Errors'
+
+// 5. Request/Response types
+import { TokenPayload } from '~/models/requests/User.requests'
+
+// 6. Socket event handlers
+import { inviteUserToBoardSocket } from '~/sockets/invitations.sockets'
+import { manageBoardSocketEvents, updateBoardSocket } from '~/sockets/boards.sockets'
+
+// 7. Other utilities (circular dependency awareness)
+import { verifyAccessToken } from '~/utils/jwt'
+```
+
+## Function Signature Patterns
+
+### ✅ Parameter Object Pattern
+```typescript
+// Good - Use parameter objects for multiple related parameters
+export const signToken = ({
+  payload,
+  privateKey,
+  options = { algorithm: 'HS256' }
+}: {
+  payload: string | Buffer | object
+  privateKey: string
+  options?: SignOptions
+}) => { }
+
+// Good - Use parameter objects for complex operations
+export const verifyToken = <T extends TokenPayload = TokenPayload>({
+  token,
+  secretOrPublicKey
+}: {
+  token: string
+  secretOrPublicKey: string
+}) => { }
+```
+
+### ✅ Optional Parameters and Defaults
+```typescript
+// Good - Optional parameters with sensible defaults
+export const verifyAccessToken = async (access_token: string, req?: Request) => { }
+
+// Good - Default values in parameter objects
+options = { algorithm: 'HS256' }
+```
+
+### ✅ Generic Type Parameters
+```typescript
+// Good - Generic functions for type safety
+export const wrapRequestHandler = <P>(func: RequestHandler<P, any, any, any>) => {
+  return async (req: Request<P>, res: Response, next: NextFunction) => { }
+}
+
+export const verifyToken = <T extends TokenPayload = TokenPayload>({ token, secretOrPublicKey }: {
+  token: string
+  secretOrPublicKey: string
+}) => { }
+```
+
+## Promise and Async Patterns
+
+### ✅ Promise Wrapper Pattern
+```typescript
+// Good - Wrap callback-based APIs in Promises
+export const signToken = ({ payload, privateKey, options }: SignTokenParams) => {
+  return new Promise<string>((resolve, reject) => {
+    jwt.sign(payload, privateKey, options, (error, token) => {
+      if (error) {
+        throw reject(error)
+      }
+      resolve(token as string)
+    })
+  })
+}
+
+export const verifyToken = <T extends TokenPayload = TokenPayload>({ token, secretOrPublicKey }: VerifyTokenParams) => {
+  return new Promise<T>((resolve, reject) => {
+    jwt.verify(token, secretOrPublicKey, (error, decoded) => {
+      if (error) {
+        throw reject(error)
+      }
+      resolve(decoded as T)
+    })
+  })
+}
+```
+
+### ✅ File Upload Promise Pattern
+```typescript
+// Good - Promise-based file upload handling
+export const handleUploadImage = async (req: Request) => {
+  const formidable = (await import('formidable')).default
+  const form = formidable({ /* config */ })
+
+  return new Promise<File[]>((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        return reject(err)
+      }
+      
+      if (!Boolean(files.image)) {
+        return reject(new Error('File is empty'))
+      }
+      
+      resolve(files.image as File[])
+    })
+  })
+}
+```
+
+## Error Handling Patterns
+
+### ✅ Custom Error Classes
+```typescript
+// Good - Use custom error classes with status codes
+throw new ErrorWithStatus({
+  message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+  status: HTTP_STATUS.UNAUTHORIZED
+})
+
+// Good - Transform library errors to custom errors
+try {
+  const decoded_authorization = await verifyToken({ token: access_token, secretOrPublicKey })
+  return decoded_authorization
+} catch (error) {
+  throw new ErrorWithStatus({
+    message: capitalize((error as JsonWebTokenError).message),
+    status: HTTP_STATUS.UNAUTHORIZED
+  })
+}
+```
+
+### ✅ Validation Error Aggregation
+```typescript
+// Good - Aggregate validation errors into structured format
+export const validate = (validation: RunnableValidationChains<ValidationChain>) => {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    await validation.run(req)
+    
+    const errors = validationResult(req)
+    if (errors.isEmpty()) {
+      return next()
+    }
+    
+    const errorsObject = errors.mapped()
+    const entityError = new EntityError({ errors: {} })
+    
+    for (const key in errorsObject) {
+      const { msg } = errorsObject[key]
+      
+      if (msg instanceof ErrorWithStatus && msg.status !== HTTP_STATUS.UNPROCESSABLE_ENTITY) {
+        return next(msg)
+      }
+      
+      entityError.errors[key] = errorsObject[key]
+    }
+    
+    next(entityError)
+  }
+}
+```
+
+### ✅ Request Handler Error Wrapping
+```typescript
+// Good - Centralized error handling for async controllers
+export const wrapRequestHandler = <P>(func: RequestHandler<P, any, any, any>) => {
+  return async (req: Request<P>, res: Response, next: NextFunction) => {
+    try {
+      await func(req, res, next)
+    } catch (error) {
+      next(error)
+    }
+  }
+}
+```
+
+## File Handling Patterns
+
+### ✅ Dynamic Import Pattern
+```typescript
+// Good - Use dynamic imports for optional dependencies
+const formidable = (await import('formidable')).default
+```
+
+### ✅ File Validation Configuration
+```typescript
+// Good - Comprehensive file validation with formidable
+const form = formidable({
+  uploadDir: UPLOAD_IMAGE_TEMP_DIR,
+  maxFiles: 4,                    // Maximum number of files
+  keepExtensions: true,           // Preserve file extensions
+  maxFileSize: 3000 * 1024,      // 3MB per file
+  maxTotalFileSize: 3000 * 1024 * 4, // 12MB total
+  filter: function ({ name, mimetype }) {
+    const valid = name === 'image' && Boolean(mimetype?.includes('image/'))
+    
+    if (!valid) {
+      form.emit('error' as any, new Error('File type is not valid') as any)
+    }
+    
+    return valid
+  }
+})
+```
+
+### ✅ MIME Type Validation
+```typescript
+// Good - Comprehensive MIME type validation
+const allowedDocumentMimeTypes = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+]
+
+const allowedImageMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+const allowedMimeTypes = [...allowedDocumentMimeTypes, ...allowedImageMimeTypes]
+```
+
+### ✅ Directory Initialization
+```typescript
+// Good - Ensure directories exist before use
+export const initFolder = () => {
+  ;[UPLOAD_IMAGE_TEMP_DIR, UPLOAD_DOCUMENT_TEMP_DIR].forEach((dir) => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
+    }
+  })
+}
+```
+
+## Socket.IO Patterns
+
+### ✅ Socket Server Initialization
+```typescript
+// Good - Socket server with CORS configuration
+const initSocket = (httpServer: ServerHttp) => {
+  const io = new Server(httpServer, { cors: corsOptions })
+  
+  // User tracking
+  const users: { [key: string]: { socket_id: string } } = {}
+  
+  return io
+}
+```
+
+### ✅ Socket Authentication Middleware
+```typescript
+// Good - Cookie-based authentication for Socket.IO
+io.use(async (socket, next) => {
+  const cookieHeader = socket.handshake.headers.cookie
+  
+  if (!cookieHeader) {
+    return next(new Error('No cookies found'))
+  }
+  
+  // Parse cookies manually
+  const cookies: { [key: string]: string } = {}
+  cookieHeader.split(';').forEach((cookie) => {
+    const parts = cookie.split('=')
+    if (parts.length === 2) {
+      const key = parts[0].trim()
+      const value = parts[1].trim()
+      cookies[key] = value
+    }
+  })
+  
+  const access_token = cookies['access_token']
+  
+  try {
+    const decoded_authorization = await verifyAccessToken(access_token)
+    socket.handshake.auth.decoded_authorization = decoded_authorization
+    socket.handshake.auth.access_token = access_token
+    next()
+  } catch (error) {
+    next({ message: 'Unauthorized', name: 'UnauthorizedError', data: error })
+  }
+})
+```
+
+### ✅ Socket Event Handler Registration
+```typescript
+// Good - Modular socket event handler registration
+socket.use(async (packet, next) => {
+  const { access_token } = socket.handshake.auth
+  try {
+    await verifyAccessToken(access_token)
+    next()
+  } catch (error) {
+    next(new Error('Unauthorized'))
+  }
+})
+
+// Register feature-specific socket handlers
+inviteUserToBoardSocket(socket)
+manageBoardSocketEvents(socket)
+updateBoardSocket(socket)
+updateCardSocket(socket)
+```
+
+### ✅ Connection Management
+```typescript
+// Good - User tracking and cleanup
+io.on('connection', (socket) => {
+  logger.info(`User ${socket.id} connected`)
+  
+  const { user_id } = socket.handshake.auth.decoded_authorization as TokenPayload
+  users[user_id] = { socket_id: socket.id }
+  
+  socket.on('disconnect', () => {
+    delete users[user_id]
+    console.log(`User ${socket.id} disconnected`)
+  })
+})
+```
+
+## Cryptographic Patterns
+
+### ✅ Password Hashing
+```typescript
+// Good - Secure password hashing with salt
+const sha256 = (content: string) => createHash('sha256').update(content).digest('hex')
+
+export const hashPassword = (password: string): string => 
+  sha256(password + envConfig.passwordSecret)
+```
+
+## Common Utility Patterns
+
+### ✅ Type Conversion Utilities
+```typescript
+// Good - Enum to array conversion with type filtering
+export const stringEnumToArray = (stringEnum: { [key: string]: string }) => {
+  return Object.values(stringEnum).filter((value) => typeof value === 'string') as string[]
+}
+```
+
+### ✅ String Manipulation Utilities
+```typescript
+// Good - Filename processing utilities
+export const getNameFromFullname = (fullname: string) => {
+  const namearr = fullname.split('.')
+  namearr.pop()
+  return namearr.join('')
+}
+```
+
+## Configuration Integration
+
+### ✅ Environment Configuration Usage
+```typescript
+// Good - Use environment configuration throughout utilities
+import { envConfig } from '~/config/environment'
+
+// Use in JWT operations
+secretOrPublicKey: envConfig.jwtSecretAccessToken as string
+
+// Use in password hashing
+sha256(password + envConfig.passwordSecret)
+```
+
+## Type Safety Patterns
+
+### ✅ Type Assertions and Guards
+```typescript
+// Good - Safe type assertions with fallbacks
+resolve(files.image as File[])
+resolve(files.document as File[])
+
+// Good - Type parameter constraints
+export const verifyToken = <T extends TokenPayload = TokenPayload>
+
+// Good - Optional chaining and type checking
+const valid = name === 'image' && Boolean(mimetype?.includes('image/'))
+```
+
+## Export Patterns
+
+### ✅ Named Exports for Utilities
+```typescript
+// Good - Use named exports for utility functions
+export const hashPassword = (password: string): string => { }
+export const signToken = ({ payload, privateKey, options }: SignTokenParams) => { }
+export const handleUploadImage = async (req: Request) => { }
+export const initFolder = () => { }
+
+// Good - Default export for main initialization functions
+export default initSocket
+```
+
+## Performance Considerations
+
+### ✅ Efficient File Processing
+```typescript
+// Good - Stream-based file processing with size limits
+maxFileSize: 3000 * 1024,      // Individual file limit
+maxTotalFileSize: 3000 * 1024 * 4, // Total upload limit
+```
+
+### ✅ Memory Management
+```typescript
+// Good - Proper cleanup and resource management
+socket.on('disconnect', () => {
+  delete users[user_id]  // Clean up user tracking
+})
+```
+
+## Security Best Practices
+
+### ✅ Input Validation
+```typescript
+// Good - Validate all inputs before processing
+if (!access_token) {
+  throw new ErrorWithStatus({
+    message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+    status: HTTP_STATUS.UNAUTHORIZED
+  })
+}
+```
+
+### ✅ File Upload Security
+```typescript
+// Good - Strict MIME type validation
+const valid = name === 'image' && Boolean(mimetype?.includes('image/'))
+
+// Good - File size limits
+maxFileSize: 3000 * 1024,
+maxFiles: 4
+```
+
+These patterns ensure consistency, security, performance, and maintainability across all utility functions in the TrellOne API. Each utility should follow these established conventions for seamless integration with the overall application architecture.

@@ -1,0 +1,768 @@
+---
+description: Middleware layer best practices for TrellOne API
+globs: src/middlewares/**/*
+alwaysApply: true
+---
+# Middleware Layer Best Practices - TrellOne API
+
+This document outlines the established patterns and best practices for writing and using middlewares in the TrellOne API Express.js application.
+
+## File Structure and Naming
+
+### ✅ Correct File Naming
+- Use kebab-case with `.middlewares.ts` suffix
+- Match the resource name: `boards.middlewares.ts`, `users.middlewares.ts`
+- Place all middleware files in `src/middlewares/` directory
+
+### ✅ Middleware Function Naming
+```typescript
+// Good - Descriptive action + Validator suffix
+export const createBoardValidator = validate(checkSchema(...))
+export const boardIdValidator = validate(checkSchema(...))
+export const accessTokenValidator = validate(checkSchema(...))
+
+// Schema naming - camelCase + Schema suffix
+export const passwordSchema: ParamSchema = { ... }
+export const confirmPasswordSchema: ParamSchema = { ... }
+```
+
+## Import Organization
+
+### ✅ Import Order and Grouping
+```typescript
+// 1. External packages - Express types
+import { Request, Response, NextFunction } from 'express'
+import { checkSchema, ParamSchema } from 'express-validator'
+
+// 2. External packages - Other dependencies
+import { ObjectId } from 'mongodb'
+import { JsonWebTokenError } from 'jsonwebtoken'
+import { capitalize, pick, omit, isEmpty } from 'lodash'
+
+// 3. Internal config and constants
+import { envConfig } from '~/config/environment'
+import { UserVerifyStatus, BoardType, TokenType } from '~/constants/enums'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { AUTH_MESSAGES, BOARDS_MESSAGES } from '~/constants/messages'
+import { ISO8601_REGEX } from '~/constants/regex'
+
+// 4. Error models
+import { ErrorWithStatus } from '~/models/Errors'
+
+// 5. Request/Response types
+import { TokenPayload } from '~/models/requests/User.requests'
+import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
+
+// 6. Schema models
+import User from '~/models/schemas/User.schema'
+import Board from '~/models/schemas/Board.schema'
+
+// 7. Services
+import databaseService from '~/services/database.services'
+import authService from '~/services/auth.services'
+
+// 8. Utilities
+import { validate } from '~/utils/validation'
+import { wrapRequestHandler } from '~/utils/handlers'
+import { hashPassword } from '~/utils/crypto'
+import { verifyToken, verifyAccessToken } from '~/utils/jwt'
+import { stringEnumToArray } from '~/utils/commons'
+```
+
+## Validation Middleware Patterns
+
+### ✅ Schema Definition Standards
+```typescript
+// Reusable schema objects with ParamSchema type
+const entityFieldSchema: ParamSchema = {
+  notEmpty: { errorMessage: MESSAGES.FIELD_IS_REQUIRED },
+  isString: { errorMessage: MESSAGES.FIELD_MUST_BE_STRING },
+  trim: true,
+  isLength: {
+    options: { min: 3, max: 50 },
+    errorMessage: MESSAGES.FIELD_LENGTH_MUST_BE_BETWEEN_3_AND_50
+  }
+}
+
+// Optional schema variations
+const optionalFieldSchema: ParamSchema = {
+  optional: true,
+  isString: { errorMessage: MESSAGES.FIELD_MUST_BE_STRING },
+  trim: true
+}
+
+// Complex validation with custom logic
+const customValidationSchema: ParamSchema = {
+  custom: {
+    options: async (value, { req }) => {
+      // Custom validation logic
+      if (!ObjectId.isValid(value)) {
+        throw new Error(MESSAGES.INVALID_ID)
+      }
+      
+      const entity = await databaseService.collection.findOne({ _id: new ObjectId(value) })
+      
+      if (!entity) {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.NOT_FOUND,
+          message: MESSAGES.ENTITY_NOT_FOUND
+        })
+      }
+      
+      // Attach entity to request for later use
+      ;(req as Request).entity = entity
+      
+      return true
+    }
+  }
+}
+```
+
+### ✅ Validator Function Patterns
+```typescript
+// Standard validation pattern using validate wrapper
+export const createEntityValidator = validate(
+  checkSchema(
+    {
+      title: entityTitleSchema,
+      description: entityDescriptionSchema,
+      type: entityTypeSchema
+    },
+    ['body'] // Validation location
+  )
+)
+
+// ID validation pattern
+export const entityIdValidator = validate(
+  checkSchema(
+    {
+      entity_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: MESSAGES.INVALID_ENTITY_ID
+              })
+            }
+
+            // Complex database lookup with authorization
+            const { user_id } = (req as Request).decoded_authorization as TokenPayload
+            
+            const entity = await databaseService.entities.findOne({
+              _id: new ObjectId(value),
+              $or: [
+                { owners: { $in: [new ObjectId(user_id)] } },
+                { members: { $in: [new ObjectId(user_id)] } }
+              ]
+            })
+
+            if (!entity) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: MESSAGES.ENTITY_NOT_FOUND
+              })
+            }
+
+            ;(req as Request).entity = entity
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+// Update validation with optional fields
+export const updateEntityValidator = validate(
+  checkSchema(
+    {
+      title: { ...entityTitleSchema, optional: true, notEmpty: undefined },
+      description: { ...entityDescriptionSchema, optional: true },
+      type: { ...entityTypeSchema, optional: true }
+    },
+    ['body']
+  )
+)
+```
+
+## Authentication Middleware Patterns
+
+### ✅ Token Validation Standards
+```typescript
+// Flexible token validation (cookies + headers)
+export const accessTokenValidator = validate(
+  checkSchema(
+    {
+      Authorization: {
+        optional: true,
+        custom: {
+          options: async (value, { req }) => {
+            // Priority 1: Check cookies
+            const cookie_token = req.headers?.cookie
+            
+            if (cookie_token) {
+              const cookieEntries = cookie_token.split('; ')
+              const accessTokenEntry = cookieEntries.find((entry: string) => 
+                entry.startsWith('access_token=')
+              )
+              
+              if (accessTokenEntry) {
+                const access_token = accessTokenEntry.split('=')[1]
+                return await verifyAccessToken(access_token, req as Request)
+              }
+            }
+            
+            // Priority 2: Check Authorization header
+            if (!value) {
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+            
+            const access_token = (value || '').split(' ')[1]
+            
+            if (!access_token) {
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                status: HTTP_STATUS.UNAUTHORIZED
+              })
+            }
+            
+            return await verifyAccessToken(access_token, req as Request)
+          }
+        }
+      }
+    },
+    ['cookies', 'headers']
+  )
+)
+
+// JWT token verification pattern
+const tokenValidationSchema: ParamSchema = {
+  trim: true,
+  custom: {
+    options: async (value: string, { req }) => {
+      if (!value) {
+        throw new ErrorWithStatus({
+          message: MESSAGES.TOKEN_IS_REQUIRED,
+          status: HTTP_STATUS.UNAUTHORIZED
+        })
+      }
+
+      try {
+        const decoded_token = await verifyToken({
+          token: value,
+          secretOrPublicKey: envConfig.jwtSecretKey as string
+        })
+        
+        const { user_id } = decoded_token
+        
+        const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+        
+        if (user === null) {
+          throw new ErrorWithStatus({
+            message: AUTH_MESSAGES.USER_NOT_FOUND,
+            status: HTTP_STATUS.UNAUTHORIZED
+          })
+        }
+        
+        if (user.token_field !== value) {
+          throw new ErrorWithStatus({
+            message: MESSAGES.INVALID_TOKEN,
+            status: HTTP_STATUS.UNAUTHORIZED
+          })
+        }
+        
+        req.decoded_token = decoded_token
+      } catch (error) {
+        if (error instanceof JsonWebTokenError) {
+          throw new ErrorWithStatus({
+            message: capitalize(error.message),
+            status: HTTP_STATUS.UNAUTHORIZED
+          })
+        }
+        
+        throw error
+      }
+      
+      return true
+    }
+  }
+}
+```
+
+## Common Middleware Patterns
+
+### ✅ Filter Middleware for Request Body Filtering
+```typescript
+export type FilterKeys<T> = Array<keyof T>
+
+// Generic filter middleware to allow only specific fields
+export const filterMiddleware =
+  <T>(filterKeys: FilterKeys<T>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    req.body = pick(req.body, filterKeys)
+    next()
+  }
+
+// Usage in routes:
+// filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type'])
+```
+
+### ✅ Pagination Middleware
+```typescript
+export const paginationValidator = validate(
+  checkSchema(
+    {
+      limit: {
+        isNumeric: true,
+        custom: {
+          options: async (value) => {
+            const num = Number(value)
+            
+            if (num > 100 || num < 1) {
+              throw new Error('1 <= limit <= 100')
+            }
+            
+            return true
+          }
+        }
+      },
+      page: {
+        isNumeric: true,
+        custom: {
+          options: async (value) => {
+            const num = Number(value)
+            
+            if (num < 1) {
+              throw new Error('page >= 1')
+            }
+            
+            return true
+          }
+        }
+      }
+    },
+    ['query']
+  )
+)
+```
+
+### ✅ Custom Business Logic Middleware
+```typescript
+// Use wrapRequestHandler for custom middleware functions
+export const checkEntityMembershipValidator = wrapRequestHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const entity = req.entity as Entity
+    const user = req.user as User
+    
+    // Business logic validation
+    const isAlreadyMember = entity.members.some((id) => 
+      id.toString() === user._id?.toString()
+    )
+    
+    if (isAlreadyMember) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.BAD_REQUEST,
+        message: MESSAGES.USER_IS_ALREADY_MEMBER
+      })
+    }
+    
+    next()
+  }
+)
+```
+
+## Complex Validation Patterns
+
+### ✅ Conditional and Multi-Field Validation
+```typescript
+// Complex object validation with conditional logic
+const complexObjectSchema: ParamSchema = {
+  optional: true,
+  isObject: { errorMessage: MESSAGES.FIELD_MUST_BE_OBJECT },
+  custom: {
+    options: (value, { req }) => {
+      if (!value.required_field) {
+        throw new Error(MESSAGES.REQUIRED_FIELD_MISSING)
+      }
+      
+      if (value.action === 'specific_action') {
+        if (!value.action_specific_field) {
+          throw new Error(MESSAGES.ACTION_SPECIFIC_FIELD_REQUIRED)
+        }
+      }
+      
+      return true
+    }
+  }
+}
+
+// Cross-field validation
+const confirmFieldSchema: ParamSchema = {
+  custom: {
+    options: (value, { req }) => {
+      if (value !== req.body.original_field) {
+        throw new Error(MESSAGES.FIELDS_MUST_MATCH)
+      }
+      return true
+    }
+  }
+}
+```
+
+### ✅ Enum and Array Validation
+```typescript
+// Enum validation
+const enumTypes = stringEnumToArray(EnumType)
+
+const enumFieldSchema: ParamSchema = {
+  isIn: {
+    options: [enumTypes],
+    errorMessage: MESSAGES.INVALID_ENUM_VALUE
+  }
+}
+
+// Array validation with ObjectId conversion
+const arrayFieldSchema: ParamSchema = {
+  optional: true,
+  isArray: { errorMessage: MESSAGES.FIELD_MUST_BE_ARRAY },
+  custom: {
+    options: (value) => {
+      if (!Array.isArray(value)) {
+        throw new Error(MESSAGES.FIELD_MUST_BE_ARRAY)
+      }
+      
+      // Validate each array element
+      for (const item of value) {
+        if (!ObjectId.isValid(item)) {
+          throw new Error(MESSAGES.INVALID_ARRAY_ITEM_ID)
+        }
+      }
+      
+      return true
+    }
+  }
+}
+```
+
+### ✅ Date and Special Type Validation
+```typescript
+// ISO8601 date validation
+const dateFieldSchema: ParamSchema = {
+  optional: true,
+  custom: {
+    options: (value) => {
+      // Allow null value
+      if (value === null) {
+        return true
+      }
+      
+      // Validate ISO8601 format
+      const isValidDate = ISO8601_REGEX.test(value)
+      
+      if (!isValidDate) {
+        throw new Error(MESSAGES.INVALID_DATE_FORMAT)
+      }
+      
+      return true
+    }
+  }
+}
+
+// Boolean with null support
+const booleanNullableSchema: ParamSchema = {
+  optional: true,
+  custom: {
+    options: (value) => {
+      if (value === null) {
+        return true
+      }
+      
+      if (typeof value !== 'boolean') {
+        throw new Error(MESSAGES.FIELD_MUST_BE_BOOLEAN)
+      }
+      
+      return true
+    }
+  }
+}
+```
+
+## Error Handling Middleware
+
+### ✅ Centralized Error Handler
+```typescript
+export const defaultErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Handle custom ErrorWithStatus
+    if (err instanceof ErrorWithStatus) {
+      return res.status(err.status).json(omit(err, ['status']))
+    }
+    
+    // Handle generic errors
+    const finalError: any = {}
+    
+    Object.getOwnPropertyNames(err).forEach((key) => {
+      if (
+        !Object.getOwnPropertyDescriptor(err, key)?.configurable ||
+        !Object.getOwnPropertyDescriptor(err, key)?.writable
+      ) {
+        return
+      }
+      finalError[key] = err[key]
+    })
+    
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: err.message,
+      errorInfo: omit(err, ['stack'])
+    })
+  } catch (error) {
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: 'Internal server error',
+      errorInfo: omit(error as any, ['stack'])
+    })
+  }
+}
+```
+
+## Middleware Usage in Routes
+
+### ✅ Middleware Chain Order
+**ALWAYS follow this exact order:**
+1. Authentication middleware (`accessTokenValidator`)
+2. Resource validation middlewares (ID validators)
+3. Business logic middlewares (custom validators)
+4. Request body validation middlewares
+5. Filter middleware (for update operations)
+6. Controller wrapped with `wrapRequestHandler`
+
+```typescript
+// Create operations
+router.post(
+  '/',
+  accessTokenValidator,
+  createEntityValidator,
+  wrapRequestHandler(createEntityController)
+)
+
+// Read operations with pagination
+router.get(
+  '/',
+  accessTokenValidator,
+  paginationValidator,
+  getEntitiesValidator,
+  wrapRequestHandler(getEntitiesController)
+)
+
+// Update operations with filtering
+router.put(
+  '/:entity_id',
+  accessTokenValidator,
+  entityIdValidator,
+  updateEntityValidator,
+  filterMiddleware<UpdateEntityReqBody>(['field1', 'field2', 'field3']),
+  wrapRequestHandler(updateEntityController)
+)
+
+// Complex operations with multiple validators
+router.put(
+  '/supports/complex-operation',
+  accessTokenValidator,
+  complexOperationValidator,
+  customBusinessLogicValidator,
+  filterMiddleware(['field1', 'field2']),
+  wrapRequestHandler(complexOperationController)
+)
+```
+
+## Schema Reusability Patterns
+
+### ✅ Shared Schema Components
+```typescript
+// Export reusable schemas from auth.middlewares.ts
+export const passwordSchema: ParamSchema = { /* definition */ }
+export const confirmPasswordSchema: ParamSchema = { /* definition */ }
+export const imageSchema: ParamSchema = { /* definition */ }
+
+// Import and reuse in other middleware files
+import { passwordSchema, confirmPasswordSchema, imageSchema } from '~/middlewares/auth.middlewares'
+
+// Modify schemas for specific use cases
+const optionalPasswordSchema: ParamSchema = {
+  ...passwordSchema,
+  optional: true,
+  notEmpty: undefined
+}
+```
+
+### ✅ Schema Composition Patterns
+```typescript
+// Base schema
+const baseEntitySchema: ParamSchema = {
+  isString: { errorMessage: MESSAGES.FIELD_MUST_BE_STRING },
+  trim: true
+}
+
+// Extended schemas
+const requiredEntitySchema: ParamSchema = {
+  ...baseEntitySchema,
+  notEmpty: { errorMessage: MESSAGES.FIELD_IS_REQUIRED }
+}
+
+const optionalEntitySchema: ParamSchema = {
+  ...baseEntitySchema,
+  optional: true
+}
+```
+
+## Database Integration Patterns
+
+### ✅ Authorization Checks in Validators
+```typescript
+// Check user permissions during validation
+const authorizationCheckSchema: ParamSchema = {
+  custom: {
+    options: async (value, { req }) => {
+      const { user_id } = (req as Request).decoded_authorization as TokenPayload
+      
+      // Complex authorization query
+      const hasAccess = await databaseService.entities.countDocuments({
+        _id: new ObjectId(value),
+        $or: [
+          { owners: { $in: [new ObjectId(user_id)] } },
+          { members: { $in: [new ObjectId(user_id)] } }
+        ]
+      })
+      
+      if (!hasAccess) {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.FORBIDDEN,
+          message: MESSAGES.ACCESS_DENIED
+        })
+      }
+      
+      return true
+    }
+  }
+}
+```
+
+### ✅ Data Enrichment in Validators
+```typescript
+// Attach related data to request for controller use
+const dataEnrichmentSchema: ParamSchema = {
+  custom: {
+    options: async (value, { req }) => {
+      // Complex aggregation to get full entity with relations
+      const [entity] = await databaseService.entities
+        .aggregate([
+          { $match: { _id: new ObjectId(value) } },
+          {
+            $lookup: {
+              from: envConfig.dbRelatedCollection,
+              localField: '_id',
+              foreignField: 'entity_id',
+              as: 'related_data'
+            }
+          }
+        ])
+        .toArray()
+      
+      if (!entity) {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.NOT_FOUND,
+          message: MESSAGES.ENTITY_NOT_FOUND
+        })
+      }
+      
+      ;(req as Request).entity = entity
+      return true
+    }
+  }
+}
+```
+
+## Export Patterns
+
+### ✅ Named Exports Only
+```typescript
+// Always use named exports for middlewares
+export const createEntityValidator = validate(...)
+export const entityIdValidator = validate(...)
+export const updateEntityValidator = validate(...)
+
+// Export reusable schemas
+export const entityTitleSchema: ParamSchema = { ... }
+export const entityDescriptionSchema: ParamSchema = { ... }
+
+// Never use default exports for individual middlewares
+```
+
+## Type Safety Patterns
+
+### ✅ Request Type Augmentation
+```typescript
+// Extend Request interface for attached data
+declare global {
+  namespace Express {
+    interface Request {
+      decoded_authorization?: TokenPayload
+      decoded_refresh_token?: TokenPayload
+      decoded_email_verify_token?: TokenPayload
+      user?: User
+      board?: Board
+      entity?: Entity
+    }
+  }
+}
+
+// Use type assertions in middleware
+;(req as Request).entity = entity
+const user = req.user as User
+const { user_id } = (req as Request).decoded_authorization as TokenPayload
+```
+
+### ✅ Generic Filter Middleware Typing
+```typescript
+// Type-safe filter middleware
+export type FilterKeys<T> = Array<keyof T>
+
+export const filterMiddleware =
+  <T>(filterKeys: FilterKeys<T>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    req.body = pick(req.body, filterKeys)
+    next()
+  }
+
+// Usage with type safety
+filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type'])
+```
+
+## Validation Location Patterns
+
+### ✅ Validation Target Specification
+```typescript
+// Body validation
+checkSchema(schemas, ['body'])
+
+// Query parameter validation
+checkSchema(schemas, ['query'])
+
+// URL parameter validation
+checkSchema(schemas, ['params'])
+
+// Header validation
+checkSchema(schemas, ['headers'])
+
+// Cookie validation
+checkSchema(schemas, ['cookies'])
+
+// Multiple locations
+checkSchema(schemas, ['cookies', 'headers'])
+```
+
+These patterns ensure consistency, maintainability, type safety, and proper error handling across all middleware implementations in the TrellOne API. Each middleware should follow these established conventions for seamless integration with the overall application architecture.

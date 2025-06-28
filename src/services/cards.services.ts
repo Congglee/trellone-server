@@ -28,7 +28,7 @@ class CardsService {
     let updatedCard = null
 
     if (body.comment) {
-      // Case 1: In case of ADD, EDIT or REMOVE comment from Card
+      // Case 1: Add, Edit or Remove comment from Card
       let updateCondition = {}
       const updateOptions: any = { returnDocument: 'after' }
 
@@ -47,7 +47,7 @@ class CardsService {
       }
 
       if (body.comment.action === CardCommentAction.Edit) {
-        // First, find the comment by its ID
+        // First, find the comment to update by its ID
         const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
 
         const commentToUpdate = card?.comments?.find((comment) =>
@@ -55,18 +55,13 @@ class CardsService {
         )
 
         // Second, put the necessary fields to update the comment into the payload
-        const payload = {
-          ...commentToUpdate,
-          content: body.comment.content
-        }
+        const payload = { ...commentToUpdate, content: body.comment.content }
 
         // Finally, update the comment in the database
-        // Using `$[elem]` to update the specific element in the array
-        // ?) The `$[elem]` syntax allows you to update an array element that matches the filter criteria
+        // Using `$[elem]` to update the specific comment in the array
         updateCondition = { $set: { 'comments.$[elem]': payload } }
 
-        // Add arrayFilters only for EDIT action to find the correct attachment
-        // ?) The `arrayFilters` option allows you to specify conditions for the elements in the array that you want to update
+        // Add arrayFilters only for EDIT action to find the correct comment
         updateOptions.arrayFilters = [{ 'elem.comment_id': new ObjectId(body.comment.comment_id) }]
       }
 
@@ -80,7 +75,7 @@ class CardsService {
         updateOptions
       )
     } else if (body.attachment) {
-      // Case 2: In case of ADD, EDIT or REMOVE attachment from Card
+      // Case 2: Add, Edit or Remove attachment from Card
       let updateCondition = {}
       const updateOptions: any = { returnDocument: 'after' }
 
@@ -101,7 +96,7 @@ class CardsService {
       }
 
       if (body.attachment.action === CardAttachmentAction.Edit) {
-        // First, find the attachment by its ID
+        // First, find the attachment to update by its ID
         const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
 
         const attachmentToUpdate = card?.attachments?.find((attachment) =>
@@ -132,10 +127,13 @@ class CardsService {
           }
         }
 
+        // Finally, update the attachment in the database
+        // Using `$[elem]` to update the specific attachment in the array
         updateCondition = {
           $set: { 'attachments.$[elem]': payload }
         }
 
+        // Add arrayFilters only for EDIT action to find the correct attachment
         updateOptions.arrayFilters = [{ 'elem.attachment_id': new ObjectId(body.attachment.attachment_id) }]
       }
 
@@ -151,7 +149,7 @@ class CardsService {
         updateOptions
       )
     } else if (body.member) {
-      // Case 3: In case of ADD or REMOVE member from Card
+      // Case 3: Add or Remove member from Card
       let updateCondition = {}
 
       if (body.member.action === CardMemberAction.Add) {

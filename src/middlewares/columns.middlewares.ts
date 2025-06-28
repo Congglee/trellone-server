@@ -77,7 +77,7 @@ export const columnIdValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const checkUserColumnAccess = await databaseService.boards.countDocuments({
+            const isUserColumnOwner = await databaseService.boards.countDocuments({
               _id: column.board_id,
               $or: [
                 {
@@ -89,7 +89,7 @@ export const columnIdValidator = validate(
               ]
             })
 
-            if (!checkUserColumnAccess) {
+            if (!isUserColumnOwner) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.FORBIDDEN,
                 message: COLUMNS_MESSAGES.COLUMN_NOT_BELONG_TO_USER
@@ -118,9 +118,9 @@ export const updateColumnValidator = validate(
           options: async (value, { req }) => {
             const column = (req as Request).column as Column
 
-            // If value is empty, check if the column already had an empty card_order_ids
+            // If the card_order_ids value is empty, check if the column already had an empty card_order_ids
             if (isEmpty(value)) {
-              // Only allow empty array if it was already empty
+              // Only allow empty array if it was empty before
               if (!isEmpty(column.card_order_ids)) {
                 throw new Error(COLUMNS_MESSAGES.CARD_ORDER_IDS_CANNOT_BE_EMPTY)
               }
@@ -128,7 +128,7 @@ export const updateColumnValidator = validate(
               return true
             }
 
-            // Check if all IDs are valid ObjectIds
+            // Check if all IDs in the card_order_ids array are valid ObjectIds
             if (value.some((id: string) => !ObjectId.isValid(id))) {
               throw new Error(COLUMNS_MESSAGES.INVALID_CARD_ID)
             }

@@ -7,15 +7,12 @@ import usersService from '~/services/users.services'
 export const getMeController = async (req: Request, res: Response) => {
   const { user_id } = req.decoded_authorization as TokenPayload
   const result = await usersService.getMe(user_id)
-
   return res.json({ message: USERS_MESSAGES.GET_ME_SUCCESS, result })
 }
 
 export const updateMeController = async (req: Request<ParamsDictionary, any, UpdateMeReqBody>, res: Response) => {
   const { user_id } = req.decoded_authorization as TokenPayload
-
   const user = await usersService.updateMe(user_id, req.body)
-
   return res.json({ message: USERS_MESSAGES.UPDATE_ME_SUCCESS, result: user })
 }
 

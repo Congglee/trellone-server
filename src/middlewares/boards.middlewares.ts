@@ -209,9 +209,9 @@ export const updateBoardValidator = validate(
           options: async (value, { req }) => {
             const board = (req as Request).board as Board
 
-            // If value is empty, check if the board already had an empty column_order_ids
+            // If the column_order_ids value is empty, check if the board already had an empty column_order_ids
             if (isEmpty(value)) {
-              // Only allow empty array if it was already empty
+              // Only allow empty array if it was empty before
               if (!isEmpty(board.column_order_ids)) {
                 throw new Error(BOARDS_MESSAGES.COLUMN_ORDER_IDS_CANNOT_BE_EMPTY)
               }
@@ -219,7 +219,7 @@ export const updateBoardValidator = validate(
               return true
             }
 
-            // Check if all IDs are valid ObjectIds
+            // Check if all IDs in the column_order_ids array are valid ObjectIds
             if (value.some((id: string) => !ObjectId.isValid(id))) {
               throw new Error(BOARDS_MESSAGES.INVALID_COLUMN_ID)
             }

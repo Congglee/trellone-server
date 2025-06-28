@@ -5,9 +5,12 @@ import { getNameFromFullname, handleUploadDocument, handleUploadImage } from '~/
 import sharp from 'sharp'
 import { uploadFileToUploadthing } from '~/providers/uploadthing'
 import fsPromise from 'fs/promises'
-import { UploadedFileData } from 'uploadthing/types'
 import { MediaType } from '~/constants/enums'
 import { getSearchPhotosFromUnsplash } from '~/providers/unsplash'
+
+type UploadedFileData = {
+  ufsUrl: string
+}
 
 class MediasService {
   async uploadImage(req: Request) {

@@ -1,0 +1,189 @@
+---
+description: Project structure for TrellOne API
+globs:
+alwaysApply: true
+---
+# TrellOne API - Project Structure Guide
+
+This document outlines the complete directory structure and organization of the TrellOne API project, a Node.js/Express.js backend for a Trello-like application.
+
+## Root Directory Structure
+
+```
+trellone-api/
+├── .cursor/                    # Cursor IDE configuration
+│   └── rules/                  # Cursor rules for development guidelines
+├── .git/                       # Git version control
+├── .github/                    # GitHub workflows and templates
+├── src/                        # Main application source code
+├── uploads/                    # File upload storage directory
+├── package.json                # Node.js dependencies and scripts
+├── package-lock.json           # Locked dependency versions
+├── tsconfig.json               # TypeScript configuration
+├── eslint.config.mjs           # ESLint configuration
+├── nodemon.json                # Nodemon development server config
+├── .prettierrc                 # Prettier code formatting rules
+├── .prettierignore             # Files to ignore in formatting
+├── .editorconfig               # Editor configuration
+├── .gitignore                  # Git ignore patterns
+└── .cursorignore               # Cursor ignore patterns
+```
+
+## Source Code Organization (`src/`)
+
+The `src/` directory follows a clean architecture pattern with clear separation of concerns:
+
+### Entry Points
+- **`index.ts`** - Main application entry point, server startup
+- **`app.ts`** - Express application configuration and middleware setup
+- **`type.d.ts`** - Global TypeScript type declarations
+
+### Core Application Layers
+
+#### 1. Configuration (`config/`)
+Application configuration and setup files:
+- **`environment.ts`** - Environment variables and configuration management
+- **`cors.ts`** - CORS (Cross-Origin Resource Sharing) configuration
+- **`logger.ts`** - Logging configuration and setup
+- **`dir.ts`** - Directory path configurations
+
+#### 2. Constants (`constants/`)
+Application-wide constants and enumerations:
+- **`domains.ts`** - Domain-related constants
+- **`enums.ts`** - Enumeration definitions
+- **`httpStatus.ts`** - HTTP status code constants
+- **`messages.ts`** - Application messages and text constants
+- **`regex.ts`** - Regular expression patterns
+
+#### 3. Models (`models/`)
+Data models and type definitions:
+- **`Errors.ts`** - Custom error classes
+- **`Extensions.ts`** - Model extensions and utilities
+
+##### Schema Definitions (`models/schemas/`)
+MongoDB/Mongoose schema definitions:
+- **`User.schema.ts`** - User data model
+- **`Board.schema.ts`** - Board data model
+- **`Column.schema.ts`** - Column data model
+- **`Card.schema.ts`** - Card data model
+- **`Invitation.schema.ts`** - Invitation data model
+- **`RefreshToken.schema.ts`** - Refresh token data model
+
+##### Request Models (`models/requests/`)
+API request validation models:
+- **`User.requests.ts`** - User-related request schemas
+- **`Board.requests.ts`** - Board-related request schemas
+- **`Column.requests.ts`** - Column-related request schemas
+- **`Card.requests.ts`** - Card-related request schemas
+- **`Invitation.requests.ts`** - Invitation-related request schemas
+- **`Media.requests.ts`** - Media-related request schemas
+- **`Common.requests.ts`** - Common/shared request schemas
+
+#### 4. Routes (`routes/`)
+API endpoint definitions and routing:
+- **`auth.routes.ts`** - Authentication endpoints
+- **`users.routes.ts`** - User management endpoints
+- **`boards.routes.ts`** - Board management endpoints
+- **`columns.routes.ts`** - Column management endpoints
+- **`cards.routes.ts`** - Card management endpoints
+- **`invitations.routes.ts`** - Invitation management endpoints
+- **`medias.routes.ts`** - Media/file upload endpoints
+
+#### 5. Middlewares (`middlewares/`)
+Request processing middleware functions:
+- **`auth.middlewares.ts`** - Authentication and authorization middleware
+- **`common.middlewares.ts`** - Common/shared middleware functions
+- **`error.middlewares.ts`** - Error handling middleware
+- **`users.middlewares.ts`** - User-specific middleware
+- **`boards.middlewares.ts`** - Board-specific middleware
+- **`columns.middlewares.ts`** - Column-specific middleware
+- **`cards.middlewares.ts`** - Card-specific middleware
+- **`invitations.middlewares.ts`** - Invitation-specific middleware
+- **`medias.middlewares.ts`** - Media/file upload middleware
+
+#### 6. Controllers (`controllers/`)
+Request handlers and business logic coordination:
+- **`auth.controllers.ts`** - Authentication logic
+- **`users.controllers.ts`** - User management logic
+- **`boards.controllers.ts`** - Board management logic
+- **`columns.controllers.ts`** - Column management logic
+- **`cards.controllers.ts`** - Card management logic
+- **`invitations.controllers.ts`** - Invitation management logic
+- **`medias.controllers.ts`** - Media/file handling logic
+
+#### 7. Services (`services/`)
+Business logic and data access layer:
+- **`database.services.ts`** - Database connection and utilities
+- **`auth.services.ts`** - Authentication business logic
+- **`users.services.ts`** - User management business logic
+- **`boards.services.ts`** - Board management business logic
+- **`columns.services.ts`** - Column management business logic
+- **`cards.services.ts`** - Card management business logic
+- **`invitations.services.ts`** - Invitation management business logic
+- **`medias.services.ts`** - Media/file handling business logic
+
+#### 8. Providers (`providers/`)
+External service integrations:
+- **`resend.ts`** - Email service provider (Resend)
+- **`unsplash.ts`** - Image service provider (Unsplash)
+- **`uploadthing.ts`** - File upload service provider
+
+#### 9. Sockets (`sockets/`)
+WebSocket/Socket.IO event handlers:
+- **`boards.sockets.ts`** - Real-time board updates
+- **`cards.sockets.ts`** - Real-time card updates
+- **`invitations.sockets.ts`** - Real-time invitation updates
+
+#### 10. Utils (`utils/`)
+Utility functions and helpers:
+- **`commons.ts`** - Common utility functions
+- **`crypto.ts`** - Cryptographic utilities
+- **`file.ts`** - File handling utilities
+- **`handlers.ts`** - Generic handler utilities
+- **`jwt.ts`** - JSON Web Token utilities
+- **`socket.ts`** - Socket.IO utilities
+- **`validation.ts`** - Data validation utilities
+
+#### 11. Templates (`templates/`)
+HTML email templates:
+- **`board-invitation.html`** - Board invitation email template
+- **`forgot-password.html`** - Password reset email template
+- **`verify-email.html`** - Email verification template
+
+## Architecture Patterns
+
+### 1. Layered Architecture
+The project follows a clean layered architecture:
+- **Routes** → **Middlewares** → **Controllers** → **Services** → **Database**
+
+### 2. Feature-Based Organization
+Each major feature (auth, boards, columns, cards, etc.) has corresponding files across all layers.
+
+### 3. Separation of Concerns
+- **Routes**: Define API endpoints
+- **Middlewares**: Handle request validation and preprocessing
+- **Controllers**: Coordinate business logic
+- **Services**: Implement business logic and data access
+- **Models**: Define data structures and validation
+
+### 4. Real-time Communication
+Socket.IO integration for real-time updates across boards, cards, and invitations.
+
+## Key Development Guidelines
+
+1. **File Naming**: Use descriptive names with appropriate suffixes (.controllers.ts, .services.ts, etc.)
+2. **Feature Consistency**: Each feature should have corresponding files in routes, middlewares, controllers, and services
+3. **Type Safety**: Utilize TypeScript throughout with proper type definitions
+4. **Error Handling**: Centralized error handling through middleware
+5. **Validation**: Request validation through dedicated middleware and request models
+6. **Real-time Updates**: Use Socket.IO for collaborative features
+
+## Important Configuration Files
+
+- **`package.json`**: Dependencies, scripts, and project metadata
+- **`tsconfig.json`**: TypeScript compilation settings
+- **`eslint.config.mjs`**: Code linting rules
+- **`nodemon.json`**: Development server configuration
+- **`.prettierrc`**: Code formatting rules
+
+This structure provides a scalable, maintainable foundation for the TrellOne API with clear separation of concerns and consistent organization patterns.

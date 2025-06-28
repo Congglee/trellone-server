@@ -16,7 +16,6 @@ export const createColumnController = async (
 export const updateColumnController = async (req: Request<ColumnParams, any, UpdateColumnReqBody>, res: Response) => {
   const { column_id } = req.params
   const result = await columnsService.updateColumn(column_id, req.body)
-
   return res.json({ message: COLUMNS_MESSAGES.UPDATE_COLUMN_SUCCESS, result })
 }
 

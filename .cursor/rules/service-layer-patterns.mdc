@@ -1,0 +1,530 @@
+---
+description: Service layer best practices for TrellOne API
+globs: src/services/**/*
+alwaysApply: true
+---
+# Service Layer Best Practices - TrellOne API
+
+This document outlines the established patterns and best practices for writing services in the TrellOne API Express.js application.
+
+## File Structure and Naming
+
+### ✅ Correct File Naming
+- Use kebab-case with `.services.ts` suffix
+- Match the resource name: `boards.services.ts`, `users.services.ts`
+- Place all service files in `src/services/` directory
+
+### ✅ Class and Instance Naming
+```typescript
+// Good - PascalCase class with descriptive suffix
+class AuthService { }
+class BoardsService { }
+class CardsService { }
+
+// Good - camelCase instance with singular service suffix
+const authService = new AuthService()
+const boardsService = new BoardsService()
+const cardsService = new CardsService()
+
+// Export default instance, not class
+export default authService
+```
+
+## Import Organization
+
+### ✅ Import Order and Grouping
+```typescript
+// 1. External packages
+import { ObjectId } from 'mongodb'
+import axios from 'axios'
+
+// 2. Internal config and constants
+import { envConfig } from '~/config/environment'
+import { TokenType, UserVerifyStatus } from '~/constants/enums'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { AUTH_MESSAGES } from '~/constants/messages'
+
+// 3. Error models
+import { ErrorWithStatus } from '~/models/Errors'
+
+// 4. Request/Response types
+import { RegisterReqBody } from '~/models/requests/User.requests'
+
+// 5. Schema models
+import User from '~/models/schemas/User.schema'
+import Board from '~/models/schemas/Board.schema'
+
+// 6. External providers
+import { sendVerifyRegisterEmail } from '~/providers/resend'
+
+// 7. Internal services
+import databaseService from '~/services/database.services'
+
+// 8. Utilities
+import { hashPassword } from '~/utils/crypto'
+import { signToken, verifyToken } from '~/utils/jwt'
+```
+
+## Class Structure Patterns
+
+### ✅ Method Organization
+```typescript
+class ServiceName {
+  // 1. Private utility methods first
+  private signAccessToken() { }
+  private signRefreshToken() { }
+  private getOauthGoogleToken() { }
+
+  // 2. Public business logic methods
+  async checkEmailExist() { }
+  async register() { }
+  async login() { }
+  async logout() { }
+}
+```
+
+### ✅ Private Method Patterns
+```typescript
+// Token signing methods
+private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  return signToken({
+    payload: { user_id, token_type: TokenType.AccessToken, verify },
+    privateKey: envConfig.jwtSecretAccessToken as string,
+    options: { expiresIn: envConfig.accessTokenExpiresIn }
+  })
+}
+
+// External API integration methods
+private async getOauthGoogleToken(code: string) {
+  const body = { /* request body */ }
+  const { data } = await axios.post('https://oauth2.googleapis.com/token', body, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  })
+  return data as { access_token: string; id_token: string }
+}
+```
+
+## Database Operation Patterns
+
+### ✅ CRUD Operations
+```typescript
+// Create operations
+async createResource(body: CreateResourceReqBody) {
+  const result = await databaseService.resources.insertOne(
+    new Resource({
+      title: body.title,
+      user_id: new ObjectId(body.user_id)
+    })
+  )
+  
+  const resource = await databaseService.resources.findOne({ _id: result.insertedId })
+  return resource
+}
+
+// Read operations with pagination
+async getResources({ user_id, limit, page, keyword }: GetResourcesParams) {
+  const queryConditions: any[] = [
+    { user_id: new ObjectId(user_id) },
+    { _destroy: false }
+  ]
+
+  if (keyword) {
+    queryConditions.push({
+      title: { $regex: keyword, $options: 'i' }
+    })
+  }
+
+  const [resources, total] = await Promise.all([
+    await databaseService.resources
+      .aggregate<Resource>([
+        { $match: { $and: queryConditions } },
+        { $sort: { created_at: -1 } },
+        { $skip: limit * (page - 1) },
+        { $limit: limit }
+      ])
+      .toArray(),
+    await databaseService.resources.countDocuments({ $and: queryConditions })
+  ])
+
+  return { resources, total }
+}
+
+// Update operations
+async updateResource(resource_id: string, body: UpdateResourceReqBody) {
+  const resource = await databaseService.resources.findOneAndUpdate(
+    { _id: new ObjectId(resource_id) },
+    {
+      $set: body,
+      $currentDate: { updated_at: true }
+    },
+    { returnDocument: 'after' }
+  )
+  
+  return resource
+}
+
+// Delete operations (soft delete preferred)
+async deleteResource(resource_id: string) {
+  await databaseService.resources.updateOne(
+    { _id: new ObjectId(resource_id) },
+    {
+      $set: { _destroy: true },
+      $currentDate: { updated_at: true }
+    }
+  )
+}
+```
+
+### ✅ ObjectId Conversion Patterns
+```typescript
+// Always convert string IDs to ObjectId for database operations
+const user_id = new ObjectId(user_id_string)
+const board_id = new ObjectId(body.board_id)
+
+// Convert arrays of IDs
+const card_order_ids = body.card_order_ids.map((id) => new ObjectId(id))
+
+// Use in database queries
+await databaseService.collection.findOne({ _id: new ObjectId(id) })
+await databaseService.collection.updateOne(
+  { user_id: new ObjectId(user_id) },
+  { $set: { data } }
+)
+```
+
+## Complex Business Logic Patterns
+
+### ✅ Conditional Update Operations
+```typescript
+async updateCard(card_id: string, user_id: string, body: UpdateCardReqBody) {
+  let updatedCard = null
+
+  if (body.comment) {
+    // Case 1: Comment operations
+    let updateCondition = {}
+    const updateOptions: any = { returnDocument: 'after' }
+
+    if (body.comment.action === CardCommentAction.Add) {
+      const comment = {
+        ...body.comment,
+        comment_id: new ObjectId(),
+        commented_at: new Date(),
+        user_id
+      }
+      delete comment.action
+      updateCondition = { $push: { comments: { $each: [comment], $position: 0 } } }
+    }
+
+    if (body.comment.action === CardCommentAction.Edit) {
+      updateCondition = { $set: { 'comments.$[elem]': payload } }
+      updateOptions.arrayFilters = [{ 'elem.comment_id': new ObjectId(body.comment.comment_id) }]
+    }
+
+    updatedCard = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      updateCondition,
+      updateOptions
+    )
+  } else {
+    // Default case: Simple field updates
+    updatedCard = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      {
+        $set: body,
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+  }
+
+  return updatedCard
+}
+```
+
+### ✅ Multi-Step Transaction Patterns
+```typescript
+async moveCardToDifferentColumn(body: MoveCardToDifferentColumnReqBody) {
+  const prev_card_order_ids = body.prev_card_order_ids.map((id) => new ObjectId(id))
+  const next_card_order_ids = body.next_card_order_ids.map((id) => new ObjectId(id))
+
+  // Step 1: Update source column
+  await databaseService.columns.findOneAndUpdate(
+    { _id: new ObjectId(body.prev_column_id) },
+    {
+      $set: { card_order_ids: prev_card_order_ids },
+      $currentDate: { updated_at: true }
+    }
+  )
+
+  // Step 2: Update destination column
+  await databaseService.columns.findOneAndUpdate(
+    { _id: new ObjectId(body.next_column_id) },
+    {
+      $set: { card_order_ids: next_card_order_ids },
+      $currentDate: { updated_at: true }
+    }
+  )
+
+  // Step 3: Update the card itself
+  await databaseService.cards.findOneAndUpdate(
+    { _id: new ObjectId(body.current_card_id) },
+    {
+      $set: { column_id: new ObjectId(body.next_column_id) },
+      $currentDate: { updated_at: true }
+    }
+  )
+
+  return { message: 'Move card to different column successfully' }
+}
+```
+
+## External Service Integration
+
+### ✅ Email Service Integration
+```typescript
+// Send emails after database operations
+await sendVerifyRegisterEmail(body.email, email_verify_token)
+await sendBoardInvitationEmail({
+  toAddress: invitee.email,
+  invite_token,
+  boardTitle: board.title,
+  boardId: body.board_id,
+  inviterName: inviter.display_name
+})
+```
+
+### ✅ File Upload Service Integration
+```typescript
+async uploadImage(req: Request) {
+  const files = await handleUploadImage(req)
+
+  const result = await Promise.all(
+    files.map(async (file) => {
+      // Process with sharp
+      await sharp(file.filepath).jpeg().toFile(newPath)
+
+      // Upload to external service
+      const uploadthingResult = await uploadFileToUploadthing(
+        file.filepath,
+        file.originalFilename || file.newFilename,
+        mime.getType(file.filepath) || 'image/jpeg'
+      )
+
+      // Cleanup local files
+      await Promise.all([
+        fsPromise.unlink(file.filepath),
+        fsPromise.unlink(newPath)
+      ])
+
+      return {
+        url: (uploadthingResult as UploadedFileData).ufsUrl,
+        type: MediaType.Image
+      }
+    })
+  )
+
+  return result
+}
+```
+
+## Token Management Patterns
+
+### ✅ JWT Token Operations
+```typescript
+// Token signing with consistent patterns
+private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  return signToken({
+    payload: { user_id, token_type: TokenType.AccessToken, verify },
+    privateKey: envConfig.jwtSecretAccessToken as string,
+    options: { expiresIn: envConfig.accessTokenExpiresIn }
+  })
+}
+
+// Token verification
+private decodeRefreshToken(refresh_token: string) {
+  return verifyToken({ 
+    token: refresh_token, 
+    secretOrPublicKey: envConfig.jwtSecretRefreshToken as string 
+  })
+}
+
+// Parallel token generation
+private signAccessAndRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  return Promise.all([
+    this.signAccessToken({ user_id, verify }), 
+    this.signRefreshToken({ user_id, verify })
+  ])
+}
+```
+
+## Aggregation Pipeline Patterns
+
+### ✅ Complex Data Fetching with Lookups
+```typescript
+const [invitations] = await databaseService.invitations
+  .aggregate<Invitation>([
+    { $match: { _id: result.insertedId } },
+    {
+      $lookup: {
+        from: envConfig.dbUsersCollection,
+        localField: 'inviter_id',
+        foreignField: '_id',
+        as: 'inviter',
+        pipeline: [
+          {
+            $project: {
+              password: 0,
+              email_verify_token: 0,
+              forgot_password_token: 0
+            }
+          }
+        ]
+      }
+    },
+    { $unwind: '$inviter' },
+    {
+      $lookup: {
+        from: envConfig.dbBoardsCollection,
+        localField: 'board_invitation.board_id',
+        foreignField: '_id',
+        as: 'board'
+      }
+    },
+    { $unwind: '$board' }
+  ])
+  .toArray()
+```
+
+## Error Handling Patterns
+
+### ✅ Business Logic Validation
+```typescript
+// Check business rules and throw appropriate errors
+if (!userInfo.verified_email) {
+  throw new ErrorWithStatus({ 
+    message: AUTH_MESSAGES.GMAIL_NOT_VERIFIED, 
+    status: HTTP_STATUS.BAD_REQUEST 
+  })
+}
+
+// Return success messages for positive cases
+return { message: AUTH_MESSAGES.REGISTER_SUCCESS }
+```
+
+## Return Value Patterns
+
+### ✅ Consistent Return Structures
+```typescript
+// Return created entities
+async createResource() {
+  const result = await databaseService.resources.insertOne(new Resource(data))
+  const resource = await databaseService.resources.findOne({ _id: result.insertedId })
+  return resource
+}
+
+// Return paginated lists
+async getResources() {
+  const [resources, total] = await Promise.all([/* queries */])
+  return { resources, total }
+}
+
+// Return success messages for operations
+async deleteResource() {
+  await databaseService.resources.deleteOne({ _id: new ObjectId(id) })
+  return { message: 'Resource deleted successfully' }
+}
+
+// Return tokens for authentication
+async login() {
+  const [access_token, refresh_token] = await this.signAccessAndRefreshToken({ user_id, verify })
+  return { access_token, refresh_token }
+}
+```
+
+## Performance Optimization Patterns
+
+### ✅ Parallel Operations
+```typescript
+// Use Promise.all for independent operations
+const [access_token, refresh_token] = await Promise.all([
+  this.signAccessToken({ user_id, verify }),
+  this.signRefreshToken({ user_id, verify })
+])
+
+// Parallel database operations
+const [resources, total] = await Promise.all([
+  databaseService.resources.find(query).toArray(),
+  databaseService.resources.countDocuments(query)
+])
+
+// Parallel cleanup operations
+await Promise.all([
+  fsPromise.unlink(file.filepath),
+  fsPromise.unlink(newPath)
+])
+```
+
+### ✅ Efficient Database Updates
+```typescript
+// Use $currentDate for automatic timestamp updates
+{
+  $set: payload,
+  $currentDate: { updated_at: true }
+}
+
+// Use aggregation pipeline for complex updates
+await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
+  {
+    $set: {
+      email_verify_token: '',
+      verify: UserVerifyStatus.Verified,
+      updated_at: '$$NOW'
+    }
+  }
+])
+```
+
+## Security Patterns
+
+### ✅ Password Handling
+```typescript
+// Always hash passwords before storage
+password: hashPassword(body.password)
+
+// Never return sensitive fields in queries
+{ projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+```
+
+### ✅ Data Sanitization
+```typescript
+// Remove action properties from request data before storage
+const comment = { ...body.comment, comment_id: new ObjectId(), commented_at: new Date() }
+delete comment.action
+```
+
+## Export Patterns
+
+### ✅ Service Instance Export
+```typescript
+// Always export service instance, not class
+const serviceName = new ServiceName()
+export default serviceName
+
+// Never export the class directly
+// ❌ export default ServiceName
+```
+
+## Database Service Integration
+
+### ✅ Consistent Database Access
+```typescript
+// Always use databaseService for database operations
+import databaseService from '~/services/database.services'
+
+// Access collections through the service
+await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+await databaseService.boards.insertOne(new Board(data))
+await databaseService.cards.updateOne(query, update)
+```
+
+These patterns ensure consistency, maintainability, security, and performance in the service layer of the TrellOne API. Each service should follow these established conventions for seamless integration with the overall application architecture.

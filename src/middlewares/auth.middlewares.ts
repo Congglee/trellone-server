@@ -159,10 +159,10 @@ export const accessTokenValidator = validate(
         optional: true,
         custom: {
           options: async (value, { req }) => {
-            // Try to get token from cookies first
+            // Get token from cookies
             const cookie_token = req.headers?.cookie
 
-            // If cookie token exists, use it
+            // If cookie token exists, use it to verify
             if (cookie_token) {
               const cookieEntries = cookie_token.split('; ')
               const accessTokenEntry = cookieEntries.find((entry: string) => entry.startsWith('access_token='))
@@ -173,7 +173,7 @@ export const accessTokenValidator = validate(
               }
             }
 
-            // Otherwise, check Authorization header
+            // If cookie token does not exist, check Authorization header
             if (!value) {
               throw new ErrorWithStatus({
                 message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
@@ -181,6 +181,7 @@ export const accessTokenValidator = validate(
               })
             }
 
+            // Get token from Authorization header
             const access_token = (value || '').split(' ')[1]
 
             if (!access_token) {
@@ -293,9 +294,7 @@ export const forgotPasswordValidator = validate(
         trim: true,
         custom: {
           options: async (value, { req }) => {
-            const user = await databaseService.users.findOne({
-              email: value
-            })
+            const user = await databaseService.users.findOne({ email: value })
 
             if (user === null) {
               throw new Error(AUTH_MESSAGES.USER_NOT_FOUND)

@@ -24,6 +24,7 @@ const initSocket = (httpServer: ServerHttp) => {
 
     cookieHeader.split(';').forEach((cookie) => {
       const parts = cookie.split('=')
+
       if (parts.length === 2) {
         const key = parts[0].trim()
         const value = parts[1].trim()
