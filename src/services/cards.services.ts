@@ -1,6 +1,13 @@
 import { ObjectId } from 'mongodb'
-import { AttachmentType, CardAttachmentAction, CardCommentAction, CardMemberAction } from '~/constants/enums'
-import { CreateCardReqBody, UpdateCardReqBody } from '~/models/requests/Card.requests'
+import {
+  AttachmentType,
+  CardAttachmentAction,
+  CardCommentAction,
+  CardCommentReactionAction,
+  CardMemberAction
+} from '~/constants/enums'
+import { Comment } from '~/models/Extensions'
+import { CreateCardReqBody, ReactToCardCommentReqBody, UpdateCardReqBody } from '~/models/requests/Card.requests'
 import Card from '~/models/schemas/Card.schema'
 import databaseService from '~/services/database.services'
 
@@ -171,6 +178,53 @@ class CardsService {
           $set: body,
           $currentDate: { updated_at: true }
         },
+        { returnDocument: 'after' }
+      )
+    }
+
+    return updatedCard
+  }
+
+  async reactToCardComment({
+    card_id,
+    user_id,
+    comment,
+    body
+  }: {
+    card_id: string
+    user_id: string
+    comment: Comment
+    body: ReactToCardCommentReqBody
+  }) {
+    let updatedCard = null
+
+    if (body.action === CardCommentReactionAction.Add) {
+      const reaction = {
+        reaction_id: new ObjectId(),
+        emoji: body.emoji,
+        user_id,
+        user_email: comment?.user_email,
+        user_display_name: comment?.user_display_name,
+        reacted_at: new Date()
+      }
+
+      updatedCard = await databaseService.cards.findOneAndUpdate(
+        {
+          _id: new ObjectId(card_id),
+          'comments.comment_id': comment.comment_id
+        },
+        { $push: { 'comments.$.reactions': reaction } },
+        { returnDocument: 'after' }
+      )
+    }
+
+    if (body.action === CardCommentReactionAction.Remove) {
+      updatedCard = await databaseService.cards.findOneAndUpdate(
+        {
+          _id: new ObjectId(card_id),
+          'comments.comment_id': comment.comment_id
+        },
+        { $pull: { 'comments.$.reactions': { reaction_id: new ObjectId(body.reaction_id) } } },
         { returnDocument: 'after' }
       )
     }

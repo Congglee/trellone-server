@@ -1,7 +1,13 @@
 import { Request } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
-import { AttachmentType, CardAttachmentAction, CardCommentAction, CardMemberAction } from '~/constants/enums'
+import {
+  AttachmentType,
+  CardAttachmentAction,
+  CardCommentAction,
+  CardCommentReactionAction,
+  CardMemberAction
+} from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { CARDS_MESSAGES } from '~/constants/messages'
 import { ISO8601_REGEX } from '~/constants/regex'
@@ -376,6 +382,112 @@ export const updateCardValidator = validate(
               // Check if the attachment exists in the card
               if (!isAttachmentExists) {
                 throw new Error(CARDS_MESSAGES.ATTACHMENT_NOT_FOUND)
+              }
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const commentIdValidator = validate(
+  checkSchema(
+    {
+      comment_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: CARDS_MESSAGES.INVALID_COMMENT_ID
+              })
+            }
+
+            const card = (req as Request).card
+
+            const comment = card?.comments?.find((comment) => comment.comment_id.equals(new ObjectId(value)))
+
+            if (!comment) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: CARDS_MESSAGES.COMMENT_NOT_FOUND
+              })
+            }
+
+            ;(req as Request).comment = comment
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+export const reactionToCardCommentValidator = validate(
+  checkSchema(
+    {
+      action: {
+        notEmpty: { errorMessage: CARDS_MESSAGES.REACTION_ACTION_IS_REQUIRED },
+        isString: { errorMessage: CARDS_MESSAGES.REACTION_ACTION_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: (value) => {
+            if (![CardCommentReactionAction.Add, CardCommentReactionAction.Remove].includes(value)) {
+              throw new Error(CARDS_MESSAGES.INVALID_REACTION_ACTION)
+            }
+
+            return true
+          }
+        }
+      },
+      emoji: {
+        trim: true,
+        custom: {
+          options: (value, { req }) => {
+            const action = (req as Request).body.action
+
+            if (action === CardCommentReactionAction.Add) {
+              if (!value) {
+                throw new Error(CARDS_MESSAGES.REACTION_EMOJI_IS_REQUIRED)
+              }
+
+              if (typeof value !== 'string' || value.length < 1 || value.length > 2) {
+                throw new Error(CARDS_MESSAGES.REACTION_EMOJI_MUST_BE_STRING_AND_1_2_CHARACTERS)
+              }
+            }
+
+            return true
+          }
+        }
+      },
+      reaction_id: {
+        optional: true,
+        isString: { errorMessage: CARDS_MESSAGES.REACTION_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: (value, { req }) => {
+            const comment = (req as Request).comment
+            const action = (req as Request).body.action
+
+            if (action === CardCommentReactionAction.Remove) {
+              if (!value) {
+                throw new Error(CARDS_MESSAGES.REACTION_ID_IS_REQUIRED)
+              }
+
+              if (!ObjectId.isValid(value)) {
+                throw new Error(CARDS_MESSAGES.INVALID_REACTION_ID)
+              }
+
+              const reaction = comment?.reactions?.find((reaction) => reaction.reaction_id.equals(new ObjectId(value)))
+
+              if (!reaction) {
+                throw new Error(CARDS_MESSAGES.REACTION_NOT_FOUND)
               }
             }
 
