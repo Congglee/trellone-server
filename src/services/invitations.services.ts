@@ -181,6 +181,7 @@ class InvitationsService {
 
   async updateBoardInvitation(invitation_id: string, user_id: string, body: BoardInvitation) {
     const payload = { ...body, board_id: new ObjectId(body.board_id) }
+    let invitee = null
 
     // Step 1: Update the status in the Invitation document
     const invitation = await databaseService.invitations.findOneAndUpdate(
@@ -199,9 +200,14 @@ class InvitationsService {
         { $push: { members: new ObjectId(user_id) } },
         { returnDocument: 'after' }
       )
+
+      invitee = await databaseService.users.findOne(
+        { _id: new ObjectId(invitation?.invitee_id) },
+        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+      )
     }
 
-    return invitation
+    return { invitation, invitee }
   }
 }
 

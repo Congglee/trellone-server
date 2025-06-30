@@ -183,6 +183,7 @@ export const CARDS_MESSAGES = {
   INVALID_COMMENT_ACTION: 'Invalid comment action',
   INVALID_COMMENT_ID: 'Invalid comment id',
   COMMENT_NOT_FOUND: 'Comment not found',
+  COMMENT_ID_IS_REQUIRED: 'Comment id is required',
 
   UPDATE_CARD_SUCCESS: 'Card updated successfully',
 

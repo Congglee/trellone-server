@@ -1,7 +1,7 @@
 import { ParamsDictionary } from 'express-serve-static-core'
 import { CardAttachmentAction, CardCommentAction, CardCommentReactionAction, CardMemberAction } from '~/constants/enums'
 import { FilterKeys } from '~/middlewares/common.middlewares'
-import { Attachment, Comment } from '~/models/Extensions'
+import { Attachment } from '~/models/Extensions'
 
 export interface CreateCardReqBody {
   title: string
@@ -16,8 +16,10 @@ export interface UpdateCardReqBody {
   description?: string
   cover_photo?: string
   _destroy?: boolean
-  comment?: Comment & {
-    action?: CardCommentAction
+  comment?: {
+    action: CardCommentAction
+    content: string
+    comment_id?: string
   }
   member?: {
     action: CardMemberAction
@@ -48,4 +50,8 @@ export interface ReactToCardCommentReqBody {
   action: CardCommentReactionAction
   emoji: string
   reaction_id?: string
+}
+
+export interface CardCommentReactionParams extends CardParams {
+  comment_id: string
 }

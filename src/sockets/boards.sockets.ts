@@ -19,3 +19,5 @@ export const updateBoardSocket = (socket: Socket) => {
     socket.broadcast.to(`board-${board._id}`).emit('SERVER_BOARD_UPDATED', board)
   })
 }
+
+// TODO: Handle user accept board invitation socket event
