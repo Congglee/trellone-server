@@ -5,7 +5,7 @@ import { validate } from '~/utils/validation'
 
 export type FilterKeys<T> = Array<keyof T>
 
-// Filter middleware to filter out unwanted keys from request body
+// Filter middleware to filter out unwanted keys from the request body
 export const filterMiddleware =
   <T>(filterKeys: FilterKeys<T>) =>
   (req: Request, res: Response, next: NextFunction) => {

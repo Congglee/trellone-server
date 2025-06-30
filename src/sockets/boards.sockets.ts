@@ -6,7 +6,7 @@ export const manageBoardSocketEvents = (socket: Socket) => {
     socket.join(`board-${boardId}`)
   })
 
-  // Handle leaving a board room when a user leaves a board
+  // Handle leaving a board room when a user closes a board
   socket.on('CLIENT_LEAVE_BOARD', (boardId) => {
     socket.leave(`board-${boardId}`)
   })

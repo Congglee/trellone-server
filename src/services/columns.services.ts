@@ -40,13 +40,13 @@ class ColumnsService {
   }
 
   async deleteColumn(column_id: string, board_id: string) {
-    // Delete column
+    // Delete the column
     await databaseService.columns.deleteOne({ _id: new ObjectId(column_id) })
 
-    // Delete all cards in this column
+    // Delete all cards in the column
     await databaseService.cards.deleteMany({ column_id: new ObjectId(column_id) })
 
-    // Delete column_id in the column_order_ids of this board containing column
+    // Delete the column_id in the column_order_ids of the board containing the column
     await databaseService.boards.findOneAndUpdate(
       { _id: new ObjectId(board_id) },
       { $pull: { column_order_ids: new ObjectId(column_id) } },

@@ -1,5 +1,10 @@
-import { ParamsDictionary } from 'express-serve-static-core'
 import { Request, Response } from 'express'
+import { ParamsDictionary } from 'express-serve-static-core'
+import { ObjectId } from 'mongodb'
+import ms from 'ms'
+import { envConfig } from '~/config/environment'
+import { UserVerifyStatus } from '~/constants/enums'
+import HTTP_STATUS from '~/constants/httpStatus'
 import { AUTH_MESSAGES } from '~/constants/messages'
 import {
   ForgotPasswordReqBody,
@@ -10,14 +15,9 @@ import {
   VerifyEmailReqBody,
   VerifyForgotPasswordReqBody
 } from '~/models/requests/User.requests'
-import authService from '~/services/auth.services'
 import User from '~/models/schemas/User.schema'
-import { ObjectId } from 'mongodb'
-import ms from 'ms'
+import authService from '~/services/auth.services'
 import databaseService from '~/services/database.services'
-import HTTP_STATUS from '~/constants/httpStatus'
-import { envConfig } from '~/config/environment'
-import { UserVerifyStatus } from '~/constants/enums'
 
 export const registerController = async (req: Request<ParamsDictionary, any, RegisterReqBody>, res: Response) => {
   const result = await authService.register(req.body)
@@ -83,6 +83,7 @@ export const refreshTokenController = async (req: Request, res: Response) => {
 
 export const verifyEmailController = async (req: Request<ParamsDictionary, any, VerifyEmailReqBody>, res: Response) => {
   const { user_id } = req.decoded_email_verify_token as TokenPayload
+
   const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
 
   if (!user) {
@@ -118,6 +119,7 @@ export const resendVerifyEmailController = async (req: Request, res: Response) =
   }
 
   const result = await authService.resendVerifyEmail(user_id, user.email)
+
   return res.json(result)
 }
 
@@ -127,7 +129,6 @@ export const forgotPasswordController = async (
 ) => {
   const { _id, verify, email } = req.user as User
   const result = await authService.forgotPassword({ user_id: (_id as ObjectId).toString(), verify, email })
-
   return res.json(result)
 }
 
@@ -136,9 +137,7 @@ export const verifyForgotPasswordController = async (
   res: Response
 ) => {
   const { user_id } = req.decoded_forgot_password_token as TokenPayload
-
   const result = await authService.verifyForgotPassword(user_id)
-
   return res.json(result)
 }
 
@@ -156,6 +155,7 @@ export const resetPasswordController = async (
 
 export const OAuthController = async (req: Request, res: Response) => {
   const { code } = req.query
+
   const result = await authService.oauth(code as string)
 
   const urlRedirect = `${envConfig.clientRedirectCallback}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}&verify=${result.verify}`

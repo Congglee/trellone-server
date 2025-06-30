@@ -63,7 +63,7 @@ export const createNewBoardInvitationValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const checkUserBoardAccess = await databaseService.boards.countDocuments({
+            const isUserBoardOwnerOrMember = await databaseService.boards.countDocuments({
               _id: new ObjectId(value),
               $or: [
                 {
@@ -75,7 +75,7 @@ export const createNewBoardInvitationValidator = validate(
               ]
             })
 
-            if (!checkUserBoardAccess) {
+            if (!isUserBoardOwnerOrMember) {
               throw new Error(INVITATIONS_MESSAGES.USER_DOES_NOT_HAVE_ACCESS_TO_BOARD)
             }
 
@@ -93,7 +93,7 @@ export const checkInviteeMembershipValidator = wrapRequestHandler(
     const invitee = req.invitee as User
     const board = req.board as Board
 
-    // Check if invitee is already an owner or member of the board
+    // Check if the invitee is already an owner or member of the board
     const isAlreadyMember = [...board.owners, ...board.members].some((id) => id.toString() === invitee._id?.toString())
 
     if (isAlreadyMember) {
@@ -201,7 +201,7 @@ export const boardInvitationIdValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const checkUserBoardInvitationAccess = await databaseService.invitations.countDocuments({
+            const isUserBoardInvitationHasAccess = await databaseService.invitations.countDocuments({
               _id: invitation._id,
               $or: [
                 {
@@ -213,7 +213,7 @@ export const boardInvitationIdValidator = validate(
               ]
             })
 
-            if (!checkUserBoardInvitationAccess) {
+            if (!isUserBoardInvitationHasAccess) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.FORBIDDEN,
                 message: INVITATIONS_MESSAGES.USER_DOES_NOT_HAVE_ACCESS_TO_BOARD_INVITATION

@@ -1,13 +1,24 @@
 import { ObjectId } from 'mongodb'
 import { AttachmentType, BoardInvitationStatus } from '~/constants/enums'
 
+export interface CommentReaction {
+  reaction_id: ObjectId
+  emoji: string
+  user_id: string
+  user_email: string
+  user_display_name: string
+  reacted_at: Date
+}
+
 export interface Comment {
+  comment_id: ObjectId
   user_id: string
   user_email: string
   user_avatar: string
   user_display_name: string
   content: string
   commented_at: Date
+  reactions: CommentReaction[]
 }
 
 export interface BoardInvitation {

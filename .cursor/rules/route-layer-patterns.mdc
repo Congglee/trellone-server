@@ -1,0 +1,284 @@
+---
+description: Route layer best practices for TrellOne API
+globs: src/routes/**/*
+alwaysApply: true
+---
+# Route Layer Best Practices - TrellOne API
+
+This document outlines the established patterns and best practices for writing routes in the TrellOne API Express.js application.
+
+## File Structure and Naming
+
+### ✅ Correct File Naming
+- Use kebab-case with `.routes.ts` suffix
+- Match the resource name: `boards.routes.ts`, `users.routes.ts`
+- Place all route files in `src/routes/` directory
+
+### ✅ Router Variable Naming
+```typescript
+// Good - Plural resource name + Router suffix
+const boardsRouter = Router()
+const usersRouter = Router()
+const cardsRouter = Router()
+
+// Bad
+const router = Router()
+const boardRouter = Router()
+```
+
+## Import Organization
+
+### ✅ Import Order and Grouping
+```typescript
+// 1. External packages
+import { Router } from 'express'
+
+// 2. Controllers (group related imports)
+import {
+  createBoardController,
+  getBoardController,
+  updateBoardController
+} from '~/controllers/boards.controllers'
+
+// 3. Auth middlewares
+import { accessTokenValidator } from '~/middlewares/auth.middlewares'
+
+// 4. Resource-specific middlewares
+import {
+  boardIdValidator,
+  createBoardValidator,
+  updateBoardValidator
+} from '~/middlewares/boards.middlewares'
+
+// 5. Common middlewares
+import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
+
+// 6. Type definitions
+import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
+
+// 7. Utilities
+import { wrapRequestHandler } from '~/utils/handlers'
+```
+
+## Route Definition Patterns
+
+### ✅ Middleware Chain Order
+**ALWAYS follow this exact order:**
+1. Authentication middleware (`accessTokenValidator`)
+2. Validation middlewares (resource-specific)
+3. Filter middleware (for update operations)
+4. Controller wrapped with `wrapRequestHandler`
+
+```typescript
+// Create operations
+router.post('/', accessTokenValidator, createValidator, wrapRequestHandler(createController))
+
+// Read operations
+router.get('/', accessTokenValidator, paginationValidator, wrapRequestHandler(getController))
+
+// Update operations
+router.put(
+  '/:resource_id',
+  accessTokenValidator,
+  resourceIdValidator,
+  updateValidator,
+  filterMiddleware<UpdateResourceReqBody>(['field1', 'field2']),
+  wrapRequestHandler(updateController)
+)
+
+// Delete operations
+router.delete('/:resource_id', accessTokenValidator, resourceIdValidator, wrapRequestHandler(deleteController))
+```
+
+### ✅ HTTP Method Usage
+```typescript
+// POST - Create new resources
+router.post('/', middlewares..., wrapRequestHandler(createController))
+
+// GET - Retrieve resources
+router.get('/', middlewares..., wrapRequestHandler(getListController))
+router.get('/:id', middlewares..., wrapRequestHandler(getSingleController))
+
+// PUT - Full updates and special operations
+router.put('/:id', middlewares..., wrapRequestHandler(updateController))
+router.put('/supports/moving-card', middlewares..., wrapRequestHandler(specialController))
+
+// PATCH - Partial updates (user profile updates)
+router.patch('/me', middlewares..., wrapRequestHandler(updateMeController))
+
+// DELETE - Remove resources
+router.delete('/:id', middlewares..., wrapRequestHandler(deleteController))
+```
+
+## Parameter Naming Conventions
+
+### ✅ URL Parameter Standards
+```typescript
+// Use snake_case with descriptive suffixes
+'/:board_id'      // Not /:id or /:boardId
+'/:card_id'       // Not /:cardId
+'/:column_id'     // Not /:columnId
+'/:invitation_id' // Not /:invitationId
+
+// Special endpoints use descriptive paths
+'/supports/moving-card'  // Support operations
+'/oauth/google'          // OAuth operations
+'/verify-board-invitation' // Verification operations
+```
+
+## Authentication Patterns
+
+### ✅ Authentication Requirements
+```typescript
+// ALL routes require authentication except OAuth
+router.post('/register', registerValidator, wrapRequestHandler(registerController))        // ❌ No auth
+router.post('/login', loginValidator, wrapRequestHandler(loginController))                // ❌ No auth
+router.get('/oauth/google', wrapRequestHandler(OAuthController))                          // ❌ No auth
+
+// Everything else requires accessTokenValidator
+router.get('/me', accessTokenValidator, wrapRequestHandler(getMeController))              // ✅ Auth required
+router.post('/', accessTokenValidator, createValidator, wrapRequestHandler(createController)) // ✅ Auth required
+```
+
+## Validation and Filtering
+
+### ✅ FilterMiddleware Usage
+```typescript
+// Always use filterMiddleware for update operations
+router.put(
+  '/:board_id',
+  accessTokenValidator,
+  boardIdValidator,
+  updateBoardValidator,
+  filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type', 'column_order_ids', 'cover_photo']),
+  wrapRequestHandler(updateBoardController)
+)
+
+// Use imported field arrays when available
+import { updateCardReqBodyFields } from '~/models/requests/Card.requests'
+filterMiddleware<UpdateCardReqBody>(updateCardReqBodyFields)
+```
+
+### ✅ Pagination Pattern
+```typescript
+// Add pagination to list endpoints
+router.get(
+  '/',
+  accessTokenValidator,
+  paginationValidator,  // Always include for list operations
+  getBoardsValidator,   // Additional validation
+  wrapRequestHandler(getBoardsController)
+)
+```
+
+## Special Route Patterns
+
+### ✅ Complex Operations
+```typescript
+// Support operations use descriptive paths
+router.put(
+  '/supports/moving-card',
+  accessTokenValidator,
+  moveCardToDifferentColumnValidator,
+  filterMiddleware([
+    'current_card_id',
+    'prev_column_id',
+    'prev_card_order_ids',
+    'next_column_id',
+    'next_card_order_ids'
+  ]),
+  wrapRequestHandler(moveCardToDifferentColumnController)
+)
+```
+
+### ✅ Verification Operations
+```typescript
+// Verification endpoints use descriptive names
+router.post('/verify-email', emailVerifyTokenValidator, wrapRequestHandler(verifyEmailController))
+router.post('/verify-forgot-password', verifyForgotPasswordTokenValidator, wrapRequestHandler(verifyForgotPasswordController))
+router.post('/verify-board-invitation', accessTokenValidator, verifyInviteTokenValidator, wrapRequestHandler(verifyBoardInvitationController))
+```
+
+### ✅ User-Specific Routes
+```typescript
+// Use '/me' for current user operations
+router.get('/me', accessTokenValidator, wrapRequestHandler(getMeController))
+router.patch('/me', accessTokenValidator, updateMeValidator, filterMiddleware<UpdateMeReqBody>(['display_name', 'avatar']), wrapRequestHandler(updateMeController))
+```
+
+## Error Handling
+
+### ✅ Request Handler Wrapping
+```typescript
+// ALWAYS wrap controllers with wrapRequestHandler
+wrapRequestHandler(controllerFunction)
+
+// NEVER call controllers directly
+// ❌ controllerFunction
+```
+
+## Export Pattern
+
+### ✅ Default Export
+```typescript
+// Always use default export
+export default resourceRouter
+
+// Examples:
+export default authRouter
+export default boardsRouter
+export default usersRouter
+```
+
+## Route Organization Within File
+
+### ✅ HTTP Method Grouping
+```typescript
+// Group by HTTP method, then by complexity
+// 1. POST routes (creation)
+router.post('/', ...)
+router.post('/special-operation', ...)
+
+// 2. GET routes (retrieval)
+router.get('/', ...)
+router.get('/:id', ...)
+
+// 3. PUT/PATCH routes (updates)
+router.put('/:id', ...)
+router.patch('/me', ...)
+
+// 4. DELETE routes (removal)
+router.delete('/:id', ...)
+```
+
+## Multi-line Route Formatting
+
+### ✅ Readable Multi-line Format
+```typescript
+// When middleware chain is long, use multi-line format
+router.put(
+  '/:board_id',                    // Path on separate line
+  accessTokenValidator,            // Each middleware on its own line
+  boardIdValidator,
+  updateBoardValidator,
+  filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type']),
+  wrapRequestHandler(updateBoardController)  // Controller last
+)
+
+// Single line for simple routes
+router.get('/me', accessTokenValidator, wrapRequestHandler(getMeController))
+```
+
+## Resource Relationship Patterns
+
+### ✅ Nested Resource Operations
+```typescript
+// Use descriptive paths for nested operations
+'/board'                    // Board invitation creation
+'/verify-board-invitation'  // Board invitation verification
+'/board/:invitation_id'     // Board invitation updates
+
+// Avoid deep nesting in URLs - keep flat structure
+```
+
+These patterns ensure consistency, maintainability, and clear separation of concerns in the route layer of the TrellOne API.

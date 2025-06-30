@@ -1,0 +1,182 @@
+---
+description: Technology stack analysis and best practices for TrellOne API dependencies
+globs: package.json,src/**/*
+alwaysApply: true
+---
+
+# TrellOne API Technology Stack & Dependencies
+
+## Core Technology Stack
+
+### Runtime & Framework
+- **Node.js** with **TypeScript 5.8.2** - Latest stable TypeScript with modern ES features
+- **Express.js 4.21.2** - Mature, stable web framework for Node.js
+- **MongoDB 6.14.2** - Latest MongoDB driver with improved performance and security
+
+### Real-time Communication
+- **Socket.IO 4.8.1** - WebSocket library for real-time bidirectional communication
+
+## Production Dependencies Analysis
+
+### Core Server Dependencies
+```typescript
+// Express ecosystem
+"express": "^4.21.2"              // ✅ Stable LTS version
+"cors": "^2.8.5"                  // ✅ Standard CORS handling
+"compression": "^1.8.0"           // ✅ Response compression
+"cookie-parser": "^1.4.7"         // ✅ Cookie parsing middleware
+
+// Database & Authentication
+"mongodb": "^6.14.2"              // ✅ Latest driver with performance improvements
+"jsonwebtoken": "^9.0.2"          // ✅ JWT implementation for auth
+```
+
+### Validation & Security
+```typescript
+"express-validator": "^7.2.1"     // ✅ Express-specific validation middleware
+```
+
+### File Handling & Media
+```typescript
+"formidable": "^3.5.2"           // ✅ File upload parsing
+"sharp": "^0.33.5"               // ✅ High-performance image processing
+"mime": "^4.0.6"                 // ✅ MIME type detection
+"uploadthing": "^7.6.0"          // ✅ Modern file upload service
+```
+
+### External Services
+```typescript
+"resend": "^4.2.0"               // ✅ Modern email service
+"unsplash-js": "^7.0.19"         // ✅ Unsplash API integration
+"axios": "^1.8.4"                // ✅ HTTP client for external APIs
+```
+
+### Utilities
+```typescript
+"lodash": "^4.17.21"             // ✅ Utility library
+"ms": "^2.1.3"                   // ✅ Time parsing utility
+"dotenv": "^16.4.7"              // ✅ Environment variable loading
+"cross-env": "^7.0.3"            // ✅ Cross-platform environment variables
+```
+
+## Development Dependencies Analysis
+
+### TypeScript Ecosystem
+```typescript
+"typescript": "^5.8.2"           // ✅ Latest stable with modern features
+"@types/node": "^22.13.10"       // ✅ Node.js type definitions
+"@types/express": "^4.17.21"     // ✅ Express type definitions
+"tsx": "^4.19.3"                 // ✅ Fast TypeScript execution
+"tsc-alias": "^1.8.11"           // ✅ Path alias resolution for builds
+```
+
+### Code Quality & Linting
+```typescript
+"eslint": "^9.22.0"              // ✅ Latest ESLint with flat config
+"typescript-eslint": "^8.26.1"   // ✅ TypeScript-specific linting
+"prettier": "^3.5.3"             // ✅ Code formatting
+"eslint-config-prettier": "^10.1.1" // ✅ ESLint-Prettier integration
+```
+
+### Development Tools
+```typescript
+"nodemon": "^3.1.9"              // ✅ Development server with hot reload
+"rimraf": "^6.0.1"               // ✅ Cross-platform file deletion
+"chalk": "^4.1.2"                // ⚠️  v4 for CommonJS compatibility
+```
+
+## Best Practices & Recommendations
+
+### ✅ Excellent Choices
+1. **TypeScript 5.8.2** - Using latest stable with modern features
+2. **Express 4.21.2** - Mature, well-maintained framework
+3. **MongoDB 6.14.2** - Latest driver with performance improvements
+4. **Socket.IO 4.8.1** - Industry standard for real-time communication
+5. **Sharp 0.33.5** - Best-in-class image processing performance
+
+### ⚠️ Version Considerations
+1. **Chalk 4.1.2** - Intentionally using v4 for CommonJS compatibility (good choice)
+2. **Lodash 4.17.21** - Consider tree-shaking or modern alternatives for bundle size
+
+### 🔒 Security Best Practices
+```typescript
+// JWT Configuration
+const jwtConfig = {
+  expiresIn: '15m',        // Short-lived access tokens
+  algorithm: 'HS256',      // Secure algorithm
+  issuer: 'trellone-api'   // Identify token issuer
+};
+
+// CORS Configuration
+const corsOptions = {
+  origin: process.env.ALLOWED_ORIGINS?.split(','),
+  credentials: true,       // Allow cookies
+  optionsSuccessStatus: 200
+};
+```
+
+### 📦 Dependency Management
+1. **Pin Major Versions**: Using `^` for minor updates while preventing breaking changes
+2. **Regular Updates**: Keep dependencies updated for security patches
+3. **Type Safety**: Comprehensive `@types/*` packages for all major dependencies
+
+### 🚀 Performance Optimizations
+```typescript
+// Compression middleware
+app.use(compression({
+  level: 6,                // Balanced compression
+  threshold: 1024          // Only compress > 1KB
+}));
+
+// Sharp image processing
+const optimizedImage = await sharp(buffer)
+  .resize(800, 600, { fit: 'inside' })
+  .jpeg({ quality: 85 })
+  .toBuffer();
+```
+
+### 🔄 Real-time Architecture
+```typescript
+// Socket.IO best practices
+io.use(authMiddleware);    // Authenticate socket connections
+io.of('/boards').on('connection', (socket) => {
+  socket.join(`board:${boardId}`); // Room-based communication
+});
+```
+
+## Environment Configuration
+
+### Required Environment Variables
+```bash
+# Database
+MONGODB_URI=mongodb://localhost:27017/trellone
+
+# Authentication
+JWT_SECRET=your-super-secret-key
+JWT_REFRESH_SECRET=your-refresh-secret
+
+# External Services
+RESEND_API_KEY=your-resend-key
+UNSPLASH_ACCESS_KEY=your-unsplash-key
+UPLOADTHING_SECRET=your-uploadthing-secret
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:3000,https://yourdomain.com
+```
+
+### Development vs Production
+- **Development**: Use `NODE_ENV=development` with detailed logging
+- **Staging**: Use `NODE_ENV=staging` for pre-production testing
+- **Production**: Use `NODE_ENV=production` with optimized settings
+
+## File Structure Alignment
+This stack supports the clean architecture pattern:
+- **Routes** → **Middlewares** → **Controllers** → **Services** → **Database**
+- Real-time updates via Socket.IO integration
+- Type-safe request/response handling with express-validator
+- Secure file uploads with formidable + sharp processing
+
+## Migration Considerations
+- **MongoDB**: Driver v6 includes breaking changes from v5 - ensure connection string format
+- **TypeScript 5.8**: Leverages latest decorators and import attributes
+- **ESLint 9**: Uses flat config format - check eslint.config.mjs compatibility

@@ -52,3 +52,14 @@ export enum CardAttachmentAction {
   Edit = 'EDIT',
   Remove = 'REMOVE'
 }
+
+export enum CardCommentAction {
+  Add = 'ADD',
+  Edit = 'EDIT',
+  Remove = 'REMOVE'
+}
+
+export enum CardCommentReactionAction {
+  Add = 'ADD',
+  Remove = 'REMOVE'
+}

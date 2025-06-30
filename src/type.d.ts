@@ -1,3 +1,4 @@
+import { Comment } from '~/models/Extensions'
 import { InviteTokenPayload } from '~/models/requests/Invitation.requests'
 import { TokenPayload } from '~/models/requests/User.requests'
 import Board from '~/models/schemas/Board.schema'
@@ -20,5 +21,6 @@ declare module 'express' {
     card?: Card
     invitee?: User
     invitation?: Invitation
+    comment?: Comment
   }
 }

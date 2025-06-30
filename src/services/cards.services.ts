@@ -1,6 +1,13 @@
 import { ObjectId } from 'mongodb'
-import { AttachmentType, CardAttachmentAction, CardMemberAction } from '~/constants/enums'
-import { CreateCardReqBody, UpdateCardReqBody } from '~/models/requests/Card.requests'
+import {
+  AttachmentType,
+  CardAttachmentAction,
+  CardCommentAction,
+  CardCommentReactionAction,
+  CardMemberAction
+} from '~/constants/enums'
+import { Comment } from '~/models/Extensions'
+import { CreateCardReqBody, ReactToCardCommentReqBody, UpdateCardReqBody } from '~/models/requests/Card.requests'
 import Card from '~/models/schemas/Card.schema'
 import databaseService from '~/services/database.services'
 
@@ -28,16 +35,54 @@ class CardsService {
     let updatedCard = null
 
     if (body.comment) {
-      // Case 1: Create comment data to add to the Database, need to add necessary fields
-      const comment = { ...body.comment, commented_at: new Date(), user_id }
+      // Case 1: Add, Edit or Remove comment from Card
+      let updateCondition = {}
+      const updateOptions: any = { returnDocument: 'after' }
+
+      if (body.comment.action === CardCommentAction.Add) {
+        const comment = {
+          ...body.comment,
+          comment_id: new ObjectId(),
+          commented_at: new Date(),
+          user_id
+        }
+
+        // Remove the action property from the comment object
+        delete comment.action
+
+        updateCondition = { $push: { comments: { $each: [comment], $position: 0 } } }
+      }
+
+      if (body.comment.action === CardCommentAction.Edit) {
+        // First, find the comment to update by its ID
+        const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
+
+        const commentToUpdate = card?.comments?.find((comment) =>
+          comment.comment_id.equals(new ObjectId(body.comment?.comment_id))
+        )
+
+        // Second, put the necessary fields to update the comment into the payload
+        const payload = { ...commentToUpdate, content: body.comment.content }
+
+        // Finally, update the comment in the database
+        // Using `$[elem]` to update the specific comment in the array
+        updateCondition = { $set: { 'comments.$[elem]': payload } }
+
+        // Add arrayFilters only for EDIT action to find the correct comment
+        updateOptions.arrayFilters = [{ 'elem.comment_id': new ObjectId(body.comment.comment_id) }]
+      }
+
+      if (body.comment.action === CardCommentAction.Remove) {
+        updateCondition = { $pull: { comments: { comment_id: new ObjectId(body.comment.comment_id) } } }
+      }
 
       updatedCard = await databaseService.cards.findOneAndUpdate(
         { _id: new ObjectId(card_id) },
-        { $push: { comments: { $each: [comment], $position: 0 } } },
-        { returnDocument: 'after' }
+        updateCondition,
+        updateOptions
       )
     } else if (body.attachment) {
-      // Case 2: In case of ADD or REMOVE attachment from Card
+      // Case 2: Add, Edit or Remove attachment from Card
       let updateCondition = {}
       const updateOptions: any = { returnDocument: 'after' }
 
@@ -58,7 +103,7 @@ class CardsService {
       }
 
       if (body.attachment.action === CardAttachmentAction.Edit) {
-        // First, find the attachment by its ID
+        // First, find the attachment to update by its ID
         const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
 
         const attachmentToUpdate = card?.attachments?.find((attachment) =>
@@ -90,14 +135,12 @@ class CardsService {
         }
 
         // Finally, update the attachment in the database
-        // Using `$[elem]` to update the specific element in the array
-        // ?) The `$[elem]` syntax allows you to update an array element that matches the filter criteria
+        // Using `$[elem]` to update the specific attachment in the array
         updateCondition = {
           $set: { 'attachments.$[elem]': payload }
         }
 
         // Add arrayFilters only for EDIT action to find the correct attachment
-        // ?) The `arrayFilters` option allows you to specify conditions for the elements in the array that you want to update
         updateOptions.arrayFilters = [{ 'elem.attachment_id': new ObjectId(body.attachment.attachment_id) }]
       }
 
@@ -113,7 +156,7 @@ class CardsService {
         updateOptions
       )
     } else if (body.member) {
-      // Case 3: In case of ADD or REMOVE member from Card
+      // Case 3: Add or Remove member from Card
       let updateCondition = {}
 
       if (body.member.action === CardMemberAction.Add) {
@@ -135,6 +178,53 @@ class CardsService {
           $set: body,
           $currentDate: { updated_at: true }
         },
+        { returnDocument: 'after' }
+      )
+    }
+
+    return updatedCard
+  }
+
+  async reactToCardComment({
+    card_id,
+    user_id,
+    comment,
+    body
+  }: {
+    card_id: string
+    user_id: string
+    comment: Comment
+    body: ReactToCardCommentReqBody
+  }) {
+    let updatedCard = null
+
+    if (body.action === CardCommentReactionAction.Add) {
+      const reaction = {
+        reaction_id: new ObjectId(),
+        emoji: body.emoji,
+        user_id,
+        user_email: comment?.user_email,
+        user_display_name: comment?.user_display_name,
+        reacted_at: new Date()
+      }
+
+      updatedCard = await databaseService.cards.findOneAndUpdate(
+        {
+          _id: new ObjectId(card_id),
+          'comments.comment_id': comment.comment_id
+        },
+        { $push: { 'comments.$.reactions': reaction } },
+        { returnDocument: 'after' }
+      )
+    }
+
+    if (body.action === CardCommentReactionAction.Remove) {
+      updatedCard = await databaseService.cards.findOneAndUpdate(
+        {
+          _id: new ObjectId(card_id),
+          'comments.comment_id': comment.comment_id
+        },
+        { $pull: { 'comments.$.reactions': { reaction_id: new ObjectId(body.reaction_id) } } },
         { returnDocument: 'after' }
       )
     }
