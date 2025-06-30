@@ -6,7 +6,6 @@ import {
   CardCommentReactionAction,
   CardMemberAction
 } from '~/constants/enums'
-import { Comment } from '~/models/Extensions'
 import { CreateCardReqBody, ReactToCardCommentReqBody, UpdateCardReqBody } from '~/models/requests/Card.requests'
 import Card from '~/models/schemas/Card.schema'
 import databaseService from '~/services/database.services'
@@ -39,16 +38,21 @@ class CardsService {
       let updateCondition = {}
       const updateOptions: any = { returnDocument: 'after' }
 
+      const user = await databaseService.users.findOne(
+        { _id: new ObjectId(user_id) },
+        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+      )
+
       if (body.comment.action === CardCommentAction.Add) {
         const comment = {
-          ...body.comment,
           comment_id: new ObjectId(),
-          commented_at: new Date(),
-          user_id
+          user_id,
+          user_email: user?.email,
+          user_avatar: user?.avatar,
+          user_display_name: user?.display_name,
+          content: body.comment.content,
+          commented_at: new Date()
         }
-
-        // Remove the action property from the comment object
-        delete comment.action
 
         updateCondition = { $push: { comments: { $each: [comment], $position: 0 } } }
       }
@@ -188,30 +192,35 @@ class CardsService {
   async reactToCardComment({
     card_id,
     user_id,
-    comment,
+    comment_id,
     body
   }: {
     card_id: string
     user_id: string
-    comment: Comment
+    comment_id: string
     body: ReactToCardCommentReqBody
   }) {
     let updatedCard = null
+
+    const user = await databaseService.users.findOne(
+      { _id: new ObjectId(user_id) },
+      { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+    )
 
     if (body.action === CardCommentReactionAction.Add) {
       const reaction = {
         reaction_id: new ObjectId(),
         emoji: body.emoji,
         user_id,
-        user_email: comment?.user_email,
-        user_display_name: comment?.user_display_name,
+        user_email: user?.email,
+        user_display_name: user?.display_name,
         reacted_at: new Date()
       }
 
       updatedCard = await databaseService.cards.findOneAndUpdate(
         {
           _id: new ObjectId(card_id),
-          'comments.comment_id': comment.comment_id
+          'comments.comment_id': new ObjectId(comment_id)
         },
         { $push: { 'comments.$.reactions': reaction } },
         { returnDocument: 'after' }
@@ -222,7 +231,7 @@ class CardsService {
       updatedCard = await databaseService.cards.findOneAndUpdate(
         {
           _id: new ObjectId(card_id),
-          'comments.comment_id': comment.comment_id
+          'comments.comment_id': new ObjectId(comment_id)
         },
         { $pull: { 'comments.$.reactions': { reaction_id: new ObjectId(body.reaction_id) } } },
         { returnDocument: 'after' }

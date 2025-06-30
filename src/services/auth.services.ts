@@ -262,17 +262,44 @@ class AuthService {
         new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token, iat, exp })
       )
 
-      return { access_token, refresh_token, newUser: 0, verify: user.verify }
+      if (user.verify !== UserVerifyStatus.Verified) {
+        await databaseService.users.updateOne(
+          { _id: user._id },
+          {
+            $set: { verify: UserVerifyStatus.Verified },
+            $currentDate: { updated_at: true }
+          }
+        )
+      }
+
+      return { access_token, refresh_token, newUser: 0, verify: UserVerifyStatus.Verified }
     } else {
+      const user_id = new ObjectId()
       const password = Math.random().toString(36).substring(2, 15)
+      const nameFromEmail = userInfo.email.split('@')[0]
 
-      const data = await this.register({
-        email: userInfo.email,
-        password,
-        confirm_password: password
+      await databaseService.users.insertOne(
+        new User({
+          _id: user_id,
+          email: userInfo.email,
+          password: hashPassword(password),
+          username: nameFromEmail,
+          display_name: userInfo.name || nameFromEmail,
+          avatar: userInfo.picture || '',
+          verify: UserVerifyStatus.Verified,
+          email_verify_token: ''
+        })
+      )
+
+      const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+        user_id: user_id.toString(),
+        verify: UserVerifyStatus.Verified
       })
+      const { iat, exp } = await this.decodeRefreshToken(refresh_token)
 
-      return { ...data, newUser: 1, verify: UserVerifyStatus.Unverified }
+      await databaseService.refreshTokens.insertOne(new RefreshToken({ user_id, token: refresh_token, iat, exp }))
+
+      return { access_token, refresh_token, newUser: 1, verify: UserVerifyStatus.Verified }
     }
   }
 }

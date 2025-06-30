@@ -204,7 +204,7 @@ export const updateCardValidator = validate(
         custom: {
           options: (value, { req }) => {
             // Ensure all required fields are present in the comment object
-            const requiredFields = ['action', 'user_email', 'user_avatar', 'user_display_name', 'content']
+            const requiredFields = ['action', 'content']
             const hasAllRequiredFields = requiredFields.every((field) => field in value)
 
             if (!hasAllRequiredFields) {
@@ -225,6 +225,10 @@ export const updateCardValidator = validate(
 
             // If the action is Edit or Remove, validate the comment_id
             if (value.action === CardCommentAction.Edit || value.action === CardCommentAction.Remove) {
+              if (!value.comment_id) {
+                throw new Error(CARDS_MESSAGES.COMMENT_ID_IS_REQUIRED)
+              }
+
               if (!ObjectId.isValid(value.comment_id)) {
                 throw new Error(CARDS_MESSAGES.INVALID_COMMENT_ID)
               }
@@ -418,8 +422,6 @@ export const commentIdValidator = validate(
               })
             }
 
-            ;(req as Request).comment = comment
-
             return true
           }
         }
@@ -472,8 +474,11 @@ export const reactionToCardCommentValidator = validate(
         trim: true,
         custom: {
           options: (value, { req }) => {
-            const comment = (req as Request).comment
+            const comment_id = (req as Request).params.comment_id
             const action = (req as Request).body.action
+            const card = (req as Request).card
+
+            const comment = card?.comments?.find((comment) => comment.comment_id.equals(new ObjectId(comment_id)))
 
             if (action === CardCommentReactionAction.Remove) {
               if (!value) {

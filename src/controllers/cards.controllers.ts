@@ -1,8 +1,8 @@
 import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { CARDS_MESSAGES } from '~/constants/messages'
-import { Comment } from '~/models/Extensions'
 import {
+  CardCommentReactionParams,
   CardParams,
   CreateCardReqBody,
   ReactToCardCommentReqBody,
@@ -26,15 +26,13 @@ export const updateCardController = async (req: Request<CardParams, any, UpdateC
 }
 
 export const reactToCardCommentController = async (
-  req: Request<CardParams, any, ReactToCardCommentReqBody>,
+  req: Request<CardCommentReactionParams, any, ReactToCardCommentReqBody>,
   res: Response
 ) => {
-  const { card_id } = req.params
+  const { card_id, comment_id } = req.params
   const { user_id } = req.decoded_authorization as TokenPayload
 
-  const comment = req.comment as Comment
-
-  const result = await cardsService.reactToCardComment({ card_id, user_id, comment, body: req.body })
+  const result = await cardsService.reactToCardComment({ card_id, user_id, comment_id, body: req.body })
 
   return res.json({ message: CARDS_MESSAGES.REACT_CARD_COMMENT_SUCCESS, result })
 }
