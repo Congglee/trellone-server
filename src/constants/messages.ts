@@ -184,7 +184,20 @@ export const CARDS_MESSAGES = {
   INVALID_COMMENT_ID: 'Invalid comment id',
   COMMENT_NOT_FOUND: 'Comment not found',
 
-  UPDATE_CARD_SUCCESS: 'Card updated successfully'
+  UPDATE_CARD_SUCCESS: 'Card updated successfully',
+
+  REACTION_EMOJI_IS_REQUIRED: 'Reaction emoji is required',
+  REACTION_EMOJI_MUST_BE_STRING_AND_1_2_CHARACTERS: 'Reaction emoji must be a string and 1 - 2 characters',
+  REACTION_ACTION_IS_REQUIRED: 'Reaction action is required',
+  REACTION_ACTION_MUST_BE_STRING: 'Reaction action must be a string',
+  INVALID_REACTION_ACTION: 'Invalid reaction action',
+  REACTION_ALREADY_EXISTS: 'Reaction already exists',
+  REACTION_ID_IS_REQUIRED: 'Reaction id is required',
+  INVALID_REACTION_ID: 'Invalid reaction id',
+  REACTION_NOT_FOUND: 'Reaction not found',
+  REACTION_ID_MUST_BE_STRING: 'Reaction id must be a string',
+
+  REACT_CARD_COMMENT_SUCCESS: 'Reacted to card comment successfully'
 }
 
 export const MEDIAS_MESSAGES = {

@@ -1,5 +1,5 @@
 import { ParamsDictionary } from 'express-serve-static-core'
-import { CardAttachmentAction, CardCommentAction, CardMemberAction } from '~/constants/enums'
+import { CardAttachmentAction, CardCommentAction, CardCommentReactionAction, CardMemberAction } from '~/constants/enums'
 import { FilterKeys } from '~/middlewares/common.middlewares'
 import { Attachment, Comment } from '~/models/Extensions'
 
@@ -42,4 +42,10 @@ export const updateCardReqBodyFields = [
 
 export interface CardParams extends ParamsDictionary {
   card_id: string
+}
+
+export interface ReactToCardCommentReqBody {
+  action: CardCommentReactionAction
+  emoji: string
+  reaction_id?: string
 }

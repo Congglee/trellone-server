@@ -58,3 +58,8 @@ export enum CardCommentAction {
   Edit = 'EDIT',
   Remove = 'REMOVE'
 }
+
+export enum CardCommentReactionAction {
+  Add = 'ADD',
+  Remove = 'REMOVE'
+}
