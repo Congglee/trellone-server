@@ -20,4 +20,10 @@ export const updateBoardSocket = (socket: Socket) => {
   })
 }
 
-// TODO: Handle user accept board invitation socket event
+export const acceptBoardInvitationSocket = (socket: Socket) => {
+  socket.on('CLIENT_USER_ACCEPTED_BOARD_INVITATION', ({ boardId, invitee }) => {
+    // Broadcast to all users in the board room that a new member has joined
+    // This allows real-time updates when someone accepts an invitation
+    socket.broadcast.to(`board-${boardId}`).emit('SERVER_USER_ACCEPTED_BOARD_INVITATION', invitee)
+  })
+}
