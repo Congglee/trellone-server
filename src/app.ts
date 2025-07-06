@@ -4,6 +4,7 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import { createServer } from 'http'
 import compression from 'compression'
+import useragent from 'express-useragent'
 
 // Routes import
 import boardsRouter from '~/routes/boards.routes'
@@ -33,6 +34,9 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(compression())
 app.use(cors(corsOptions))
+
+// Enable user agent parsing for request
+app.use(useragent.express())
 
 // Initialize folders for file uploads
 initFolder()

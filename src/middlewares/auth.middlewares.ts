@@ -159,39 +159,66 @@ export const accessTokenValidator = validate(
         optional: true,
         custom: {
           options: async (value, { req }) => {
-            // Get token from cookies
-            const cookie_token = req.headers?.cookie
+            // Check device type using express-useragent
+            const userAgent = req.useragent
+            const isMobileDevice =
+              userAgent?.isMobile || userAgent?.isTablet || userAgent?.isiPhone || userAgent?.isAndroid
 
-            // If cookie token exists, use it to verify
-            if (cookie_token) {
-              const cookieEntries = cookie_token.split('; ')
-              const accessTokenEntry = cookieEntries.find((entry: string) => entry.startsWith('access_token='))
-
-              if (accessTokenEntry) {
-                const access_token = accessTokenEntry.split('=')[1]
-                return await verifyAccessToken(access_token, req as Request)
+            if (isMobileDevice) {
+              // Mobile devices: use Authorization header
+              if (!value) {
+                throw new ErrorWithStatus({
+                  message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
               }
+
+              // Get token from Authorization header
+              const access_token = (value || '').split(' ')[1]
+
+              if (!access_token) {
+                throw new ErrorWithStatus({
+                  message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+
+              return await verifyAccessToken(access_token, req as Request)
+            } else {
+              // Desktop devices: use cookies first, fallback to Authorization header
+              const cookie_token = req.headers?.cookie
+
+              // Try to get token from cookies first
+              if (cookie_token) {
+                const cookieEntries = cookie_token.split('; ')
+                const accessTokenEntry = cookieEntries.find((entry: string) => entry.startsWith('access_token='))
+
+                if (accessTokenEntry) {
+                  const access_token = accessTokenEntry.split('=')[1]
+                  return await verifyAccessToken(access_token, req as Request)
+                }
+              }
+
+              // Fallback to Authorization header for desktop
+              if (!value) {
+                throw new ErrorWithStatus({
+                  message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+
+              // Get token from Authorization header
+              const access_token = (value || '').split(' ')[1]
+
+              if (!access_token) {
+                throw new ErrorWithStatus({
+                  message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+                  status: HTTP_STATUS.UNAUTHORIZED
+                })
+              }
+
+              return await verifyAccessToken(access_token, req as Request)
             }
-
-            // If cookie token does not exist, check Authorization header
-            if (!value) {
-              throw new ErrorWithStatus({
-                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
-                status: HTTP_STATUS.UNAUTHORIZED
-              })
-            }
-
-            // Get token from Authorization header
-            const access_token = (value || '').split(' ')[1]
-
-            if (!access_token) {
-              throw new ErrorWithStatus({
-                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
-                status: HTTP_STATUS.UNAUTHORIZED
-              })
-            }
-
-            return await verifyAccessToken(access_token, req as Request)
           }
         }
       }
