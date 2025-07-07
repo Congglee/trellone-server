@@ -160,43 +160,43 @@ export const accessTokenValidator = validate(
         custom: {
           options: async (value, { req }) => {
             // Get token from cookies
-            const cookie_token = req.headers?.cookie
+            // const cookie_token = req.headers?.cookie
 
             // If cookie token exists, use it to verify
-            if (cookie_token) {
-              const cookieEntries = cookie_token.split('; ')
-              const accessTokenEntry = cookieEntries.find((entry: string) => entry.startsWith('access_token='))
+            // if (cookie_token) {
+            //   const cookieEntries = cookie_token.split('; ')
+            //   const accessTokenEntry = cookieEntries.find((entry: string) => entry.startsWith('access_token='))
 
-              if (accessTokenEntry) {
-                const access_token = accessTokenEntry.split('=')[1]
-                return await verifyAccessToken(access_token, req as Request)
-              }
-            }
+            //   if (accessTokenEntry) {
+            //     const access_token = accessTokenEntry.split('=')[1]
+            //     return await verifyAccessToken(access_token, req as Request)
+            //   }
+            // }
 
             // If cookie token does not exist, check Authorization header
-            if (!value) {
-              throw new ErrorWithStatus({
-                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
-                status: HTTP_STATUS.UNAUTHORIZED
-              })
-            }
+            // if (!value) {
+            //   throw new ErrorWithStatus({
+            //     message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+            //     status: HTTP_STATUS.UNAUTHORIZED
+            //   })
+            // }
 
             // Get token from Authorization header
             const access_token = (value || '').split(' ')[1]
 
-            if (!access_token) {
-              throw new ErrorWithStatus({
-                message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
-                status: HTTP_STATUS.UNAUTHORIZED
-              })
-            }
+            // if (!access_token) {
+            //   throw new ErrorWithStatus({
+            //     message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+            //     status: HTTP_STATUS.UNAUTHORIZED
+            //   })
+            // }
 
             return await verifyAccessToken(access_token, req as Request)
           }
         }
       }
     },
-    ['cookies', 'headers']
+    ['headers']
   )
 )
 
