@@ -156,7 +156,7 @@ export const accessTokenValidator = validate(
   checkSchema(
     {
       Authorization: {
-        optional: true,
+        notEmpty: { errorMessage: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED },
         custom: {
           options: async (value, { req }) => {
             // Get token from cookies
