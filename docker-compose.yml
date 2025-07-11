@@ -1,7 +1,0 @@
-services:
-  node-app:
-    image: conggglee/trellone-api-server:latest
-    ports:
-      - 8000:8000
-    container_name: conggglee/trellone-api-server:latest
-    restart: always
