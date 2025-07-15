@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   createCardController,
+  deleteCardController,
   reactToCardCommentController,
   updateCardController
 } from '~/controllers/cards.controllers'
@@ -38,5 +39,7 @@ cardsRouter.put(
   filterMiddleware<ReactToCardCommentReqBody>(['action', 'emoji', 'reaction_id']),
   wrapRequestHandler(reactToCardCommentController)
 )
+
+cardsRouter.delete('/:card_id', accessTokenValidator, cardIdValidator, wrapRequestHandler(deleteCardController))
 
 export default cardsRouter

@@ -198,7 +198,9 @@ export const CARDS_MESSAGES = {
   REACTION_NOT_FOUND: 'Reaction not found',
   REACTION_ID_MUST_BE_STRING: 'Reaction id must be a string',
 
-  REACT_CARD_COMMENT_SUCCESS: 'Reacted to card comment successfully'
+  REACT_CARD_COMMENT_SUCCESS: 'Reacted to card comment successfully',
+
+  DELETE_CARD_SUCCESS: 'Card deleted successfully'
 }
 
 export const MEDIAS_MESSAGES = {

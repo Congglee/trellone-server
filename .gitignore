@@ -19,3 +19,6 @@ coverage/
 
 # Markdown
 mdx/
+
+# AI Coding Assistant
+.augment/
