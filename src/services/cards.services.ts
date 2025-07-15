@@ -240,6 +240,18 @@ class CardsService {
 
     return updatedCard
   }
+
+  async deleteCard(card_id: string, column_id: string) {
+    // Delete the card
+    await databaseService.cards.deleteOne({ _id: new ObjectId(card_id) })
+
+    // Delete the card_id from the card_order_ids of the column containing the card
+    await databaseService.columns.findOneAndUpdate(
+      { _id: new ObjectId(column_id) },
+      { $pull: { card_order_ids: new ObjectId(card_id) } },
+      { returnDocument: 'after' }
+    )
+  }
 }
 
 const cardsService = new CardsService()
