@@ -222,7 +222,18 @@ const pipeline = [
 ]
 ```
 
-### 4. Soft Delete Pattern
+### 4. Hard Delete with Reference Cleanup Pattern
+
+```typescript
+// Delete entity and clean up references
+await databaseService.cards.deleteOne({ _id: new ObjectId(card_id) })
+await databaseService.columns.findOneAndUpdate(
+  { _id: new ObjectId(column_id) },
+  { $pull: { card_order_ids: new ObjectId(card_id) } }
+)
+```
+
+### 5. Soft Delete Pattern
 
 ```typescript
 // Mark as deleted instead of removing
@@ -429,3 +440,26 @@ TypeScript Compilation → Path Resolution → Asset Copying → Production Bund
 ```
 
 This architecture ensures maintainability, scalability, and clear separation of concerns while following established Node.js and Express.js best practices.
+
+## Development Rules & Documentation
+
+### Comprehensive Pattern Documentation
+
+The project maintains detailed development patterns and best practices in `.augment/rules/imported/`:
+
+- **Controller Layer Patterns**: Request handling, data extraction, response formatting
+- **Middleware Best Practices**: Validation chains, authentication, error handling
+- **MongoDB Schema Patterns**: Database design, schema definitions, data modeling
+- **Service Layer Patterns**: Business logic implementation, database operations
+- **Route Layer Patterns**: API endpoint organization, middleware orchestration
+- **Utility Functions**: Helper functions, common operations, reusable components
+
+### Pattern Enforcement
+
+These documented patterns ensure:
+
+- **Consistency**: All developers follow the same conventions
+- **Maintainability**: Code is predictable and easy to modify
+- **Scalability**: Architecture supports growth and new features
+- **Quality**: Best practices are embedded in development workflow
+- **Onboarding**: New team members can quickly understand the codebase

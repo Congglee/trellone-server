@@ -54,6 +54,8 @@ export const AUTH_MESSAGES = {
 export const USERS_MESSAGES = {
   GET_ME_SUCCESS: 'Get my profile successfully',
 
+  USER_NOT_VERIFIED: 'User not verified, please verify your account',
+
   DISPLAY_NAME_IS_REQUIRED: 'Display name is required',
   DISPLAY_NAME_MUST_BE_STRING: 'Display name must be a string',
   DISPLAY_NAME_LENGTH_MUST_BE_BETWEEN_1_AND_100: 'Display name length must be between 1 and 100 characters',

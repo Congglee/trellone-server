@@ -105,11 +105,17 @@ GOOGLE_REDIRECT_URI=your-google-redirect-uri
 
 ```json
 {
-  "dev": "nodemon",
-  "build": "rimraf dist && tsc && tsc-alias",
-  "start": "node dist/index.js",
-  "lint": "eslint src/",
-  "format": "prettier --write src/"
+  "dev": "cross-env NODE_ENV=development npx nodemon",
+  "dev:prod": "cross-env NODE_ENV=production npx nodemon",
+  "dev:stag": "cross-env NODE_ENV=staging npx nodemon",
+  "build": "rimraf ./dist && tsc && tsc-alias",
+  "start:dev": "cross-env NODE_ENV=development node dist/index.js",
+  "start:prod": "cross-env NODE_ENV=production node dist/index.js",
+  "start:stag": "cross-env NODE_ENV=staging node dist/index.js",
+  "lint": "eslint .",
+  "lint:fix": "eslint . --fix",
+  "prettier": "prettier --check .",
+  "prettier:fix": "prettier --write ."
 }
 ```
 
@@ -119,8 +125,9 @@ GOOGLE_REDIRECT_URI=your-google-redirect-uri
 2. **Environment**: Copy `.env.example` to `.env` and configure
 3. **Database**: Start MongoDB instance (local or cloud)
 4. **Development**: Run `npm run dev` for hot-reload server
-5. **Linting**: Use `npm run lint` for code quality checks
-6. **Formatting**: Use `npm run format` for consistent code style
+5. **Linting**: Use `npm run lint` for code quality checks or `npm run lint:fix` for auto-fix
+6. **Formatting**: Use `npm run prettier` for format checking or `npm run prettier:fix` for auto-format
+7. **Production Testing**: Use `npm run dev:prod` to test production environment locally
 
 ## Project Structure Conventions
 
@@ -150,6 +157,11 @@ src/
 ├── sockets/         # Socket.IO event handlers
 ├── templates/       # Email templates
 └── utils/           # Utility functions
+
+.augment/
+└── rules/           # Development guidelines and patterns
+    ├── imported/    # Imported development rules and patterns
+    └── *.md         # Specific development rules
 ```
 
 ## TypeScript Configuration
@@ -309,15 +321,55 @@ const io = new Server(httpServer, {
 - Static asset caching
 - Redis integration (future enhancement)
 
-## Deployment Requirements
+## Deployment Configuration
+
+### Docker Deployment
+
+The project includes a multi-stage Dockerfile for optimized production deployment:
+
+```dockerfile
+# Stage 1: Builder
+FROM node:22-alpine3.22 AS builder
+WORKDIR /home/node/app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: Production
+FROM node:22-alpine3.22
+WORKDIR /home/node/app
+COPY --from=builder /home/node/app/dist ./dist
+COPY --from=builder /home/node/app/package*.json ./
+RUN npm ci --omit=dev
+EXPOSE 4000
+CMD ["npm", "run", "start:prod"]
+```
+
+### PM2 Process Management
+
+The project uses PM2 for process management in production:
+
+```javascript
+// ecosystem.config.js
+module.exports = {
+  apps: [
+    {
+      name: 'trellone-api-server',
+      script: 'npm run start:prod'
+    }
+  ]
+}
+```
 
 ### Production Environment
 
-- Node.js 18+ runtime
+- Node.js 22+ runtime (Alpine-based)
 - MongoDB 6+ database
 - SSL/TLS certificates for HTTPS
 - Environment variable configuration
-- Process management (PM2 or similar)
+- Process management (PM2)
+- Docker containerization
 
 ### Build Process
 
@@ -326,6 +378,7 @@ const io = new Server(httpServer, {
 3. Asset copying and optimization
 4. Environment configuration validation
 5. Production bundle creation
+6. Docker image building
 
 ### Monitoring & Logging
 

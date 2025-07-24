@@ -14,6 +14,7 @@ import {
   updateBoardInvitationValidator,
   verifyInviteTokenValidator
 } from '~/middlewares/invitations.middlewares'
+import { verifiedUserValidator } from '~/middlewares/users.middlewares'
 import { UpdateBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
@@ -22,6 +23,7 @@ const invitationsRouter = Router()
 invitationsRouter.post(
   '/board',
   accessTokenValidator,
+  verifiedUserValidator,
   createNewBoardInvitationValidator,
   checkInviteeMembershipValidator,
   wrapRequestHandler(createNewBoardInvitationController)
@@ -30,7 +32,7 @@ invitationsRouter.post(
 invitationsRouter.post(
   '/verify-board-invitation',
   accessTokenValidator,
-  verifyInviteTokenValidator,
+  verifiedUserValidator,
   wrapRequestHandler(verifyBoardInvitationController)
 )
 
