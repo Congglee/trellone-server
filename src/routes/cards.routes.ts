@@ -14,16 +14,24 @@ import {
   updateCardValidator
 } from '~/middlewares/cards.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
+import { verifiedUserValidator } from '~/middlewares/users.middlewares'
 import { ReactToCardCommentReqBody, UpdateCardReqBody, updateCardReqBodyFields } from '~/models/requests/Card.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const cardsRouter = Router()
 
-cardsRouter.post('/', accessTokenValidator, createCardValidator, wrapRequestHandler(createCardController))
+cardsRouter.post(
+  '/',
+  accessTokenValidator,
+  verifiedUserValidator,
+  createCardValidator,
+  wrapRequestHandler(createCardController)
+)
 
 cardsRouter.put(
   '/:card_id',
   accessTokenValidator,
+  verifiedUserValidator,
   cardIdValidator,
   updateCardValidator,
   filterMiddleware<UpdateCardReqBody>(updateCardReqBodyFields),
@@ -33,6 +41,7 @@ cardsRouter.put(
 cardsRouter.put(
   '/:card_id/comment/:comment_id/reaction',
   accessTokenValidator,
+  verifiedUserValidator,
   cardIdValidator,
   commentIdValidator,
   reactionToCardCommentValidator,
@@ -40,6 +49,12 @@ cardsRouter.put(
   wrapRequestHandler(reactToCardCommentController)
 )
 
-cardsRouter.delete('/:card_id', accessTokenValidator, cardIdValidator, wrapRequestHandler(deleteCardController))
+cardsRouter.delete(
+  '/:card_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  cardIdValidator,
+  wrapRequestHandler(deleteCardController)
+)
 
 export default cardsRouter
