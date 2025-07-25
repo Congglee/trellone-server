@@ -56,6 +56,20 @@ class WorkspacesService {
 
     return workspace
   }
+
+  async deleteWorkspace(workspace_id: string) {
+    // Delete the workspace
+    await databaseService.workspaces.deleteOne({ _id: new ObjectId(workspace_id) })
+
+    // Move all Boards in that Workspace to the `closed` state (i.e., set `_destroy` to `true`) and set `workspace_id` to `null`.
+    await databaseService.boards.updateMany(
+      { workspace_id: new ObjectId(workspace_id) },
+      {
+        $set: { _destroy: true, workspace_id: null },
+        $currentDate: { updated_at: true }
+      }
+    )
+  }
 }
 
 const workspacesService = new WorkspacesService()

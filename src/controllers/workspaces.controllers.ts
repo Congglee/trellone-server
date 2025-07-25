@@ -46,3 +46,11 @@ export const updateWorkspaceController = async (
   const result = await workspacesService.updateWorkspace(workspace_id, req.body)
   return res.json({ message: WORKSPACES_MESSAGES.UPDATE_WORKSPACE_SUCCESS, result })
 }
+
+export const deleteWorkspaceController = async (req: Request<WorkspaceParams, any, any>, res: Response) => {
+  const { workspace_id } = req.params
+
+  await workspacesService.deleteWorkspace(workspace_id)
+
+  return res.json({ message: WORKSPACES_MESSAGES.DELETE_WORKSPACE_SUCCESS })
+}
