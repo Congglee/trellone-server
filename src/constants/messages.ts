@@ -90,7 +90,9 @@ export const WORKSPACES_MESSAGES = {
   WORKSPACE_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Workspace type must be public or private',
   WORKSPACE_LOGO_MUST_BE_STRING: 'Workspace logo must be a string',
 
-  UPDATE_WORKSPACE_SUCCESS: 'Workspace updated successfully'
+  UPDATE_WORKSPACE_SUCCESS: 'Workspace updated successfully',
+
+  DELETE_WORKSPACE_SUCCESS: 'Workspace deleted successfully'
 }
 
 export const BOARDS_MESSAGES = {

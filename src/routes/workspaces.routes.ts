@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   createWorkspaceController,
+  deleteWorkspaceController,
   getWorkspaceController,
   getWorkspacesController,
   updateWorkspaceController
@@ -44,6 +45,14 @@ workspacesRouter.put(
   updateWorkspaceValidator,
   filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo']),
   wrapRequestHandler(updateWorkspaceController)
+)
+
+workspacesRouter.delete(
+  '/:workspace_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  workspaceIdValidator,
+  wrapRequestHandler(deleteWorkspaceController)
 )
 
 export default workspacesRouter
