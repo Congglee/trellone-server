@@ -78,7 +78,12 @@ export const WORKSPACES_MESSAGES = {
   WORKSPACE_DESCRIPTION_MUST_BE_STRING: 'Workspace description must be a string',
   WORKSPACE_DESCRIPTION_MUST_BE_BETWEEN_3_AND_256: 'Workspace description must be between 3 and 256 characters',
 
-  CREATE_WORKSPACE_SUCCESS: 'Workspace created successfully'
+  CREATE_WORKSPACE_SUCCESS: 'Workspace created successfully',
+
+  INVALID_WORKSPACE_ID: 'Invalid workspace id',
+  WORKSPACE_NOT_FOUND: 'Workspace not found',
+
+  GET_WORKSPACE_SUCCESS: 'Get workspace successfully'
 }
 
 export const BOARDS_MESSAGES = {

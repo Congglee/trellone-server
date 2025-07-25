@@ -13,3 +13,8 @@ export const createWorkspaceController = async (
   const result = await workspacesService.createWorkspace(user_id, req.body)
   return res.json({ message: WORKSPACES_MESSAGES.CREATE_WORKSPACE_SUCCESS, result })
 }
+
+export const getWorkspaceController = async (req: Request<ParamsDictionary, any, any>, res: Response) => {
+  const result = { ...req.workspace }
+  return res.json({ message: WORKSPACES_MESSAGES.GET_WORKSPACE_SUCCESS, result })
+}
