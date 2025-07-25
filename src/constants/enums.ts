@@ -3,6 +3,16 @@ export enum BoardType {
   Private = 'Private'
 }
 
+export enum WorkspaceType {
+  Public = 'Public',
+  Private = 'Private'
+}
+
+export enum WorkspaceRole {
+  Admin = 'Admin',
+  Normal = 'Normal'
+}
+
 export enum UserVerifyStatus {
   Unverified,
   Verified,

@@ -1,5 +1,12 @@
 import { ObjectId } from 'mongodb'
-import { AttachmentType, BoardInvitationStatus } from '~/constants/enums'
+import { AttachmentType, BoardInvitationStatus, WorkspaceRole } from '~/constants/enums'
+
+export interface WorkspaceMember {
+  user_id: ObjectId
+  role: WorkspaceRole
+  joined_at: Date
+  invited_by?: ObjectId
+}
 
 export interface CommentReaction {
   reaction_id: ObjectId

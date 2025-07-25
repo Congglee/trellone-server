@@ -6,6 +6,7 @@ export interface CreateBoardReqBody {
   title: string
   description?: string
   type: BoardType
+  workspace_id: string
 }
 
 export interface BoardQuery extends Pagination, Query {
