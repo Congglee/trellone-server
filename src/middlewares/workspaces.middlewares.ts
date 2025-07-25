@@ -1,36 +1,51 @@
 import { Request } from 'express'
-import { checkSchema } from 'express-validator'
+import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
+import { WorkspaceType } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { WORKSPACES_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
 import { TokenPayload } from '~/models/requests/User.requests'
 import Workspace from '~/models/schemas/Workspace.schema'
 import databaseService from '~/services/database.services'
+import { stringEnumToArray } from '~/utils/commons'
 import { validate } from '~/utils/validation'
+
+const workspaceTypes = stringEnumToArray(WorkspaceType)
+
+const workspaceTitleSchema: ParamSchema = {
+  notEmpty: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_IS_REQUIRED },
+  isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_MUST_BE_STRING },
+  trim: true,
+  isLength: {
+    options: { min: 3, max: 50 },
+    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_LENGTH_MUST_BE_BETWEEN_3_AND_50
+  }
+}
+
+const workspaceDescriptionSchema: ParamSchema = {
+  optional: true,
+  isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_DESCRIPTION_MUST_BE_STRING },
+  trim: true,
+  isLength: {
+    options: { min: 3, max: 256 },
+    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_DESCRIPTION_MUST_BE_BETWEEN_3_AND_256
+  }
+}
+
+const workspaceTypeSchema: ParamSchema = {
+  isIn: {
+    options: [workspaceTypes],
+    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TYPE_MUST_BE_PUBLIC_OR_PRIVATE
+  }
+}
 
 export const createWorkspaceValidator = validate(
   checkSchema(
     {
-      title: {
-        notEmpty: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_IS_REQUIRED },
-        isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_MUST_BE_STRING },
-        trim: true,
-        isLength: {
-          options: { min: 3, max: 50 },
-          errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_LENGTH_MUST_BE_BETWEEN_3_AND_50
-        }
-      },
-      description: {
-        optional: true,
-        isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_DESCRIPTION_MUST_BE_STRING },
-        trim: true,
-        isLength: {
-          options: { min: 3, max: 256 },
-          errorMessage: WORKSPACES_MESSAGES.WORKSPACE_DESCRIPTION_MUST_BE_BETWEEN_3_AND_256
-        }
-      }
+      title: workspaceTitleSchema,
+      description: workspaceDescriptionSchema
     },
     ['body']
   )
@@ -175,4 +190,16 @@ export const workspaceIdValidator = validate(
     },
     ['params']
   )
+)
+
+export const updateWorkspaceValidator = validate(
+  checkSchema({
+    title: { ...workspaceTitleSchema, optional: true, notEmpty: undefined },
+    description: workspaceDescriptionSchema,
+    type: { ...workspaceTypeSchema, optional: true },
+    logo: {
+      optional: true,
+      isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_LOGO_MUST_BE_STRING }
+    }
+  })
 )

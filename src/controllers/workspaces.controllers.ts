@@ -2,7 +2,7 @@ import { ParamsDictionary } from 'express-serve-static-core'
 import { Request, Response } from 'express'
 import { TokenPayload } from '~/models/requests/User.requests'
 import { WORKSPACES_MESSAGES } from '~/constants/messages'
-import { CreateWorkspaceReqBody, WorkspaceParams } from '~/models/requests/Workspace.requests'
+import { CreateWorkspaceReqBody, UpdateWorkspaceReqBody, WorkspaceParams } from '~/models/requests/Workspace.requests'
 import workspacesService from '~/services/workspaces.services'
 import { Pagination } from '~/models/requests/Common.requests'
 
@@ -36,4 +36,13 @@ export const getWorkspacesController = async (req: Request<ParamsDictionary, any
 export const getWorkspaceController = async (req: Request<WorkspaceParams>, res: Response) => {
   const result = { ...req.workspace }
   return res.json({ message: WORKSPACES_MESSAGES.GET_WORKSPACE_SUCCESS, result })
+}
+
+export const updateWorkspaceController = async (
+  req: Request<WorkspaceParams, any, UpdateWorkspaceReqBody>,
+  res: Response
+) => {
+  const { workspace_id } = req.params
+  const result = await workspacesService.updateWorkspace(workspace_id, req.body)
+  return res.json({ message: WORKSPACES_MESSAGES.UPDATE_WORKSPACE_SUCCESS, result })
 }
