@@ -51,7 +51,14 @@ boardsRouter.put(
   verifiedUserValidator,
   boardIdValidator,
   updateBoardValidator,
-  filterMiddleware<UpdateBoardReqBody>(['title', 'description', 'type', 'column_order_ids', 'cover_photo']),
+  filterMiddleware<UpdateBoardReqBody>([
+    'title',
+    'description',
+    'type',
+    'workspace_id',
+    'column_order_ids',
+    'cover_photo'
+  ]),
   wrapRequestHandler(updateBoardController)
 )
 

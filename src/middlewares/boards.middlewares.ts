@@ -47,7 +47,29 @@ export const createBoardValidator = validate(
     {
       title: boardTitleSchema,
       description: boardDescriptionSchema,
-      type: boardTypeSchema
+      type: boardTypeSchema,
+      workspace_id: {
+        notEmpty: { errorMessage: BOARDS_MESSAGES.WORKSPACE_ID_IS_REQUIRED },
+        isString: { errorMessage: BOARDS_MESSAGES.WORKSPACE_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new Error(BOARDS_MESSAGES.INVALID_WORKSPACE_ID)
+            }
+
+            const workspace = await databaseService.workspaces.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!workspace) {
+              throw new Error(BOARDS_MESSAGES.WORKSPACE_NOT_FOUND)
+            }
+
+            return true
+          }
+        }
+      }
     },
     ['body']
   )

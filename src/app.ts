@@ -6,6 +6,7 @@ import { createServer } from 'http'
 import compression from 'compression'
 
 // Routes import
+import workspacesRouter from '~/routes/workspaces.routes'
 import boardsRouter from '~/routes/boards.routes'
 import columnsRouter from '~/routes/columns.routes'
 import cardsRouter from '~/routes/cards.routes'
@@ -40,6 +41,7 @@ initFolder()
 // Use app routes
 app.use('/auth', authRouter)
 app.use('/users', usersRouter)
+app.use('/workspaces', workspacesRouter)
 app.use('/boards', boardsRouter)
 app.use('/columns', columnsRouter)
 app.use('/cards', cardsRouter)

@@ -7,6 +7,7 @@ import Column from '~/models/schemas/Column.schema'
 import Invitation from '~/models/schemas/Invitation.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
+import Workspace from '~/models/schemas/Workspace.schema'
 
 const URI = `mongodb+srv://${envConfig.dbUsername}:${envConfig.dbPassword}@trellone-cluster0.nnecc.mongodb.net/?retryWrites=true&w=majority&appName=${envConfig.dbName}`
 
@@ -37,6 +38,10 @@ class DatabaseService {
       console.log('Error', error)
       throw error
     }
+  }
+
+  get workspaces(): Collection<Workspace> {
+    return this.db.collection<Workspace>(envConfig.dbWorkspacesCollection as string)
   }
 
   get boards(): Collection<Board> {
