@@ -14,7 +14,8 @@ class BoardsService {
         title: body.title,
         description: body.description,
         type: body.type,
-        owners: [new ObjectId(user_id)]
+        owners: [new ObjectId(user_id)],
+        workspace_id: new ObjectId(body.workspace_id)
       })
     )
 
@@ -70,9 +71,15 @@ class BoardsService {
   }
 
   async updateBoard(board_id: string, body: UpdateBoardReqBody) {
-    const payload = body.column_order_ids
-      ? { ...body, column_order_ids: body.column_order_ids.map((id) => new ObjectId(id)) }
-      : (body as UpdateBoardReqBody & { column_order_ids: ObjectId[] })
+    const payload: any = { ...body }
+
+    if (body.workspace_id) {
+      payload.workspace_id = new ObjectId(body.workspace_id)
+    }
+
+    if (body.column_order_ids) {
+      payload.column_order_ids = body.column_order_ids.map((id) => new ObjectId(id))
+    }
 
     const board = await databaseService.boards.findOneAndUpdate(
       { _id: new ObjectId(board_id) },

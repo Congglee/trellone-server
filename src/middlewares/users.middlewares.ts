@@ -1,6 +1,7 @@
-import { Request } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
+import { UserVerifyStatus } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { confirmPasswordSchema, passwordSchema } from '~/middlewares/auth.middlewares'
@@ -23,6 +24,21 @@ const displayNameSchema: ParamSchema = {
 export const imageSchema: ParamSchema = {
   optional: true,
   isString: { errorMessage: USERS_MESSAGES.IMAGE_URL_MUST_BE_STRING }
+}
+
+export const verifiedUserValidator = (req: Request, res: Response, next: NextFunction) => {
+  const { verify } = req.decoded_authorization as TokenPayload
+
+  if (verify !== UserVerifyStatus.Verified) {
+    next(
+      new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_VERIFIED,
+        status: HTTP_STATUS.FORBIDDEN
+      })
+    )
+  }
+
+  next()
 }
 
 export const updateMeValidator = validate(

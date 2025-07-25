@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { Role, UserVerifyStatus } from '~/constants/enums'
+import { UserVerifyStatus } from '~/constants/enums'
 
 interface UserSchema {
   _id?: ObjectId
@@ -8,7 +8,6 @@ interface UserSchema {
   username: string
   display_name: string
   avatar?: string
-  role?: Role
   is_active?: boolean
   email_verify_token?: string
   forgot_password_token?: string
@@ -25,7 +24,6 @@ export default class User {
   username: string
   display_name: string
   avatar: string
-  role: Role
   is_active: boolean
   email_verify_token: string
   forgot_password_token: string
@@ -43,7 +41,6 @@ export default class User {
     this.username = user.username
     this.display_name = user.display_name || ''
     this.avatar = user.avatar || ''
-    this.role = user.role || Role.Client
     this.is_active = user.is_active || true
     this.email_verify_token = user.email_verify_token || ''
     this.forgot_password_token = user.forgot_password_token || ''

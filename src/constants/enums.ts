@@ -1,11 +1,16 @@
 export enum BoardType {
-  Public = 'public',
-  Private = 'private'
+  Public = 'Public',
+  Private = 'Private'
 }
 
-export enum Role {
-  Client = 'client',
-  Admin = 'admin'
+export enum WorkspaceType {
+  Public = 'Public',
+  Private = 'Private'
+}
+
+export enum WorkspaceRole {
+  Admin = 'Admin',
+  Normal = 'Normal'
 }
 
 export enum UserVerifyStatus {
