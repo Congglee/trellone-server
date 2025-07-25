@@ -25,6 +25,24 @@ class WorkspacesService {
 
     return workspace
   }
+
+  async getWorkspaces({ user_id, limit, page }: { user_id: string; limit: number; page: number }) {
+    const queryConditions: any[] = [{ 'members.user_id': new ObjectId(user_id) }, { _destroy: false }]
+
+    const [workspaces, total] = await Promise.all([
+      databaseService.workspaces
+        .aggregate<Workspace>([
+          { $match: { $and: queryConditions } },
+          { $sort: { created_at: -1 } },
+          { $skip: limit * (page - 1) },
+          { $limit: limit }
+        ])
+        .toArray(),
+      databaseService.workspaces.countDocuments({ $and: queryConditions })
+    ])
+
+    return { workspaces, total }
+  }
 }
 
 const workspacesService = new WorkspacesService()

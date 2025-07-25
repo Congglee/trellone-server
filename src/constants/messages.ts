@@ -83,7 +83,9 @@ export const WORKSPACES_MESSAGES = {
   INVALID_WORKSPACE_ID: 'Invalid workspace id',
   WORKSPACE_NOT_FOUND: 'Workspace not found',
 
-  GET_WORKSPACE_SUCCESS: 'Get workspace successfully'
+  GET_WORKSPACE_SUCCESS: 'Get workspace successfully',
+
+  GET_WORKSPACES_SUCCESS: 'Get workspaces successfully'
 }
 
 export const BOARDS_MESSAGES = {
