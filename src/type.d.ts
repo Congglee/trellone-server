@@ -5,6 +5,7 @@ import Card from '~/models/schemas/Card.schema'
 import Column from '~/models/schemas/Column.schema'
 import Invitation from '~/models/schemas/Invitation.schema'
 import User from '~/models/schemas/User.schema'
+import Workspace from '~/models/schemas/Workspace.schema'
 
 declare module 'express' {
   interface Request {
@@ -20,5 +21,6 @@ declare module 'express' {
     card?: Card
     invitee?: User
     invitation?: Invitation
+    workspace?: Workspace
   }
 }

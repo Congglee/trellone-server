@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { createWorkspaceController } from '~/controllers/workspaces.controllers'
+import { createWorkspaceController, getWorkspaceController } from '~/controllers/workspaces.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
-import { createWorkspaceValidator } from '~/middlewares/workspaces.middlewares'
+import { createWorkspaceValidator, workspaceIdValidator } from '~/middlewares/workspaces.middlewares'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const workspacesRouter = Router()
@@ -13,6 +13,14 @@ workspacesRouter.post(
   verifiedUserValidator,
   createWorkspaceValidator,
   wrapRequestHandler(createWorkspaceController)
+)
+
+workspacesRouter.get(
+  '/:workspace_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  workspaceIdValidator,
+  wrapRequestHandler(getWorkspaceController)
 )
 
 export default workspacesRouter
