@@ -85,7 +85,12 @@ export const WORKSPACES_MESSAGES = {
 
   GET_WORKSPACE_SUCCESS: 'Get workspace successfully',
 
-  GET_WORKSPACES_SUCCESS: 'Get workspaces successfully'
+  GET_WORKSPACES_SUCCESS: 'Get workspaces successfully',
+
+  WORKSPACE_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Workspace type must be public or private',
+  WORKSPACE_LOGO_MUST_BE_STRING: 'Workspace logo must be a string',
+
+  UPDATE_WORKSPACE_SUCCESS: 'Workspace updated successfully'
 }
 
 export const BOARDS_MESSAGES = {

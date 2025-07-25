@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb'
 import { WorkspaceRole, WorkspaceType } from '~/constants/enums'
-import { CreateWorkspaceReqBody } from '~/models/requests/Workspace.requests'
+import { CreateWorkspaceReqBody, UpdateWorkspaceReqBody } from '~/models/requests/Workspace.requests'
 import Workspace from '~/models/schemas/Workspace.schema'
 import databaseService from '~/services/database.services'
 
@@ -42,6 +42,19 @@ class WorkspacesService {
     ])
 
     return { workspaces, total }
+  }
+
+  async updateWorkspace(workspace_id: string, body: UpdateWorkspaceReqBody) {
+    const workspace = await databaseService.workspaces.findOneAndUpdate(
+      { _id: new ObjectId(workspace_id) },
+      {
+        $set: body,
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return workspace
   }
 }
 
