@@ -19,8 +19,8 @@ const workspaceTitleSchema: ParamSchema = {
   isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_MUST_BE_STRING },
   trim: true,
   isLength: {
-    options: { min: 3, max: 50 },
-    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_LENGTH_MUST_BE_BETWEEN_3_AND_50
+    options: { min: 1, max: 50 },
+    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_LENGTH_MUST_BE_BETWEEN_1_AND_50
   }
 }
 
@@ -29,8 +29,8 @@ const workspaceDescriptionSchema: ParamSchema = {
   isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_DESCRIPTION_MUST_BE_STRING },
   trim: true,
   isLength: {
-    options: { min: 3, max: 256 },
-    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_DESCRIPTION_MUST_BE_BETWEEN_3_AND_256
+    options: { max: 256 },
+    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_DESCRIPTION_LENGTH_MUST_BE_LESS_THAN_256
   }
 }
 

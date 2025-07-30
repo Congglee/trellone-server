@@ -10,6 +10,7 @@ import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
 import { sendForgotPasswordEmail, sendVerifyRegisterEmail } from '~/providers/resend'
 import databaseService from '~/services/database.services'
+import workspacesService from '~/services/workspaces.services'
 import { hashPassword } from '~/utils/crypto'
 import { signToken, verifyToken } from '~/utils/jwt'
 
@@ -120,6 +121,12 @@ class AuthService {
         display_name: nameFromEmail
       })
     )
+
+    // Automatically create a new workspace when user register successfully
+    await workspacesService.createWorkspace(user_id.toString(), {
+      title: `${nameFromEmail}'s Workspace`,
+      description: 'This is your personal workspace for managing your tasks and projects.'
+    })
 
     await sendVerifyRegisterEmail(body.email, email_verify_token)
 
@@ -298,6 +305,12 @@ class AuthService {
       const { iat, exp } = await this.decodeRefreshToken(refresh_token)
 
       await databaseService.refreshTokens.insertOne(new RefreshToken({ user_id, token: refresh_token, iat, exp }))
+
+      // Automatically create a new workspace when user register successfully via google oauth
+      await workspacesService.createWorkspace(user_id.toString(), {
+        title: `${nameFromEmail}'s Workspace`,
+        description: 'This is your personal workspace for managing your tasks and projects.'
+      })
 
       return { access_token, refresh_token, newUser: 1, verify: UserVerifyStatus.Verified }
     }

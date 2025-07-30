@@ -33,6 +33,24 @@ class WorkspacesService {
       databaseService.workspaces
         .aggregate<Workspace>([
           { $match: { $and: queryConditions } },
+          {
+            $lookup: {
+              from: 'boards',
+              localField: '_id',
+              foreignField: 'workspace_id',
+              as: 'boards',
+              pipeline: [
+                { $match: { _destroy: false } },
+                {
+                  $project: {
+                    title: 1,
+                    description: 1,
+                    cover_photo: 1
+                  }
+                }
+              ]
+            }
+          },
           { $sort: { created_at: -1 } },
           { $skip: limit * (page - 1) },
           { $limit: limit }
