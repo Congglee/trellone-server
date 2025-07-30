@@ -74,9 +74,9 @@ export const USERS_MESSAGES = {
 export const WORKSPACES_MESSAGES = {
   WORKSPACE_TITLE_IS_REQUIRED: 'Workspace title is required',
   WORKSPACE_TITLE_MUST_BE_STRING: 'Workspace title must be a string',
-  WORKSPACE_TITLE_LENGTH_MUST_BE_BETWEEN_3_AND_50: 'Workspace title length must be between 3 and 50 characters',
+  WORKSPACE_TITLE_LENGTH_MUST_BE_BETWEEN_1_AND_50: 'Workspace title length must be between 1 and 50 characters',
   WORKSPACE_DESCRIPTION_MUST_BE_STRING: 'Workspace description must be a string',
-  WORKSPACE_DESCRIPTION_MUST_BE_BETWEEN_3_AND_256: 'Workspace description must be between 3 and 256 characters',
+  WORKSPACE_DESCRIPTION_LENGTH_MUST_BE_LESS_THAN_256: 'Workspace description length must be less than 256 characters',
 
   CREATE_WORKSPACE_SUCCESS: 'Workspace created successfully',
 
@@ -98,9 +98,9 @@ export const WORKSPACES_MESSAGES = {
 export const BOARDS_MESSAGES = {
   BOARD_TITLE_IS_REQUIRED: 'Board title is required',
   BOARD_TITLE_MUST_BE_STRING: 'Board title must be a string',
-  BOARD_TITLE_LENGTH_MUST_BE_BETWEEN_3_AND_50: 'Board title length must be between 3 and 50 characters',
+  BOARD_TITLE_LENGTH_MUST_BE_BETWEEN_1_AND_50: 'Board title length must be between 1 and 50 characters',
   BOARD_DESCRIPTION_MUST_BE_STRING: 'Board description must be a string',
-  BOARD_DESCRIPTION_MUST_BE_BETWEEN_3_AND_256: 'Board description must be between 3 and 256 characters',
+  BOARD_DESCRIPTION_LENGTH_MUST_BE_LESS_THAN_256: 'Board description length must be less than 256 characters',
   BOARD_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Board type must be public or private',
   WORKSPACE_ID_IS_REQUIRED: 'Workspace id is required',
   WORKSPACE_ID_MUST_BE_STRING: 'Workspace id must be a string',
