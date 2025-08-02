@@ -105,19 +105,12 @@ export const cardIdValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const isUserCardOwner = await databaseService.boards.countDocuments({
+            const isUserCardMember = await databaseService.boards.countDocuments({
               _id: card.board_id,
-              $or: [
-                {
-                  owners: { $in: [new ObjectId(user_id)] }
-                },
-                {
-                  members: { $in: [new ObjectId(user_id)] }
-                }
-              ]
+              members: { $elemMatch: { user_id: new ObjectId(user_id) } }
             })
 
-            if (!isUserCardOwner) {
+            if (!isUserCardMember) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.FORBIDDEN,
                 message: CARDS_MESSAGES.CARD_NOT_BELONG_TO_USER

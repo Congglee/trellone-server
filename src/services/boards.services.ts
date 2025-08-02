@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongodb'
+import { BoardRole } from '~/constants/enums'
 import {
   CreateBoardReqBody,
   MoveCardToDifferentColumnReqBody,
@@ -9,15 +10,21 @@ import databaseService from '~/services/database.services'
 
 class BoardsService {
   async createBoard(user_id: string, body: CreateBoardReqBody) {
-    const result = await databaseService.boards.insertOne(
-      new Board({
-        title: body.title,
-        description: body.description,
-        type: body.type,
-        owners: [new ObjectId(user_id)],
-        workspace_id: new ObjectId(body.workspace_id)
-      })
-    )
+    const newBoard = new Board({
+      title: body.title,
+      description: body.description,
+      type: body.type,
+      members: [
+        {
+          user_id: new ObjectId(user_id),
+          role: BoardRole.Admin,
+          joined_at: new Date()
+        }
+      ],
+      workspace_id: new ObjectId(body.workspace_id)
+    })
+
+    const result = await databaseService.boards.insertOne(newBoard)
 
     const board = await databaseService.boards.findOne({ _id: result.insertedId })
 
@@ -36,16 +43,7 @@ class BoardsService {
     keyword: string
   }) {
     const queryConditions: any[] = [
-      {
-        $or: [
-          {
-            owners: { $all: [new ObjectId(user_id)] }
-          },
-          {
-            members: { $all: [new ObjectId(user_id)] }
-          }
-        ]
-      },
+      { members: { $elemMatch: { user_id: new ObjectId(user_id) } } },
       { _destroy: false }
     ]
 

@@ -27,7 +27,19 @@ class WorkspacesService {
   }
 
   async getWorkspaces({ user_id, limit, page }: { user_id: string; limit: number; page: number }) {
-    const queryConditions: any[] = [{ 'members.user_id': new ObjectId(user_id) }, { _destroy: false }]
+    const queryConditions = [
+      {
+        $or: [
+          {
+            members: {
+              $elemMatch: { user_id: new ObjectId(user_id) }
+            }
+          },
+          { guests: new ObjectId(user_id) }
+        ]
+      },
+      { _destroy: false }
+    ]
 
     const [workspaces, total] = await Promise.all([
       databaseService.workspaces

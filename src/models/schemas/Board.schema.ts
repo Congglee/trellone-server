@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb'
 import { BoardType } from '~/constants/enums'
+import { BoardMember } from '~/models/Extensions'
 
 interface BoardSchema {
   _id?: ObjectId
@@ -9,8 +10,7 @@ interface BoardSchema {
   cover_photo?: string
   workspace_id: ObjectId | null
   column_order_ids?: ObjectId[]
-  owners: ObjectId[]
-  members?: ObjectId[]
+  members?: BoardMember[]
   _destroy?: boolean
   created_at?: Date
   updated_at?: Date
@@ -24,8 +24,7 @@ export default class Board {
   cover_photo: string
   workspace_id: ObjectId | null
   column_order_ids: ObjectId[]
-  owners: ObjectId[]
-  members: ObjectId[]
+  members: BoardMember[]
   _destroy: boolean
   created_at?: Date
   updated_at?: Date
@@ -40,7 +39,6 @@ export default class Board {
     this.cover_photo = board.cover_photo || ''
     this.workspace_id = board.workspace_id || null
     this.column_order_ids = board.column_order_ids || []
-    this.owners = board.owners || []
     this.members = board.members || []
     this._destroy = board._destroy || false
     this.created_at = board.created_at || date

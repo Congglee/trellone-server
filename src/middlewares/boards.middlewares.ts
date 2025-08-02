@@ -106,20 +106,21 @@ export const boardIdValidator = validate(
               { _id: new ObjectId(value) },
               { _destroy: false },
               {
-                $or: [
-                  {
-                    owners: { $all: [new ObjectId(user_id)] }
-                  },
-                  { members: { $all: [new ObjectId(user_id)] } }
-                ]
+                members: { $elemMatch: { user_id: new ObjectId(user_id) } }
               }
             ]
 
+            // Execute MongoDB aggregation pipeline to fetch board with related data
             const [board] = await databaseService.boards
               .aggregate<Board>([
+                // Stage 1: $match - Filter documents based on query conditions
+                // This stage finds the board by ID, ensures it's not destroyed,
+                // and verifies the current user is a member of the board
                 {
                   $match: { $and: queryConditions }
                 },
+                // Stage 2: $lookup - Join with columns collection
+                // This performs a left outer join to fetch all columns associated with this board
                 {
                   $lookup: {
                     from: envConfig.dbColumnsCollection,
@@ -128,6 +129,8 @@ export const boardIdValidator = validate(
                     as: 'columns'
                   }
                 },
+                // Stage 3: $lookup - Join with cards collection
+                // This fetches all cards associated with this board for column organization
                 {
                   $lookup: {
                     from: envConfig.dbCardsCollection,
@@ -136,14 +139,19 @@ export const boardIdValidator = validate(
                     as: 'cards'
                   }
                 },
+                // Stage 4: $lookup - Join with users collection for member details
+                // This fetches user information for all board members
+                // Uses a sub-pipeline to exclude sensitive user data (passwords, tokens)
                 {
                   $lookup: {
                     from: envConfig.dbUsersCollection,
-                    localField: 'members',
-                    foreignField: '_id',
-                    as: 'members',
+                    localField: 'members.user_id', // Array of user IDs from board members
+                    foreignField: '_id', // User document _id field
+                    as: 'memberUsers', // Store results in temporary field
                     pipeline: [
                       {
+                        // Sub-pipeline: $project - Exclude sensitive user fields
+                        // This ensures passwords and security tokens are not returned
                         $project: {
                           password: 0,
                           email_verify_token: 0,
@@ -153,25 +161,59 @@ export const boardIdValidator = validate(
                     ]
                   }
                 },
-                {
-                  $lookup: {
-                    from: envConfig.dbUsersCollection,
-                    localField: 'owners',
-                    foreignField: '_id',
-                    as: 'owners',
-                    pipeline: [
-                      {
-                        $project: {
-                          password: 0,
-                          email_verify_token: 0,
-                          forgot_password_token: 0
-                        }
-                      }
-                    ]
-                  }
-                },
+                // Stage 5: $addFields - Transform member data structure and organize columns
+                // This stage restructures the members array to include user details directly
+                // and organizes cards within their respective columns
                 {
                   $addFields: {
+                    // Transform members array to include user details
+                    members: {
+                      // $map - Transform each element in the members array
+                      $map: {
+                        input: '$members', // Process each member in the array
+                        as: 'member', // Variable name for current member
+                        in: {
+                          // $let - Define variables for use in expression
+                          $let: {
+                            vars: {
+                              // Find the corresponding user document for this member
+                              user: {
+                                // $arrayElemAt - Get the first element from filtered array
+                                $arrayElemAt: [
+                                  {
+                                    // $filter - Find user document matching member's user_id
+                                    $filter: {
+                                      input: '$memberUsers', // Search in fetched user documents
+                                      as: 'user', // Variable name for current user
+                                      cond: {
+                                        // $eq - Match user._id with member.user_id
+                                        $eq: ['$$user._id', '$$member.user_id']
+                                      }
+                                    }
+                                  },
+                                  0 // Get first (and only) matching element
+                                ]
+                              }
+                            },
+                            in: {
+                              // $mergeObjects - Combine member and user data into single object
+                              $mergeObjects: [
+                                {
+                                  // $unsetField - Remove user_id field from member object
+                                  // This prevents duplication since user._id will serve as identifier
+                                  $unsetField: {
+                                    field: 'user_id',
+                                    input: '$$member'
+                                  }
+                                },
+                                '$$user' // Merge all user fields into member object
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    },
+                    // Transform columns array to include associated cards
                     columns: {
                       $map: {
                         input: '$columns',
@@ -194,8 +236,13 @@ export const boardIdValidator = validate(
                     }
                   }
                 },
+                // Stage 6: $project - Clean up temporary fields
+                // Remove temporary fields that are no longer needed
                 {
-                  $project: { cards: 0 }
+                  $project: {
+                    cards: 0, // Remove cards array as they're now nested in columns
+                    memberUsers: 0 // Remove temporary memberUsers field
+                  }
                 }
               ])
               .toArray()

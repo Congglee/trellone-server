@@ -1,9 +1,16 @@
 import { ObjectId } from 'mongodb'
-import { AttachmentType, BoardInvitationStatus, WorkspaceRole } from '~/constants/enums'
+import { AttachmentType, BoardInvitationStatus, BoardRole, WorkspaceRole } from '~/constants/enums'
 
 export interface WorkspaceMember {
   user_id: ObjectId
   role: WorkspaceRole
+  joined_at: Date
+  invited_by?: ObjectId
+}
+
+export interface BoardMember {
+  user_id: ObjectId
+  role: BoardRole
   joined_at: Date
   invited_by?: ObjectId
 }
