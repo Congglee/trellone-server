@@ -77,19 +77,12 @@ export const columnIdValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const isUserColumnOwner = await databaseService.boards.countDocuments({
+            const isUserColumnMember = await databaseService.boards.countDocuments({
               _id: column.board_id,
-              $or: [
-                {
-                  owners: { $in: [new ObjectId(user_id)] }
-                },
-                {
-                  members: { $in: [new ObjectId(user_id)] }
-                }
-              ]
+              members: { $elemMatch: { user_id: new ObjectId(user_id) } }
             })
 
-            if (!isUserColumnOwner) {
+            if (!isUserColumnMember) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.FORBIDDEN,
                 message: COLUMNS_MESSAGES.COLUMN_NOT_BELONG_TO_USER

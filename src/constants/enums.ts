@@ -13,6 +13,12 @@ export enum WorkspaceRole {
   Normal = 'Normal'
 }
 
+export enum BoardRole {
+  Admin = 'Admin',
+  Member = 'Member',
+  Observer = 'Observer'
+}
+
 export enum UserVerifyStatus {
   Unverified,
   Verified,

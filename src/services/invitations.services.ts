@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
-import { BoardInvitationStatus, InvitationType, TokenType } from '~/constants/enums'
+import { BoardInvitationStatus, BoardRole, InvitationType, TokenType } from '~/constants/enums'
 import { BoardInvitation } from '~/models/Extensions'
 import { CreateNewBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
 import Board from '~/models/schemas/Board.schema'
@@ -197,9 +197,40 @@ class InvitationsService {
     if (body.status === BoardInvitationStatus.Accepted) {
       await databaseService.boards.findOneAndUpdate(
         { _id: new ObjectId(body.board_id) },
-        { $push: { members: new ObjectId(user_id) } },
+        {
+          $push: {
+            members: {
+              user_id: new ObjectId(user_id),
+              role: BoardRole.Member,
+              joined_at: new Date()
+            }
+          }
+        },
         { returnDocument: 'after' }
       )
+
+      // Step 3: Workspace guest management - Add user to workspace guests if not already a member
+      // First, retrieve the board to get its workspace_id
+      const board = await databaseService.boards.findOne({ _id: new ObjectId(body.board_id) })
+
+      if (board?.workspace_id) {
+        // Check if the user is already a member of the workspace
+        const isWorkspaceMember = await databaseService.workspaces.countDocuments({
+          _id: board.workspace_id,
+          members: { $elemMatch: { user_id: new ObjectId(user_id) } }
+        })
+
+        // If user is not a workspace member, add them to the guests array
+        if (!isWorkspaceMember) {
+          await databaseService.workspaces.findOneAndUpdate(
+            { _id: board.workspace_id },
+            {
+              $addToSet: { guests: new ObjectId(user_id) }
+            },
+            { returnDocument: 'after' }
+          )
+        }
+      }
 
       invitee = await databaseService.users.findOne(
         { _id: new ObjectId(invitation?.invitee_id) },
