@@ -68,8 +68,13 @@ export const workspaceIdValidator = validate(
 
             const queryConditions = [
               { _id: new ObjectId(value) },
-              { _destroy: false },
-              { 'members.user_id': new ObjectId(user_id) }
+              {
+                $or: [
+                  { members: { $elemMatch: { user_id: new ObjectId(user_id) } } },
+                  { guests: new ObjectId(user_id) }
+                ]
+              },
+              { _destroy: false }
             ]
 
             // Execute MongoDB aggregation pipeline to fetch workspace with related data

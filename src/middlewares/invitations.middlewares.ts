@@ -63,19 +63,12 @@ export const createNewBoardInvitationValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const isUserBoardOwnerOrMember = await databaseService.boards.countDocuments({
+            const isUserBoardMember = await databaseService.boards.countDocuments({
               _id: new ObjectId(value),
-              $or: [
-                {
-                  owners: { $in: [new ObjectId(user_id)] }
-                },
-                {
-                  members: { $in: [new ObjectId(user_id)] }
-                }
-              ]
+              members: { $elemMatch: { user_id: new ObjectId(user_id) } }
             })
 
-            if (!isUserBoardOwnerOrMember) {
+            if (!isUserBoardMember) {
               throw new Error(INVITATIONS_MESSAGES.USER_DOES_NOT_HAVE_ACCESS_TO_BOARD)
             }
 
@@ -94,7 +87,7 @@ export const checkInviteeMembershipValidator = wrapRequestHandler(
     const board = req.board as Board
 
     // Check if the invitee is already an owner or member of the board
-    const isAlreadyMember = [...board.owners, ...board.members].some((id) => id.toString() === invitee._id?.toString())
+    const isAlreadyMember = board.members?.some((member) => member.user_id.toString() === invitee._id?.toString())
 
     if (isAlreadyMember) {
       throw new ErrorWithStatus({
@@ -250,9 +243,9 @@ export const updateBoardInvitationValidator = validate(
               _id: new ObjectId(board_id)
             })) as Board
 
-            const boardOwnerAndMemberIds = [...board.owners, ...board.members].toString()
+            const boardMemberIds = board.members?.map((member) => member.user_id.toString())
 
-            if (value === BoardInvitationStatus.Accepted && boardOwnerAndMemberIds.includes(user_id)) {
+            if (value === BoardInvitationStatus.Accepted && boardMemberIds?.includes(user_id)) {
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.BAD_REQUEST,
                 message: INVITATIONS_MESSAGES.USER_IS_ALREADY_MEMBER_OF_BOARD
