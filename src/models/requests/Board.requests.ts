@@ -21,11 +21,3 @@ export interface UpdateBoardReqBody extends CreateBoardReqBody {
   column_order_ids: string[]
   cover_photo?: string
 }
-
-export interface MoveCardToDifferentColumnReqBody {
-  current_card_id: string
-  prev_column_id: string
-  prev_card_order_ids: string[]
-  next_column_id: string
-  next_card_order_ids: string[]
-}

@@ -43,6 +43,7 @@ export const envConfig = {
   dbUsersCollection: process.env.DB_USERS_COLLECTION as string,
   dbRefreshTokensCollection: process.env.DB_REFRESH_TOKENS_COLLECTION as string,
   dbInvitationsCollection: process.env.DB_INVITATIONS_COLLECTION as string,
+  dbRolesCollection: process.env.DB_ROLES_COLLECTION as string,
 
   passwordSecret: process.env.PASSWORD_SECRET as string,
 

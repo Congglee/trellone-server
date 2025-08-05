@@ -3,7 +3,6 @@ import {
   createBoardController,
   getBoardController,
   getBoardsController,
-  moveCardToDifferentColumnController,
   updateBoardController
 } from '~/controllers/boards.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
@@ -11,10 +10,10 @@ import {
   boardIdValidator,
   createBoardValidator,
   getBoardsValidator,
-  moveCardToDifferentColumnValidator,
   updateBoardValidator
 } from '~/middlewares/boards.middlewares'
 import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
+import { requireWorkspacePermissionForBoard } from '~/middlewares/rbac.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
 import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -26,6 +25,7 @@ boardsRouter.post(
   accessTokenValidator,
   verifiedUserValidator,
   createBoardValidator,
+  requireWorkspacePermissionForBoard(['board:create']),
   wrapRequestHandler(createBoardController)
 )
 
@@ -42,6 +42,7 @@ boardsRouter.get(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
+  requireWorkspacePermissionForBoard(['board:read', 'board:read_all']),
   wrapRequestHandler(getBoardController)
 )
 
@@ -50,6 +51,7 @@ boardsRouter.put(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
+  requireWorkspacePermissionForBoard(['board:update', 'board:update_all']),
   updateBoardValidator,
   filterMiddleware<UpdateBoardReqBody>([
     'title',
@@ -60,21 +62,6 @@ boardsRouter.put(
     'cover_photo'
   ]),
   wrapRequestHandler(updateBoardController)
-)
-
-boardsRouter.put(
-  '/supports/moving-card',
-  accessTokenValidator,
-  verifiedUserValidator,
-  moveCardToDifferentColumnValidator,
-  filterMiddleware([
-    'current_card_id',
-    'prev_column_id',
-    'prev_card_order_ids',
-    'next_column_id',
-    'next_card_order_ids'
-  ]),
-  wrapRequestHandler(moveCardToDifferentColumnController)
 )
 
 export default boardsRouter

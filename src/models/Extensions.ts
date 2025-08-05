@@ -1,7 +1,8 @@
 import { ObjectId } from 'mongodb'
 import { AttachmentType, BoardInvitationStatus, BoardRole, WorkspaceRole } from '~/constants/enums'
+import User from '~/models/schemas/User.schema'
 
-export interface WorkspaceMember {
+export interface WorkspaceMember extends User {
   user_id: ObjectId
   role: WorkspaceRole
   joined_at: Date

@@ -55,3 +55,11 @@ export interface ReactToCardCommentReqBody {
 export interface CardCommentReactionParams extends CardParams {
   comment_id: string
 }
+
+export interface MoveCardToDifferentColumnReqBody {
+  current_card_id: string
+  prev_column_id: string
+  prev_card_order_ids: string[]
+  next_column_id: string
+  next_card_order_ids: string[]
+}
