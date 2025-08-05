@@ -92,7 +92,11 @@ export const WORKSPACES_MESSAGES = {
 
   UPDATE_WORKSPACE_SUCCESS: 'Workspace updated successfully',
 
-  DELETE_WORKSPACE_SUCCESS: 'Workspace deleted successfully'
+  DELETE_WORKSPACE_SUCCESS: 'Workspace deleted successfully',
+
+  USER_NOT_MEMBER_OF_WORKSPACE: 'User is not a member of this workspace',
+  INSUFFICIENT_WORKSPACE_PERMISSIONS: 'Insufficient permissions to access this workspace resource',
+  WORKSPACE_ROLE_NOT_FOUND: 'Workspace role not found'
 }
 
 export const BOARDS_MESSAGES = {
@@ -124,23 +128,7 @@ export const BOARDS_MESSAGES = {
   COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
   INVALID_COLUMN_ID: 'Invalid column id',
 
-  UPDATE_BOARD_SUCCESS: 'Board updated successfully',
-
-  CURRENT_CARD_ID_IS_REQUIRED: 'Current card id is required',
-  CURRENT_CARD_ID_MUST_BE_STRING: 'Current card id must be a string',
-  INVALID_CARD_ID: 'Invalid card id',
-  CARD_NOT_FOUND: 'Card not found',
-  PREV_COLUMN_ID_IS_REQUIRED: 'Previous column id is required',
-  PREV_COLUMN_ID_MUST_BE_STRING: 'Previous column id must be a string',
-  COLUMN_NOT_FOUND: 'Column not found',
-  PREV_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Previous card order ids must be an array of strings',
-  PREV_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Previous card order ids cannot be empty',
-  NEXT_COLUMN_ID_IS_REQUIRED: 'Next column id is required',
-  NEXT_COLUMN_ID_MUST_BE_STRING: 'Next column id must be a string',
-  NEXT_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Next card order ids must be an array of strings',
-  NEXT_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Next card order ids cannot be empty',
-
-  MOVE_CARD_TO_DIFFERENT_COLUMN_SUCCESS: 'Move card to different column successfully'
+  UPDATE_BOARD_SUCCESS: 'Board updated successfully'
 }
 
 export const COLUMNS_MESSAGES = {
@@ -230,7 +218,20 @@ export const CARDS_MESSAGES = {
 
   REACT_CARD_COMMENT_SUCCESS: 'Reacted to card comment successfully',
 
-  DELETE_CARD_SUCCESS: 'Card deleted successfully'
+  DELETE_CARD_SUCCESS: 'Card deleted successfully',
+
+  CURRENT_CARD_ID_IS_REQUIRED: 'Current card id is required',
+  CURRENT_CARD_ID_MUST_BE_STRING: 'Current card id must be a string',
+  PREV_COLUMN_ID_IS_REQUIRED: 'Previous column id is required',
+  PREV_COLUMN_ID_MUST_BE_STRING: 'Previous column id must be a string',
+  PREV_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Previous card order ids must be an array of strings',
+  PREV_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Previous card order ids cannot be empty',
+  NEXT_COLUMN_ID_IS_REQUIRED: 'Next column id is required',
+  NEXT_COLUMN_ID_MUST_BE_STRING: 'Next column id must be a string',
+  NEXT_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Next card order ids must be an array of strings',
+  NEXT_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Next card order ids cannot be empty',
+
+  MOVE_CARD_TO_DIFFERENT_COLUMN_SUCCESS: 'Move card to different column successfully'
 }
 
 export const MEDIAS_MESSAGES = {

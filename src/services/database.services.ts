@@ -6,6 +6,7 @@ import Card from '~/models/schemas/Card.schema'
 import Column from '~/models/schemas/Column.schema'
 import Invitation from '~/models/schemas/Invitation.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import Role from '~/models/schemas/Role.schema'
 import User from '~/models/schemas/User.schema'
 import Workspace from '~/models/schemas/Workspace.schema'
 
@@ -66,6 +67,10 @@ class DatabaseService {
 
   get invitations(): Collection<Invitation> {
     return this.db.collection<Invitation>(envConfig.dbInvitationsCollection as string)
+  }
+
+  get roles(): Collection<Role> {
+    return this.db.collection<Role>(envConfig.dbRolesCollection as string)
   }
 }
 

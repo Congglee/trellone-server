@@ -497,3 +497,101 @@ export const reactionToCardCommentValidator = validate(
     ['body']
   )
 )
+
+export const moveCardToDifferentColumnValidator = validate(
+  checkSchema(
+    {
+      current_card_id: {
+        notEmpty: { errorMessage: CARDS_MESSAGES.CURRENT_CARD_ID_IS_REQUIRED },
+        isString: { errorMessage: CARDS_MESSAGES.CURRENT_CARD_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new Error(CARDS_MESSAGES.INVALID_CARD_ID)
+            }
+
+            const card = await databaseService.cards.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!card) {
+              throw new Error(CARDS_MESSAGES.CARD_NOT_FOUND)
+            }
+
+            return true
+          }
+        }
+      },
+      prev_column_id: {
+        notEmpty: { errorMessage: CARDS_MESSAGES.PREV_COLUMN_ID_IS_REQUIRED },
+        isString: { errorMessage: CARDS_MESSAGES.PREV_COLUMN_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new Error(CARDS_MESSAGES.INVALID_COLUMN_ID)
+            }
+
+            const column = await databaseService.columns.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!column) {
+              throw new Error(CARDS_MESSAGES.COLUMN_NOT_FOUND)
+            }
+
+            return true
+          }
+        }
+      },
+      prev_card_order_ids: {
+        isArray: { errorMessage: CARDS_MESSAGES.PREV_CARD_ORDER_IDS_MUST_BE_AN_ARRAY },
+        custom: {
+          options: async (value) => {
+            if (value.some((id: string) => !ObjectId.isValid(id))) {
+              throw new Error(CARDS_MESSAGES.INVALID_CARD_ID)
+            }
+
+            return true
+          }
+        }
+      },
+      next_column_id: {
+        notEmpty: { errorMessage: CARDS_MESSAGES.NEXT_COLUMN_ID_IS_REQUIRED },
+        isString: { errorMessage: CARDS_MESSAGES.NEXT_COLUMN_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new Error(CARDS_MESSAGES.INVALID_COLUMN_ID)
+            }
+
+            const column = await databaseService.columns.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!column) {
+              throw new Error(CARDS_MESSAGES.COLUMN_NOT_FOUND)
+            }
+
+            return true
+          }
+        }
+      },
+      next_card_order_ids: {
+        isArray: { errorMessage: CARDS_MESSAGES.NEXT_CARD_ORDER_IDS_MUST_BE_AN_ARRAY },
+        custom: {
+          options: async (value) => {
+            if (value.some((id: string) => !ObjectId.isValid(id))) {
+              throw new Error(CARDS_MESSAGES.INVALID_CARD_ID)
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)

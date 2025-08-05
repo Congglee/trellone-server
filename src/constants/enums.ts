@@ -74,3 +74,8 @@ export enum CardCommentReactionAction {
   Add = 'ADD',
   Remove = 'REMOVE'
 }
+
+export enum RoleLevel {
+  Workspace = 'Workspace',
+  Board = 'Board'
+}

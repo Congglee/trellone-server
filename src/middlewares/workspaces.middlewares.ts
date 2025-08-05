@@ -153,15 +153,9 @@ export const workspaceIdValidator = validate(
                             },
                             in: {
                               // $mergeObjects - Combine member and user data into single object
+                              // Keep user_id field from member object for downstream processing
                               $mergeObjects: [
-                                {
-                                  // $unsetField - Remove user_id field from member object
-                                  // This prevents duplication since user._id will serve as identifier
-                                  $unsetField: {
-                                    field: 'user_id',
-                                    input: '$$member'
-                                  }
-                                },
+                                '$$member', // Keep all member fields including user_id
                                 '$$user' // Merge all user fields into member object
                               ]
                             }

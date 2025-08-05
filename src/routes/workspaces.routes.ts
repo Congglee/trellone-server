@@ -8,6 +8,7 @@ import {
 } from '~/controllers/workspaces.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
+import { requireWorkspacePermission } from '~/middlewares/rbac.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
 import {
   createWorkspaceValidator,
@@ -42,6 +43,7 @@ workspacesRouter.put(
   accessTokenValidator,
   verifiedUserValidator,
   workspaceIdValidator,
+  requireWorkspacePermission(['workspace:update']),
   updateWorkspaceValidator,
   filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo']),
   wrapRequestHandler(updateWorkspaceController)
@@ -52,6 +54,7 @@ workspacesRouter.delete(
   accessTokenValidator,
   verifiedUserValidator,
   workspaceIdValidator,
+  requireWorkspacePermission(['workspace:delete']),
   wrapRequestHandler(deleteWorkspaceController)
 )
 
