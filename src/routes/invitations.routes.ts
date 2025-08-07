@@ -33,6 +33,7 @@ invitationsRouter.post(
   '/verify-board-invitation',
   accessTokenValidator,
   verifiedUserValidator,
+  verifyInviteTokenValidator,
   wrapRequestHandler(verifyBoardInvitationController)
 )
 
