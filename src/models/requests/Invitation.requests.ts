@@ -1,10 +1,18 @@
 import { ParamsDictionary } from 'express-serve-static-core'
-import { BoardInvitationStatus } from '~/constants/enums'
+import { BoardInvitationStatus, BoardRole, WorkspaceInvitationStatus, WorkspaceRole } from '~/constants/enums'
 import { TokenPayload } from '~/models/requests/User.requests'
+
+export interface CreateNewWorkspaceInvitationReqBody {
+  invitee_email: string
+  workspace_id: string
+  role: WorkspaceRole
+}
 
 export interface CreateNewBoardInvitationReqBody {
   invitee_email: string
   board_id: string
+  workspace_id: string
+  role: BoardRole
 }
 
 export interface InviteTokenPayload extends TokenPayload {
@@ -12,12 +20,17 @@ export interface InviteTokenPayload extends TokenPayload {
   invitation_id: string
 }
 
-export interface VerifyBoardInvitationReqBody {
+export interface VerifyInvitationReqBody {
   invite_token: string
 }
 
-export interface BoardInvitationParams extends ParamsDictionary {
+export interface InvitationParams extends ParamsDictionary {
   invitation_id: string
+}
+
+export interface UpdateWorkspaceInvitationReqBody {
+  status: WorkspaceInvitationStatus
+  workspace_id: string
 }
 
 export interface UpdateBoardInvitationReqBody {

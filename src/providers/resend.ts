@@ -5,6 +5,7 @@ import fs from 'fs'
 
 const verifyEmailTemplate = fs.readFileSync(path.resolve('src/templates/verify-email.html'), 'utf-8')
 const forgotPasswordTemplate = fs.readFileSync(path.resolve('src/templates/forgot-password.html'), 'utf-8')
+const workspaceInvitationTemplate = fs.readFileSync(path.resolve('src/templates/workspace-invitation.html'), 'utf-8')
 const boardInvitationTemplate = fs.readFileSync(path.resolve('src/templates/board-invitation.html'), 'utf-8')
 
 const resend = new Resend(envConfig.resendApiKey)
@@ -79,6 +80,40 @@ export const sendBoardInvitationEmail = ({
       .replace(
         '{{link}}',
         `${envConfig.clientUrl}/board-invitation/verification?token=${invite_token}&board_id=${boardId}`
+      ),
+    `'${inviterName}' ${emailSenderAddress}`
+  )
+}
+
+export const sendWorkspaceInvitationEmail = ({
+  toAddress,
+  invite_token,
+  workspaceTitle,
+  workspaceId,
+  inviterName,
+  template = workspaceInvitationTemplate
+}: {
+  toAddress: string
+  invite_token: string
+  workspaceTitle: string
+  workspaceId: string
+  inviterName: string
+  template?: string
+}) => {
+  const emailSenderAddress = envConfig.resendEmailFromAddress.split(' ')[1]
+
+  return sendVerifyEmail(
+    toAddress,
+    `You've been invited to join a workspace on Trellone`,
+    template
+      .replace('{{title}}', 'Workspace Invitation')
+      .replace('{{content}}', `Hi ${toAddress},`)
+      .replace('{{workspace_title}}', workspaceTitle)
+      .replace('{{inviter_name}}', inviterName)
+      .replace('{{title_link}}', 'Join this workspace')
+      .replace(
+        '{{link}}',
+        `${envConfig.clientUrl}/workspace-invitation/verification?token=${invite_token}&workspace_id=${workspaceId}`
       ),
     `'${inviterName}' ${emailSenderAddress}`
   )
