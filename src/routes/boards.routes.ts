@@ -13,7 +13,6 @@ import {
   updateBoardValidator
 } from '~/middlewares/boards.middlewares'
 import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
-import { requireWorkspacePermissionForBoard } from '~/middlewares/rbac.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
 import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
@@ -25,7 +24,6 @@ boardsRouter.post(
   accessTokenValidator,
   verifiedUserValidator,
   createBoardValidator,
-  requireWorkspacePermissionForBoard(['board:create']),
   wrapRequestHandler(createBoardController)
 )
 
@@ -42,7 +40,6 @@ boardsRouter.get(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
-  requireWorkspacePermissionForBoard(['board:read', 'board:read_all']),
   wrapRequestHandler(getBoardController)
 )
 
@@ -51,7 +48,6 @@ boardsRouter.put(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
-  requireWorkspacePermissionForBoard(['board:update', 'board:update_all']),
   updateBoardValidator,
   filterMiddleware<UpdateBoardReqBody>([
     'title',

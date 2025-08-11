@@ -8,7 +8,7 @@ interface WorkspaceSchema {
   description?: string
   type: WorkspaceType
   logo?: string
-  members: WorkspaceMember[]
+  members?: WorkspaceMember[]
   guests?: ObjectId[]
   _destroy?: boolean
   created_at?: Date

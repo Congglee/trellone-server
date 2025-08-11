@@ -166,7 +166,6 @@ export const boardIdValidator = validate(
                 // and organizes cards within their respective columns
                 {
                   $addFields: {
-                    // Transform members array to include user details
                     members: {
                       // $map - Transform each element in the members array
                       $map: {
@@ -197,40 +196,13 @@ export const boardIdValidator = validate(
                             },
                             in: {
                               // $mergeObjects - Combine member and user data into single object
+                              // Keep user_id field from member object for downstream processing
                               $mergeObjects: [
-                                {
-                                  // $unsetField - Remove user_id field from member object
-                                  // This prevents duplication since user._id will serve as identifier
-                                  $unsetField: {
-                                    field: 'user_id',
-                                    input: '$$member'
-                                  }
-                                },
+                                '$$member', // Keep all member fields including user_id
                                 '$$user' // Merge all user fields into member object
                               ]
                             }
                           }
-                        }
-                      }
-                    },
-                    // Transform columns array to include associated cards
-                    columns: {
-                      $map: {
-                        input: '$columns',
-                        as: 'column',
-                        in: {
-                          $mergeObjects: [
-                            '$$column',
-                            {
-                              cards: {
-                                $filter: {
-                                  input: '$cards',
-                                  as: 'card',
-                                  cond: { $eq: ['$$card.column_id', '$$column._id'] }
-                                }
-                              }
-                            }
-                          ]
                         }
                       }
                     }

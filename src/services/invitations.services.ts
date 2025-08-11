@@ -1,12 +1,23 @@
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
-import { BoardInvitationStatus, BoardRole, InvitationType, TokenType } from '~/constants/enums'
-import { BoardInvitation } from '~/models/Extensions'
-import { CreateNewBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
+import {
+  BoardInvitationStatus,
+  BoardRole,
+  InvitationType,
+  TokenType,
+  WorkspaceInvitationStatus,
+  WorkspaceRole
+} from '~/constants/enums'
+import { BoardInvitation, WorkspaceInvitation } from '~/models/Extensions'
+import {
+  CreateNewBoardInvitationReqBody,
+  CreateNewWorkspaceInvitationReqBody
+} from '~/models/requests/Invitation.requests'
 import Board from '~/models/schemas/Board.schema'
 import Invitation from '~/models/schemas/Invitation.schema'
 import User from '~/models/schemas/User.schema'
-import { sendBoardInvitationEmail } from '~/providers/resend'
+import Workspace from '~/models/schemas/Workspace.schema'
+import { sendBoardInvitationEmail, sendWorkspaceInvitationEmail } from '~/providers/resend'
 import databaseService from '~/services/database.services'
 import { signToken } from '~/utils/jwt'
 
@@ -17,6 +28,102 @@ class InvitationsService {
       privateKey: envConfig.jwtSecretInviteToken as string,
       options: { expiresIn: envConfig.inviteTokenExpiresIn }
     })
+  }
+
+  async createNewWorkspaceInvitation(
+    body: CreateNewWorkspaceInvitationReqBody,
+    inviter_id: string,
+    invitee: User,
+    workspace: Workspace
+  ) {
+    const invitation_id = new ObjectId()
+
+    const invite_token = await this.signInvitationToken({
+      inviter_id,
+      invitation_id: invitation_id.toString()
+    })
+
+    const inviter = (await databaseService.users.findOne({ _id: new ObjectId(inviter_id) })) as User
+
+    const payload = {
+      inviter_id: new ObjectId(inviter_id),
+      invitee_id: new ObjectId(invitee._id),
+      type: InvitationType.WorkspaceInvitation,
+      workspace_invitation: {
+        workspace_id: new ObjectId(body.workspace_id),
+        role: body.role,
+        status: WorkspaceInvitationStatus.Pending
+      },
+      invite_token
+    }
+
+    const result = await databaseService.invitations.insertOne(
+      new Invitation({
+        ...payload,
+        _id: invitation_id
+      })
+    )
+
+    const [invitation] = await databaseService.invitations
+      .aggregate<Invitation>([
+        { $match: { _id: result.insertedId } },
+        {
+          $lookup: {
+            from: envConfig.dbUsersCollection,
+            localField: 'inviter_id',
+            foreignField: '_id',
+            as: 'inviter',
+            pipeline: [
+              {
+                $project: {
+                  password: 0,
+                  email_verify_token: 0,
+                  forgot_password_token: 0
+                }
+              }
+            ]
+          }
+        },
+        { $unwind: '$inviter' },
+        {
+          $lookup: {
+            from: envConfig.dbUsersCollection,
+            localField: 'invitee_id',
+            foreignField: '_id',
+            as: 'invitee',
+            pipeline: [
+              {
+                $project: {
+                  password: 0,
+                  email_verify_token: 0,
+                  forgot_password_token: 0
+                }
+              }
+            ]
+          }
+        },
+        { $unwind: '$invitee' },
+        {
+          $lookup: {
+            from: envConfig.dbWorkspacesCollection,
+            localField: 'workspace_invitation.workspace_id',
+            foreignField: '_id',
+            as: 'workspace'
+          }
+        },
+        { $unwind: '$workspace' }
+      ])
+      .toArray()
+
+    await sendWorkspaceInvitationEmail({
+      toAddress: invitee.email,
+      invite_token,
+      workspaceTitle: workspace.title,
+      workspaceId: body.workspace_id,
+      inviterName: inviter.display_name
+    })
+
+    return invitation
   }
 
   async createNewBoardInvitation(
@@ -40,6 +147,8 @@ class InvitationsService {
       type: InvitationType.BoardInvitation,
       board_invitation: {
         board_id: new ObjectId(body.board_id),
+        workspace_id: new ObjectId(body.workspace_id),
+        role: body.role,
         status: BoardInvitationStatus.Pending
       },
       invite_token
@@ -179,13 +288,57 @@ class InvitationsService {
     return { invitations, total }
   }
 
-  async updateBoardInvitation(invitation_id: string, user_id: string, body: BoardInvitation) {
+  async updateWorkspaceInvitation(invitation_id: string, invitee_id: string, body: WorkspaceInvitation) {
+    const payload = { ...body, workspace_id: new ObjectId(body.workspace_id) }
+    let invitee = null
+
+    // Step 1: Update the status in the Invitation document
+    const invitation = await databaseService.invitations.findOneAndUpdate(
+      { _id: new ObjectId(invitation_id), invitee_id: new ObjectId(invitee_id) },
+      {
+        $set: { workspace_invitation: payload },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    // Step 2: If the case is a successful invitation, it is necessary to add more information of the user (UserID) to the member_ids record in the Workspace collection.
+    if (body.status === WorkspaceInvitationStatus.Accepted) {
+      // Step 3: Atomically remove user from guests array (if present) and add to members array
+      await databaseService.workspaces.findOneAndUpdate(
+        { _id: new ObjectId(body.workspace_id) },
+        {
+          $pull: {
+            guests: new ObjectId(invitee_id)
+          },
+          $push: {
+            members: {
+              user_id: new ObjectId(invitee_id),
+              role: WorkspaceRole.Normal,
+              joined_at: new Date(),
+              invited_by: new ObjectId(invitation?.inviter_id)
+            }
+          }
+        },
+        { returnDocument: 'after' }
+      )
+
+      invitee = await databaseService.users.findOne(
+        { _id: new ObjectId(invitee_id) },
+        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+      )
+    }
+
+    return { invitation, invitee }
+  }
+
+  async updateBoardInvitation(invitation_id: string, invitee_id: string, body: BoardInvitation) {
     const payload = { ...body, board_id: new ObjectId(body.board_id) }
     let invitee = null
 
     // Step 1: Update the status in the Invitation document
     const invitation = await databaseService.invitations.findOneAndUpdate(
-      { _id: new ObjectId(invitation_id), invitee_id: new ObjectId(user_id) },
+      { _id: new ObjectId(invitation_id), invitee_id: new ObjectId(invitee_id) },
       {
         $set: { board_invitation: payload },
         $currentDate: { updated_at: true }
@@ -200,9 +353,10 @@ class InvitationsService {
         {
           $push: {
             members: {
-              user_id: new ObjectId(user_id),
+              user_id: new ObjectId(invitee_id),
               role: BoardRole.Member,
-              joined_at: new Date()
+              joined_at: new Date(),
+              invited_by: new ObjectId(invitation?.inviter_id)
             }
           }
         },
@@ -217,7 +371,7 @@ class InvitationsService {
         // Check if the user is already a member of the workspace
         const isWorkspaceMember = await databaseService.workspaces.countDocuments({
           _id: board.workspace_id,
-          members: { $elemMatch: { user_id: new ObjectId(user_id) } }
+          members: { $elemMatch: { user_id: new ObjectId(invitee_id) } }
         })
 
         // If user is not a workspace member, add them to the guests array
@@ -225,7 +379,7 @@ class InvitationsService {
           await databaseService.workspaces.findOneAndUpdate(
             { _id: board.workspace_id },
             {
-              $addToSet: { guests: new ObjectId(user_id) }
+              $addToSet: { guests: new ObjectId(invitee_id) }
             },
             { returnDocument: 'after' }
           )
@@ -233,7 +387,7 @@ class InvitationsService {
       }
 
       invitee = await databaseService.users.findOne(
-        { _id: new ObjectId(invitation?.invitee_id) },
+        { _id: new ObjectId(invitee_id) },
         { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
       )
     }
