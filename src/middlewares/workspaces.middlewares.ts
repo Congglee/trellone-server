@@ -2,7 +2,7 @@ import { Request } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
-import { BoardRole, WorkspaceMemberAction, WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { BoardRole, WorkspaceGuestAction, WorkspaceMemberAction, WorkspaceRole, WorkspaceType } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { WORKSPACES_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
@@ -308,6 +308,84 @@ export const updateWorkspaceValidator = validate(
 
             // Case 06: Handle RemoveFromBoard action
             if (value.action === WorkspaceMemberAction.RemoveFromBoard) {
+              // Require board_id for RemoveFromBoard action
+              if (!value.board_id) {
+                throw new Error(WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED)
+              }
+
+              // Validate board_id format
+              if (typeof value.board_id !== 'string' || !ObjectId.isValid(value.board_id)) {
+                throw new Error(WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED)
+              }
+
+              // Find the board and verify it belongs to this workspace
+              const board = await databaseService.boards.findOne({
+                _id: new ObjectId(value.board_id),
+                workspace_id: workspace?._id,
+                _destroy: false
+              })
+
+              if (!board) {
+                throw new Error(WORKSPACES_MESSAGES.BOARD_NOT_FOUND)
+              }
+
+              // Check if the user is a member of this board
+              const isBoardMember = board.members?.some((member) => member.user_id.equals(new ObjectId(value.user_id)))
+
+              if (!isBoardMember) {
+                throw new Error(WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_BOARD)
+              }
+
+              // Ensure at least one admin remains on the board after removal
+              const boardAdmins = board.members?.filter((member) => member.role === BoardRole.Admin) || []
+              const targetBoardMember = board.members?.find((member) =>
+                member.user_id.equals(new ObjectId(value.user_id))
+              )
+              const isTargetBoardAdmin = targetBoardMember?.role === BoardRole.Admin
+
+              // If there's only one board admin and we're trying to remove that admin
+              if (boardAdmins.length === 1 && isTargetBoardAdmin) {
+                throw new Error(WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_BOARD_ADMIN)
+              }
+            }
+
+            return true
+          }
+        }
+      },
+      guest: {
+        optional: true,
+        isObject: { errorMessage: WORKSPACES_MESSAGES.GUEST_MUST_BE_OBJECT },
+        custom: {
+          options: async (value, { req }) => {
+            // Ensure all required fields are present in the member object
+            const requiredFields = ['action', 'user_id']
+            const hasAllRequiredFields = requiredFields.every((field) => field in value)
+
+            if (!hasAllRequiredFields) {
+              throw new Error(`${WORKSPACES_MESSAGES.MEMBER_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
+            }
+
+            const workspaceGuestActions = [
+              WorkspaceGuestAction.AddToWorkspace,
+              WorkspaceGuestAction.RemoveFromWorkspace,
+              WorkspaceGuestAction.RemoveFromBoard
+            ]
+
+            // Case 01:Validate the action is either AddToWorkspace, RemoveFromWorkspace, RemoveFromBoard
+            if (!workspaceGuestActions.includes(value.action)) {
+              throw new Error(WORKSPACES_MESSAGES.INVALID_MEMBER_ACTION)
+            }
+
+            // Case 02: Validate the user_id is a valid ObjectId
+            if (typeof value.user_id !== 'string' || !ObjectId.isValid(value.user_id)) {
+              throw new Error(WORKSPACES_MESSAGES.INVALID_MEMBER_ID)
+            }
+
+            const workspace = (req as Request).workspace
+
+            // Case 03: Handle RemoveFromBoard action
+            if (value.action === WorkspaceGuestAction.RemoveFromBoard) {
               // Require board_id for RemoveFromBoard action
               if (!value.board_id) {
                 throw new Error(WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED)

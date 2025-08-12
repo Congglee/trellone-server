@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { WorkspaceMemberAction, WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { WorkspaceGuestAction, WorkspaceMemberAction, WorkspaceRole, WorkspaceType } from '~/constants/enums'
 import { CreateWorkspaceReqBody, UpdateWorkspaceReqBody } from '~/models/requests/Workspace.requests'
 import Workspace from '~/models/schemas/Workspace.schema'
 import databaseService from '~/services/database.services'
@@ -179,6 +179,100 @@ class WorkspacesService {
 
           // Return the workspace document (unchanged for this action)
           updatedWorkspace = await databaseService.workspaces.findOne({ _id: new ObjectId(workspace_id) })
+        }
+      }
+    } else if (body.guest) {
+      const { action, user_id, board_id } = body.guest
+
+      if (action === WorkspaceGuestAction.AddToWorkspace) {
+        // Convert guest to workspace member by adding to members array and removing from guests array
+        updatedWorkspace = await databaseService.workspaces.findOneAndUpdate(
+          { _id: new ObjectId(workspace_id) },
+          {
+            $addToSet: {
+              members: {
+                user_id: new ObjectId(user_id),
+                role: WorkspaceRole.Normal,
+                joined_at: new Date()
+              }
+            },
+            $pull: { guests: new ObjectId(user_id) },
+            $currentDate: { updated_at: true }
+          },
+          { returnDocument: 'after' }
+        )
+      }
+
+      if (action === WorkspaceGuestAction.RemoveFromWorkspace) {
+        // Remove guest from workspace guests array and from all boards within the workspace
+        const userObjectId = new ObjectId(user_id)
+        const workspaceObjectId = new ObjectId(workspace_id)
+
+        // Remove user from all board members arrays in this workspace
+        await databaseService.boards.updateMany(
+          {
+            workspace_id: workspaceObjectId,
+            _destroy: false,
+            'members.user_id': userObjectId
+          },
+          {
+            $pull: { members: { user_id: userObjectId } },
+            $currentDate: { updated_at: true }
+          }
+        )
+
+        // Remove user from workspace guests array
+        updatedWorkspace = await databaseService.workspaces.findOneAndUpdate(
+          { _id: workspaceObjectId },
+          {
+            $pull: { guests: userObjectId },
+            $currentDate: { updated_at: true }
+          },
+          { returnDocument: 'after' }
+        )
+      }
+
+      if (action === WorkspaceGuestAction.RemoveFromBoard) {
+        // Remove guest from a specific board's members array
+        if (board_id) {
+          const userObjectId = new ObjectId(user_id)
+          const workspaceObjectId = new ObjectId(workspace_id)
+          const boardObjectId = new ObjectId(board_id)
+
+          // Remove user from the specified board's members array
+          await databaseService.boards.updateOne(
+            {
+              _id: boardObjectId,
+              workspace_id: workspaceObjectId
+            },
+            {
+              $pull: { members: { user_id: userObjectId } },
+              $currentDate: { updated_at: true }
+            }
+          )
+
+          // Check how many other boards in this workspace the guest is still a member of
+          const remainingBoardsCount = await databaseService.boards.countDocuments({
+            workspace_id: workspaceObjectId,
+            _destroy: false,
+            'members.user_id': userObjectId,
+            _id: { $ne: boardObjectId } // Exclude the board we just removed them from
+          })
+
+          // If guest is not a member of any other boards in the workspace, remove from workspace guests
+          if (remainingBoardsCount === 0) {
+            updatedWorkspace = await databaseService.workspaces.findOneAndUpdate(
+              { _id: workspaceObjectId },
+              {
+                $pull: { guests: userObjectId },
+                $currentDate: { updated_at: true }
+              },
+              { returnDocument: 'after' }
+            )
+          } else {
+            // Guest is still a member of other boards, return workspace unchanged
+            updatedWorkspace = await databaseService.workspaces.findOne({ _id: workspaceObjectId })
+          }
         }
       }
     } else {

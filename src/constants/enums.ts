@@ -93,3 +93,9 @@ export enum WorkspaceMemberAction {
   RemoveFromBoard = 'REMOVE_FROM_BOARD',
   Leave = 'LEAVE'
 }
+
+export enum WorkspaceGuestAction {
+  AddToWorkspace = 'ADD_TO_WORKSPACE',
+  RemoveFromWorkspace = 'REMOVE_FROM_WORKSPACE',
+  RemoveFromBoard = 'REMOVE_FROM_BOARD'
+}
