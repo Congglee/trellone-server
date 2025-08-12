@@ -107,7 +107,9 @@ export const WORKSPACES_MESSAGES = {
   BOARD_ID_IS_REQUIRED: 'Board id is required for remove from board action',
   BOARD_NOT_FOUND: 'Board not found or does not belong to this workspace',
   USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board',
-  CANNOT_REMOVE_LAST_BOARD_ADMIN: 'Cannot remove the last admin from board. At least one admin must remain.'
+  CANNOT_REMOVE_LAST_BOARD_ADMIN: 'Cannot remove the last admin from board. At least one admin must remain.',
+
+  GUEST_MUST_BE_OBJECT: 'Guest must be an object'
 }
 
 export const BOARDS_MESSAGES = {
