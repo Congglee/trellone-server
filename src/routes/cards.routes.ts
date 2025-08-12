@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   createCardController,
   deleteCardController,
+  moveCardToDifferentColumnController,
   reactToCardCommentController,
   updateCardController
 } from '~/controllers/cards.controllers'
@@ -10,6 +11,7 @@ import {
   cardIdValidator,
   commentIdValidator,
   createCardValidator,
+  moveCardToDifferentColumnValidator,
   reactionToCardCommentValidator,
   updateCardValidator
 } from '~/middlewares/cards.middlewares'
@@ -55,6 +57,21 @@ cardsRouter.delete(
   verifiedUserValidator,
   cardIdValidator,
   wrapRequestHandler(deleteCardController)
+)
+
+cardsRouter.put(
+  '/supports/moving-card',
+  accessTokenValidator,
+  verifiedUserValidator,
+  moveCardToDifferentColumnValidator,
+  filterMiddleware([
+    'current_card_id',
+    'prev_column_id',
+    'prev_card_order_ids',
+    'next_column_id',
+    'next_card_order_ids'
+  ]),
+  wrapRequestHandler(moveCardToDifferentColumnController)
 )
 
 export default cardsRouter

@@ -1,5 +1,11 @@
 import { ObjectId } from 'mongodb'
-import { AttachmentType, BoardInvitationStatus, BoardRole, WorkspaceRole } from '~/constants/enums'
+import {
+  AttachmentType,
+  BoardInvitationStatus,
+  BoardRole,
+  WorkspaceInvitationStatus,
+  WorkspaceRole
+} from '~/constants/enums'
 
 export interface WorkspaceMember {
   user_id: ObjectId
@@ -35,8 +41,16 @@ export interface Comment {
   reactions: CommentReaction[]
 }
 
+export interface WorkspaceInvitation {
+  workspace_id: ObjectId
+  role: WorkspaceRole
+  status: WorkspaceInvitationStatus
+}
+
 export interface BoardInvitation {
   board_id: ObjectId
+  workspace_id: ObjectId
+  role: BoardRole
   status: BoardInvitationStatus
 }
 

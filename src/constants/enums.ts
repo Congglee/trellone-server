@@ -44,7 +44,14 @@ export enum CardMemberAction {
 }
 
 export enum InvitationType {
-  BoardInvitation = 'BOARD_INVITATION'
+  BoardInvitation = 'BOARD_INVITATION',
+  WorkspaceInvitation = 'WORKSPACE_INVITATION'
+}
+
+export enum WorkspaceInvitationStatus {
+  Pending = 'PENDING',
+  Accepted = 'ACCEPTED',
+  Rejected = 'REJECTED'
 }
 
 export enum BoardInvitationStatus {
@@ -73,4 +80,22 @@ export enum CardCommentAction {
 export enum CardCommentReactionAction {
   Add = 'ADD',
   Remove = 'REMOVE'
+}
+
+export enum RoleLevel {
+  Workspace = 'Workspace',
+  Board = 'Board'
+}
+
+export enum WorkspaceMemberAction {
+  EditRole = 'EDIT_ROLE',
+  RemoveFromWorkspace = 'REMOVE_FROM_WORKSPACE',
+  RemoveFromBoard = 'REMOVE_FROM_BOARD',
+  Leave = 'LEAVE'
+}
+
+export enum WorkspaceGuestAction {
+  AddToWorkspace = 'ADD_TO_WORKSPACE',
+  RemoveFromWorkspace = 'REMOVE_FROM_WORKSPACE',
+  RemoveFromBoard = 'REMOVE_FROM_BOARD'
 }

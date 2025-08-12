@@ -1,24 +1,39 @@
 import { Router } from 'express'
 import {
   createNewBoardInvitationController,
+  createNewWorkspaceInvitationController,
   getInvitationsController,
   updateBoardInvitationController,
-  verifyBoardInvitationController
+  updateWorkspaceInvitationController,
+  verifyInvitationController
 } from '~/controllers/invitations.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
 import {
-  boardInvitationIdValidator,
+  boardInvitationUpdateGuard,
   checkInviteeMembershipValidator,
   createNewBoardInvitationValidator,
+  createNewWorkspaceInvitationValidator,
+  invitationIdValidator,
   updateBoardInvitationValidator,
-  verifyInviteTokenValidator
+  updateWorkspaceInvitationValidator,
+  verifyInviteTokenValidator,
+  workspaceInvitationUpdateGuard
 } from '~/middlewares/invitations.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
-import { UpdateBoardInvitationReqBody } from '~/models/requests/Invitation.requests'
+import { UpdateBoardInvitationReqBody, UpdateWorkspaceInvitationReqBody } from '~/models/requests/Invitation.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
 const invitationsRouter = Router()
+
+invitationsRouter.post(
+  '/workspace',
+  accessTokenValidator,
+  verifiedUserValidator,
+  createNewWorkspaceInvitationValidator,
+  checkInviteeMembershipValidator,
+  wrapRequestHandler(createNewWorkspaceInvitationController)
+)
 
 invitationsRouter.post(
   '/board',
@@ -30,19 +45,31 @@ invitationsRouter.post(
 )
 
 invitationsRouter.post(
-  '/verify-board-invitation',
+  '/verify-invitation',
   accessTokenValidator,
   verifiedUserValidator,
-  wrapRequestHandler(verifyBoardInvitationController)
+  verifyInviteTokenValidator,
+  wrapRequestHandler(verifyInvitationController)
 )
 
 invitationsRouter.get('/', accessTokenValidator, paginationValidator, wrapRequestHandler(getInvitationsController))
 
 invitationsRouter.put(
+  '/workspace/:invitation_id',
+  accessTokenValidator,
+  invitationIdValidator,
+  updateWorkspaceInvitationValidator,
+  workspaceInvitationUpdateGuard,
+  filterMiddleware<UpdateWorkspaceInvitationReqBody>(['status']),
+  wrapRequestHandler(updateWorkspaceInvitationController)
+)
+
+invitationsRouter.put(
   '/board/:invitation_id',
   accessTokenValidator,
-  boardInvitationIdValidator,
+  invitationIdValidator,
   updateBoardInvitationValidator,
+  boardInvitationUpdateGuard,
   filterMiddleware<UpdateBoardInvitationReqBody>(['status']),
   wrapRequestHandler(updateBoardInvitationController)
 )

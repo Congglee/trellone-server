@@ -1,18 +1,37 @@
 import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { INVITATIONS_MESSAGES } from '~/constants/messages'
+import { BoardInvitation, WorkspaceInvitation } from '~/models/Extensions'
 import { Pagination } from '~/models/requests/Common.requests'
 import {
-  BoardInvitationParams,
+  InvitationParams,
   CreateNewBoardInvitationReqBody,
+  CreateNewWorkspaceInvitationReqBody,
   UpdateBoardInvitationReqBody,
-  VerifyBoardInvitationReqBody
+  VerifyInvitationReqBody,
+  UpdateWorkspaceInvitationReqBody
 } from '~/models/requests/Invitation.requests'
 import { TokenPayload } from '~/models/requests/User.requests'
 import Board from '~/models/schemas/Board.schema'
 import Invitation from '~/models/schemas/Invitation.schema'
 import User from '~/models/schemas/User.schema'
+import Workspace from '~/models/schemas/Workspace.schema'
 import invitationsService from '~/services/invitations.services'
+
+export const createNewWorkspaceInvitationController = async (
+  req: Request<ParamsDictionary, any, CreateNewWorkspaceInvitationReqBody>,
+  res: Response
+) => {
+  const invitee = req.invitee as User
+  const workspace = req.workspace as Workspace
+
+  // The user making this request is the inviter - the person who sends the invitation
+  const { user_id: inviter_id } = req.decoded_authorization as TokenPayload
+
+  const result = await invitationsService.createNewWorkspaceInvitation(req.body, inviter_id, invitee, workspace)
+
+  return res.json({ message: INVITATIONS_MESSAGES.CREATE_NEW_WORKSPACE_INVITATION_SUCCESS, result })
+}
 
 export const createNewBoardInvitationController = async (
   req: Request<ParamsDictionary, any, CreateNewBoardInvitationReqBody>,
@@ -47,24 +66,44 @@ export const getInvitationsController = async (req: Request<ParamsDictionary, an
   })
 }
 
-export const verifyBoardInvitationController = async (
-  req: Request<ParamsDictionary, any, VerifyBoardInvitationReqBody>,
+export const verifyInvitationController = async (
+  req: Request<ParamsDictionary, any, VerifyInvitationReqBody>,
   res: Response
 ) => {
-  return res.json({ message: INVITATIONS_MESSAGES.VERIFY_BOARD_INVITATION_SUCCESS })
+  return res.json({ message: INVITATIONS_MESSAGES.VERIFY_INVITATION_SUCCESS })
 }
 
-export const updateBoardInvitationController = async (
-  req: Request<BoardInvitationParams, any, UpdateBoardInvitationReqBody>,
+export const updateWorkspaceInvitationController = async (
+  req: Request<InvitationParams, any, UpdateWorkspaceInvitationReqBody>,
   res: Response
 ) => {
   const { invitation_id } = req.params
-  const { user_id } = req.decoded_authorization as TokenPayload
   const invitation = req.invitation as Invitation
 
-  const body = { ...invitation.board_invitation, status: req.body.status }
+  const invitee_id = invitation.invitee_id.toString()
 
-  const result = await invitationsService.updateBoardInvitation(invitation_id, user_id, body)
+  const body = { ...(invitation.workspace_invitation as WorkspaceInvitation), status: req.body.status }
+
+  const result = await invitationsService.updateWorkspaceInvitation(invitation_id, invitee_id, body)
+
+  return res.json({
+    message: INVITATIONS_MESSAGES.UPDATE_WORKSPACE_INVITATION_SUCCESS,
+    result
+  })
+}
+
+export const updateBoardInvitationController = async (
+  req: Request<InvitationParams, any, UpdateBoardInvitationReqBody>,
+  res: Response
+) => {
+  const { invitation_id } = req.params
+  const invitation = req.invitation as Invitation
+
+  const invitee_id = invitation.invitee_id.toString()
+
+  const body = { ...(invitation.board_invitation as BoardInvitation), status: req.body.status }
+
+  const result = await invitationsService.updateBoardInvitation(invitation_id, invitee_id, body)
 
   return res.json({
     message: INVITATIONS_MESSAGES.UPDATE_BOARD_INVITATION_SUCCESS,

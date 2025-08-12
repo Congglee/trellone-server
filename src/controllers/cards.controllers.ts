@@ -5,6 +5,7 @@ import {
   CardCommentReactionParams,
   CardParams,
   CreateCardReqBody,
+  MoveCardToDifferentColumnReqBody,
   ReactToCardCommentReqBody,
   UpdateCardReqBody
 } from '~/models/requests/Card.requests'
@@ -45,4 +46,12 @@ export const deleteCardController = async (req: Request<CardParams, any, any>, r
   await cardsService.deleteCard(card_id, column_id)
 
   return res.json({ message: CARDS_MESSAGES.DELETE_CARD_SUCCESS })
+}
+
+export const moveCardToDifferentColumnController = async (
+  req: Request<ParamsDictionary, any, MoveCardToDifferentColumnReqBody>,
+  res: Response
+) => {
+  const result = await cardsService.moveCardToDifferentColumn(req.body)
+  return res.json(result)
 }

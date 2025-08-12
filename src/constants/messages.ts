@@ -89,10 +89,27 @@ export const WORKSPACES_MESSAGES = {
 
   WORKSPACE_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Workspace type must be public or private',
   WORKSPACE_LOGO_MUST_BE_STRING: 'Workspace logo must be a string',
+  MEMBER_MUST_BE_OBJECT: 'Member must be an object',
+  MEMBER_MISSING_REQUIRED_FIELDS: 'Member missing required fields',
+  INVALID_MEMBER_ACTION: 'Invalid member action',
+  WORKSPACE_ROLE_IS_REQUIRED: 'Workspace role is required',
+  INVALID_WORKSPACE_ROLE: 'Invalid workspace role',
+  INVALID_MEMBER_ID: 'Invalid member id',
 
   UPDATE_WORKSPACE_SUCCESS: 'Workspace updated successfully',
 
-  DELETE_WORKSPACE_SUCCESS: 'Workspace deleted successfully'
+  DELETE_WORKSPACE_SUCCESS: 'Workspace deleted successfully',
+
+  USER_NOT_MEMBER_OF_WORKSPACE: 'User is not a member of this workspace',
+  INSUFFICIENT_WORKSPACE_PERMISSIONS: 'Insufficient permissions to access this workspace resource',
+  WORKSPACE_ROLE_NOT_FOUND: 'Workspace role not found',
+  CANNOT_REMOVE_LAST_WORKSPACE_ADMIN: 'Cannot remove the last admin from workspace. At least one admin must remain.',
+  BOARD_ID_IS_REQUIRED: 'Board id is required for remove from board action',
+  BOARD_NOT_FOUND: 'Board not found or does not belong to this workspace',
+  USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board',
+  CANNOT_REMOVE_LAST_BOARD_ADMIN: 'Cannot remove the last admin from board. At least one admin must remain.',
+
+  GUEST_MUST_BE_OBJECT: 'Guest must be an object'
 }
 
 export const BOARDS_MESSAGES = {
@@ -124,23 +141,7 @@ export const BOARDS_MESSAGES = {
   COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
   INVALID_COLUMN_ID: 'Invalid column id',
 
-  UPDATE_BOARD_SUCCESS: 'Board updated successfully',
-
-  CURRENT_CARD_ID_IS_REQUIRED: 'Current card id is required',
-  CURRENT_CARD_ID_MUST_BE_STRING: 'Current card id must be a string',
-  INVALID_CARD_ID: 'Invalid card id',
-  CARD_NOT_FOUND: 'Card not found',
-  PREV_COLUMN_ID_IS_REQUIRED: 'Previous column id is required',
-  PREV_COLUMN_ID_MUST_BE_STRING: 'Previous column id must be a string',
-  COLUMN_NOT_FOUND: 'Column not found',
-  PREV_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Previous card order ids must be an array of strings',
-  PREV_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Previous card order ids cannot be empty',
-  NEXT_COLUMN_ID_IS_REQUIRED: 'Next column id is required',
-  NEXT_COLUMN_ID_MUST_BE_STRING: 'Next column id must be a string',
-  NEXT_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Next card order ids must be an array of strings',
-  NEXT_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Next card order ids cannot be empty',
-
-  MOVE_CARD_TO_DIFFERENT_COLUMN_SUCCESS: 'Move card to different column successfully'
+  UPDATE_BOARD_SUCCESS: 'Board updated successfully'
 }
 
 export const COLUMNS_MESSAGES = {
@@ -230,7 +231,20 @@ export const CARDS_MESSAGES = {
 
   REACT_CARD_COMMENT_SUCCESS: 'Reacted to card comment successfully',
 
-  DELETE_CARD_SUCCESS: 'Card deleted successfully'
+  DELETE_CARD_SUCCESS: 'Card deleted successfully',
+
+  CURRENT_CARD_ID_IS_REQUIRED: 'Current card id is required',
+  CURRENT_CARD_ID_MUST_BE_STRING: 'Current card id must be a string',
+  PREV_COLUMN_ID_IS_REQUIRED: 'Previous column id is required',
+  PREV_COLUMN_ID_MUST_BE_STRING: 'Previous column id must be a string',
+  PREV_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Previous card order ids must be an array of strings',
+  PREV_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Previous card order ids cannot be empty',
+  NEXT_COLUMN_ID_IS_REQUIRED: 'Next column id is required',
+  NEXT_COLUMN_ID_MUST_BE_STRING: 'Next column id must be a string',
+  NEXT_CARD_ORDER_IDS_MUST_BE_AN_ARRAY: 'Next card order ids must be an array of strings',
+  NEXT_CARD_ORDER_IDS_CANNOT_BE_EMPTY: 'Next card order ids cannot be empty',
+
+  MOVE_CARD_TO_DIFFERENT_COLUMN_SUCCESS: 'Move card to different column successfully'
 }
 
 export const MEDIAS_MESSAGES = {
@@ -250,25 +264,45 @@ export const INVITATIONS_MESSAGES = {
   INVALID_BOARD_ID: 'Invalid board id',
   BOARD_NOT_FOUND: 'Board not found',
   USER_DOES_NOT_HAVE_ACCESS_TO_BOARD: 'User does not have access to board',
+  WORKSPACE_ID_IS_REQUIRED: 'Workspace id is required',
+  WORKSPACE_ID_MUST_BE_STRING: 'Workspace id must be a string',
+  INVALID_WORKSPACE_ID: 'Invalid workspace id',
+  WORKSPACE_NOT_FOUND: 'Workspace not found',
+  USER_DOES_NOT_HAVE_ACCESS_TO_WORKSPACE: 'User does not have access to workspace',
+  INVALID_BOARD_ROLE: 'Invalid board role',
+  INVALID_WORKSPACE_ROLE: 'Invalid workspace role',
 
+  CREATE_NEW_WORKSPACE_INVITATION_SUCCESS: 'User invited to workspace successfully',
   CREATE_NEW_BOARD_INVITATION_SUCCESS: 'User invited to board successfully',
 
   INVITE_TOKEN_IS_REQUIRED: 'Invite token is required',
   INVITER_NOT_FOUND: 'Inviter not found',
   INVALID_INVITE_TOKEN: 'Invalid invite token',
 
-  VERIFY_BOARD_INVITATION_SUCCESS: 'Verify board invitation successfully',
+  VERIFY_INVITATION_SUCCESS: 'Verify invitation successfully',
 
   GET_INVITATIONS_SUCCESS: "Get user's invitations successfully",
 
+  INVALID_WORKSPACE_INVITATION_STATUS: 'Workspace invitation status must be PENDING, ACCEPTED or REJECTED',
+
   INVALID_BOARD_INVITATION_STATUS: 'Board invitation status must be PENDING, ACCEPTED or REJECTED',
   USER_IS_ALREADY_MEMBER_OF_BOARD: 'User is already member of board',
+  USER_IS_ALREADY_MEMBER_OF_WORKSPACE: 'User is already member of workspace',
+
+  INVITATION_ID_IS_REQUIRED: 'Invitation id is required',
+  INVITATION_ID_MUST_BE_STRING: 'Invitation id must be a string',
+  INVALID_INVITATION_ID: 'Invalid invitation id',
+  INVITATION_NOT_FOUND: 'Invitation not found',
+  USER_DOES_NOT_HAVE_ACCESS_TO_INVITATION: 'User does not have access to this invitation',
+  ONLY_INVITED_USER_CAN_ACCEPT_INVITATION: 'Only the invited user can accept this invitation',
 
   BOARD_INVITATION_ID_IS_REQUIRED: 'Board invitation id is required',
   BOARD_INVITATION_ID_MUST_BE_STRING: 'Board invitation id must be a string',
   INVALID_BOARD_INVITATION_ID: 'Invalid board invitation id',
   BOARD_INVITATION_NOT_FOUND: 'Board invitation not found',
   USER_DOES_NOT_HAVE_ACCESS_TO_BOARD_INVITATION: 'User does not have access to this board invitation',
+
+  UPDATE_WORKSPACE_INVITATION_SUCCESS: 'Update workspace invitation successfully',
 
   UPDATE_BOARD_INVITATION_SUCCESS: 'Update board invitation successfully'
 }

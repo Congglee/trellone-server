@@ -43,7 +43,7 @@ workspacesRouter.put(
   verifiedUserValidator,
   workspaceIdValidator,
   updateWorkspaceValidator,
-  filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo']),
+  filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo', 'member', 'guest']),
   wrapRequestHandler(updateWorkspaceController)
 )
 

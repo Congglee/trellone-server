@@ -166,7 +166,6 @@ export const boardIdValidator = validate(
                 // and organizes cards within their respective columns
                 {
                   $addFields: {
-                    // Transform members array to include user details
                     members: {
                       // $map - Transform each element in the members array
                       $map: {
@@ -197,40 +196,13 @@ export const boardIdValidator = validate(
                             },
                             in: {
                               // $mergeObjects - Combine member and user data into single object
+                              // Keep user_id field from member object for downstream processing
                               $mergeObjects: [
-                                {
-                                  // $unsetField - Remove user_id field from member object
-                                  // This prevents duplication since user._id will serve as identifier
-                                  $unsetField: {
-                                    field: 'user_id',
-                                    input: '$$member'
-                                  }
-                                },
+                                '$$member', // Keep all member fields including user_id
                                 '$$user' // Merge all user fields into member object
                               ]
                             }
                           }
-                        }
-                      }
-                    },
-                    // Transform columns array to include associated cards
-                    columns: {
-                      $map: {
-                        input: '$columns',
-                        as: 'column',
-                        in: {
-                          $mergeObjects: [
-                            '$$column',
-                            {
-                              cards: {
-                                $filter: {
-                                  input: '$cards',
-                                  as: 'card',
-                                  cond: { $eq: ['$$card.column_id', '$$column._id'] }
-                                }
-                              }
-                            }
-                          ]
                         }
                       }
                     }
@@ -319,104 +291,6 @@ export const updateBoardValidator = validate(
       cover_photo: {
         optional: true,
         isString: { errorMessage: BOARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING }
-      }
-    },
-    ['body']
-  )
-)
-
-export const moveCardToDifferentColumnValidator = validate(
-  checkSchema(
-    {
-      current_card_id: {
-        notEmpty: { errorMessage: BOARDS_MESSAGES.CURRENT_CARD_ID_IS_REQUIRED },
-        isString: { errorMessage: BOARDS_MESSAGES.CURRENT_CARD_ID_MUST_BE_STRING },
-        trim: true,
-        custom: {
-          options: async (value) => {
-            if (!ObjectId.isValid(value)) {
-              throw new Error(BOARDS_MESSAGES.INVALID_CARD_ID)
-            }
-
-            const card = await databaseService.cards.findOne({
-              _id: new ObjectId(value)
-            })
-
-            if (!card) {
-              throw new Error(BOARDS_MESSAGES.CARD_NOT_FOUND)
-            }
-
-            return true
-          }
-        }
-      },
-      prev_column_id: {
-        notEmpty: { errorMessage: BOARDS_MESSAGES.PREV_COLUMN_ID_IS_REQUIRED },
-        isString: { errorMessage: BOARDS_MESSAGES.PREV_COLUMN_ID_MUST_BE_STRING },
-        trim: true,
-        custom: {
-          options: async (value) => {
-            if (!ObjectId.isValid(value)) {
-              throw new Error(BOARDS_MESSAGES.INVALID_COLUMN_ID)
-            }
-
-            const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value)
-            })
-
-            if (!column) {
-              throw new Error(BOARDS_MESSAGES.COLUMN_NOT_FOUND)
-            }
-
-            return true
-          }
-        }
-      },
-      prev_card_order_ids: {
-        isArray: { errorMessage: BOARDS_MESSAGES.PREV_CARD_ORDER_IDS_MUST_BE_AN_ARRAY },
-        custom: {
-          options: async (value) => {
-            if (value.some((id: string) => !ObjectId.isValid(id))) {
-              throw new Error(BOARDS_MESSAGES.INVALID_CARD_ID)
-            }
-
-            return true
-          }
-        }
-      },
-      next_column_id: {
-        notEmpty: { errorMessage: BOARDS_MESSAGES.NEXT_COLUMN_ID_IS_REQUIRED },
-        isString: { errorMessage: BOARDS_MESSAGES.NEXT_COLUMN_ID_MUST_BE_STRING },
-        trim: true,
-        custom: {
-          options: async (value) => {
-            if (!ObjectId.isValid(value)) {
-              throw new Error(BOARDS_MESSAGES.INVALID_COLUMN_ID)
-            }
-
-            const column = await databaseService.columns.findOne({
-              _id: new ObjectId(value)
-            })
-
-            if (!column) {
-              throw new Error(BOARDS_MESSAGES.COLUMN_NOT_FOUND)
-            }
-
-            return true
-          }
-        }
-      },
-      next_card_order_ids: {
-        isArray: { errorMessage: BOARDS_MESSAGES.NEXT_CARD_ORDER_IDS_MUST_BE_AN_ARRAY },
-        custom: {
-          options: async (value) => {
-            if (value.some((id: string) => !ObjectId.isValid(id))) {
-              throw new Error(BOARDS_MESSAGES.INVALID_CARD_ID)
-            }
-
-            return true
-          }
-        }
       }
     },
     ['body']

@@ -1,13 +1,14 @@
 import { ObjectId } from 'mongodb'
 import { InvitationType } from '~/constants/enums'
-import { BoardInvitation } from '~/models/Extensions'
+import { BoardInvitation, WorkspaceInvitation } from '~/models/Extensions'
 
 interface InvitationSchema {
   _id?: ObjectId
   inviter_id: ObjectId
   invitee_id: ObjectId
   type: InvitationType
-  board_invitation?: BoardInvitation
+  board_invitation?: BoardInvitation | null
+  workspace_invitation?: WorkspaceInvitation | null
   invite_token?: string
   _destroy?: boolean
   created_at?: Date
@@ -19,7 +20,8 @@ export default class Invitation {
   inviter_id: ObjectId
   invitee_id: ObjectId
   type: InvitationType
-  board_invitation: BoardInvitation
+  board_invitation: BoardInvitation | null
+  workspace_invitation: WorkspaceInvitation | null
   invite_token: string
   _destroy: boolean
   created_at?: Date
@@ -32,7 +34,8 @@ export default class Invitation {
     this.inviter_id = invitation.inviter_id
     this.invitee_id = invitation.invitee_id
     this.type = invitation.type || InvitationType.BoardInvitation
-    this.board_invitation = invitation.board_invitation || ({} as BoardInvitation)
+    this.board_invitation = invitation.board_invitation || null
+    this.workspace_invitation = invitation.workspace_invitation || null
     this.invite_token = invitation.invite_token || ''
     this._destroy = invitation._destroy || false
     this.created_at = invitation.created_at || date
