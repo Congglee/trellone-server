@@ -38,11 +38,6 @@ export enum MediaType {
   Document
 }
 
-export enum CardMemberAction {
-  Add = 'ADD',
-  Remove = 'REMOVE'
-}
-
 export enum InvitationType {
   BoardInvitation = 'BOARD_INVITATION',
   WorkspaceInvitation = 'WORKSPACE_INVITATION'
@@ -65,18 +60,6 @@ export enum AttachmentType {
   Link = 'LINK'
 }
 
-export enum CardAttachmentAction {
-  Add = 'ADD',
-  Edit = 'EDIT',
-  Remove = 'REMOVE'
-}
-
-export enum CardCommentAction {
-  Add = 'ADD',
-  Edit = 'EDIT',
-  Remove = 'REMOVE'
-}
-
 export enum CardCommentReactionAction {
   Add = 'ADD',
   Remove = 'REMOVE'
@@ -85,17 +68,4 @@ export enum CardCommentReactionAction {
 export enum RoleLevel {
   Workspace = 'Workspace',
   Board = 'Board'
-}
-
-export enum WorkspaceMemberAction {
-  EditRole = 'EDIT_ROLE',
-  RemoveFromWorkspace = 'REMOVE_FROM_WORKSPACE',
-  RemoveFromBoard = 'REMOVE_FROM_BOARD',
-  Leave = 'LEAVE'
-}
-
-export enum WorkspaceGuestAction {
-  AddToWorkspace = 'ADD_TO_WORKSPACE',
-  RemoveFromWorkspace = 'REMOVE_FROM_WORKSPACE',
-  RemoveFromBoard = 'REMOVE_FROM_BOARD'
 }

@@ -1,20 +1,17 @@
 import { Request } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
-import {
-  AttachmentType,
-  CardAttachmentAction,
-  CardCommentAction,
-  CardCommentReactionAction,
-  CardMemberAction
-} from '~/constants/enums'
+import { AttachmentType, CardCommentReactionAction } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { CARDS_MESSAGES } from '~/constants/messages'
 import { ISO8601_REGEX } from '~/constants/regex'
 import { ErrorWithStatus } from '~/models/Errors'
 import { TokenPayload } from '~/models/requests/User.requests'
 import databaseService from '~/services/database.services'
+import { stringEnumToArray } from '~/utils/commons'
 import { validate } from '~/utils/validation'
+
+const attachmentTypes = stringEnumToArray(AttachmentType)
 
 const cardTitleSchema: ParamSchema = {
   notEmpty: { errorMessage: CARDS_MESSAGES.CARD_TITLE_IS_REQUIRED },
@@ -190,202 +187,22 @@ export const updateCardValidator = validate(
           }
         },
         toBoolean: true
-      },
-      comment: {
-        optional: true,
-        isObject: { errorMessage: CARDS_MESSAGES.COMMENT_MUST_BE_OBJECT },
-        custom: {
-          options: (value, { req }) => {
-            // Ensure all required fields are present in the comment object
-            const requiredFields = ['action', 'content']
-            const hasAllRequiredFields = requiredFields.every((field) => field in value)
-
-            if (!hasAllRequiredFields) {
-              throw new Error(`${CARDS_MESSAGES.COMMENT_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
-            }
-
-            if (typeof value.content !== 'string') {
-              throw new Error(CARDS_MESSAGES.COMMENT_CONTENT_MUST_BE_STRING)
-            }
-
-            const card = (req as Request).card
-            const { user_id } = (req as Request).decoded_authorization as TokenPayload
-
-            // Validate the action is either Add, Edit or Remove in the comment object
-            if (![CardCommentAction.Add, CardCommentAction.Edit, CardCommentAction.Remove].includes(value.action)) {
-              throw new Error(CARDS_MESSAGES.INVALID_COMMENT_ACTION)
-            }
-
-            // If the action is Edit or Remove, validate the comment_id
-            if (value.action === CardCommentAction.Edit || value.action === CardCommentAction.Remove) {
-              if (!value.comment_id) {
-                throw new Error(CARDS_MESSAGES.COMMENT_ID_IS_REQUIRED)
-              }
-
-              if (!ObjectId.isValid(value.comment_id)) {
-                throw new Error(CARDS_MESSAGES.INVALID_COMMENT_ID)
-              }
-
-              // Check if the comment exists in the card and owned by the user
-              const comment = card?.comments?.find(
-                (comment) =>
-                  comment.comment_id.equals(new ObjectId(value.comment_id)) && comment.user_id.toString() === user_id
-              )
-
-              if (!comment) {
-                throw new Error(CARDS_MESSAGES.COMMENT_NOT_FOUND)
-              }
-            }
-
-            return true
-          }
-        }
-      },
-      member: {
-        optional: true,
-        isObject: { errorMessage: CARDS_MESSAGES.MEMBER_MUST_BE_OBJECT },
-        custom: {
-          options: (value, { req }) => {
-            // Ensure all required fields are present in the member object
-            const requiredFields = ['action', 'user_id']
-            const hasAllRequiredFields = requiredFields.every((field) => field in value)
-
-            if (!hasAllRequiredFields) {
-              throw new Error(`${CARDS_MESSAGES.MEMBER_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
-            }
-
-            // Validate the action is either Add or Remove in the member object
-            if (![CardMemberAction.Add, CardMemberAction.Remove].includes(value.action)) {
-              throw new Error(CARDS_MESSAGES.INVALID_MEMBER_ACTION)
-            }
-
-            const card = (req as Request).card
-            const isMemberExists = card?.members?.some((id) => id.equals(new ObjectId(value.user_id)))
-
-            // For ADD action, check if member already exists
-            if (value.action === CardMemberAction.Add && isMemberExists) {
-              throw new Error(CARDS_MESSAGES.MEMBER_ALREADY_EXISTS)
-            }
-
-            // For REMOVE action, check if member doesn't exist
-            if (value.action === CardMemberAction.Remove && !isMemberExists) {
-              throw new Error(CARDS_MESSAGES.MEMBER_NOT_FOUND)
-            }
-
-            if (typeof value.user_id !== 'string' || !ObjectId.isValid(value.user_id)) {
-              throw new Error(CARDS_MESSAGES.INVALID_MEMBER_ID)
-            }
-
-            return true
-          }
-        }
-      },
-      attachment: {
-        optional: true,
-        isObject: { errorMessage: CARDS_MESSAGES.ATTACHMENT_MUST_BE_OBJECT },
-        custom: {
-          options: (value, { req }) => {
-            // Ensure all required fields are present in the attachment object
-            const requiredFields = ['type', 'action']
-            const hasAllRequiredFields = requiredFields.every((field) => field in value)
-
-            if (!hasAllRequiredFields) {
-              throw new Error(`${CARDS_MESSAGES.ATTACHMENT_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
-            }
-
-            // File attachment required fields
-            const fileRequiredFields = ['url', 'mime_type']
-            const hasAllFileFields = fileRequiredFields.every(
-              (field) => value.file && typeof value.file === 'object' && field in value.file
-            )
-
-            // Link attachment required fields
-            const linkRequiredFields = ['url']
-            const hasAllLinkFields = linkRequiredFields.every(
-              (field) => value.link && typeof value.link === 'object' && field in value.link
-            )
-
-            const card = (req as Request).card
-
-            // Validate the action is either Add or Remove
-            if (
-              ![CardAttachmentAction.Add, CardAttachmentAction.Edit, CardAttachmentAction.Remove].includes(value.action)
-            ) {
-              throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ACTION)
-            }
-
-            // Validate the type is either File or Link
-            if (![AttachmentType.File, AttachmentType.Link].includes(value.type)) {
-              throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_TYPE)
-            }
-
-            // If the action is Add, validate the type and required fields
-            if (value.action === CardAttachmentAction.Add) {
-              // If the type is File, validate the required fields
-              if (value.type === AttachmentType.File) {
-                // Ensure the file is an object and has required fields
-                if (!hasAllFileFields) {
-                  throw new Error(
-                    `${CARDS_MESSAGES.ATTACHMENT_FILE_MISSING_REQUIRED_FIELDS}: ${fileRequiredFields.join(', ')}`
-                  )
-                }
-              }
-
-              // If the type is Link, validate the required fields
-              if (value.type === AttachmentType.Link) {
-                // Ensure the link is an object and has required fields
-                if (!hasAllLinkFields) {
-                  throw new Error(
-                    `${CARDS_MESSAGES.ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS}: ${linkRequiredFields.join(', ')}`
-                  )
-                }
-              }
-            }
-
-            if (value.action === CardAttachmentAction.Edit) {
-              if (!ObjectId.isValid(value.attachment_id)) {
-                throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ID)
-              }
-
-              const isAttachmentExists = card?.attachments?.some((attachment) =>
-                attachment.attachment_id.equals(new ObjectId(value.attachment_id))
-              )
-
-              // Check if the attachment exists in the card
-              if (!isAttachmentExists) {
-                throw new Error(CARDS_MESSAGES.ATTACHMENT_NOT_FOUND)
-              }
-
-              if (value.type === AttachmentType.Link) {
-                // Ensure the link is an object and has required fields
-                if (!hasAllLinkFields) {
-                  throw new Error(
-                    `${CARDS_MESSAGES.ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS}: ${linkRequiredFields.join(', ')}`
-                  )
-                }
-              }
-            }
-
-            // If the action is Remove, validate the attachment_id
-            if (value.action === CardAttachmentAction.Remove) {
-              if (!ObjectId.isValid(value.attachment_id)) {
-                throw new Error(CARDS_MESSAGES.INVALID_ATTACHMENT_ID)
-              }
-
-              const isAttachmentExists = card?.attachments?.some((attachment) =>
-                attachment.attachment_id.equals(new ObjectId(value.attachment_id))
-              )
-
-              // Check if the attachment exists in the card
-              if (!isAttachmentExists) {
-                throw new Error(CARDS_MESSAGES.ATTACHMENT_NOT_FOUND)
-              }
-            }
-
-            return true
-          }
-        }
       }
+    },
+    ['body']
+  )
+)
+
+const cardCommentContentSchema: ParamSchema = {
+  notEmpty: { errorMessage: CARDS_MESSAGES.COMMENT_CONTENT_IS_REQUIRED },
+  isString: { errorMessage: CARDS_MESSAGES.COMMENT_CONTENT_MUST_BE_STRING },
+  trim: true
+}
+
+export const addCardCommentValidator = validate(
+  checkSchema(
+    {
+      content: cardCommentContentSchema
     },
     ['body']
   )
@@ -412,6 +229,208 @@ export const commentIdValidator = validate(
               throw new ErrorWithStatus({
                 status: HTTP_STATUS.NOT_FOUND,
                 message: CARDS_MESSAGES.COMMENT_NOT_FOUND
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+export const updateCardCommentValidator = validate(
+  checkSchema(
+    {
+      content: { ...cardCommentContentSchema, optional: true, notEmpty: undefined }
+    },
+    ['body']
+  )
+)
+
+const cardAttachmentTypeSchema: ParamSchema = {
+  isIn: {
+    options: [attachmentTypes],
+    errorMessage: CARDS_MESSAGES.ATTACHMENT_TYPE_MUST_BE_FILE_OR_LINK
+  }
+}
+
+const cardAttachmentFileSchema: ParamSchema = {
+  notEmpty: { errorMessage: CARDS_MESSAGES.ATTACHMENT_FILE_IS_REQUIRED },
+  isObject: { errorMessage: CARDS_MESSAGES.ATTACHMENT_FILE_MUST_BE_OBJECT },
+  custom: {
+    options: (value, { req }) => {
+      const attachmentType = (req as Request).body.type
+
+      if (attachmentType === AttachmentType.File) {
+        // File attachment required fields
+        const requiredFields = ['url', 'mime_type']
+        const hasAllFields = requiredFields.every((field) => value && typeof value === 'object' && field in value)
+
+        if (!hasAllFields) {
+          throw new ErrorWithStatus({
+            status: HTTP_STATUS.BAD_REQUEST,
+            message: `${CARDS_MESSAGES.ATTACHMENT_FILE_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`
+          })
+        }
+      }
+
+      return true
+    }
+  }
+}
+
+const cardAttachmentLinkSchema: ParamSchema = {
+  notEmpty: { errorMessage: CARDS_MESSAGES.ATTACHMENT_LINK_IS_REQUIRED },
+  isObject: { errorMessage: CARDS_MESSAGES.ATTACHMENT_LINK_MUST_BE_OBJECT },
+  custom: {
+    options: (value, { req }) => {
+      const attachmentType = (req as Request).body.type
+
+      if (attachmentType === AttachmentType.Link) {
+        // Link attachment required fields
+        const requiredFields = ['url']
+        const hasAllFields = requiredFields.every((field) => value && typeof value === 'object' && field in value)
+
+        if (!hasAllFields) {
+          throw new ErrorWithStatus({
+            status: HTTP_STATUS.BAD_REQUEST,
+            message: `${CARDS_MESSAGES.ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`
+          })
+        }
+      }
+
+      return true
+    }
+  }
+}
+
+export const addCardAttachmentValidator = validate(
+  checkSchema(
+    {
+      type: cardAttachmentTypeSchema,
+      file: cardAttachmentFileSchema,
+      link: cardAttachmentLinkSchema
+    },
+    ['body']
+  )
+)
+
+export const attachmentIdValidator = validate(
+  checkSchema(
+    {
+      attachment_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: CARDS_MESSAGES.INVALID_ATTACHMENT_ID
+              })
+            }
+
+            const card = (req as Request).card
+
+            const attachment = card?.attachments?.find((attachment) =>
+              attachment.attachment_id.equals(new ObjectId(value))
+            )
+
+            if (!attachment) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: CARDS_MESSAGES.ATTACHMENT_NOT_FOUND
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+export const updateCardAttachmentValidator = validate(
+  checkSchema(
+    {
+      type: { ...cardAttachmentTypeSchema, optional: true },
+      file: { ...cardAttachmentFileSchema, optional: true, notEmpty: undefined },
+      link: { ...cardAttachmentLinkSchema, optional: true, notEmpty: undefined }
+    },
+    ['body']
+  )
+)
+
+export const addCardMemberValidator = validate(
+  checkSchema(
+    {
+      user_id: {
+        notEmpty: { errorMessage: CARDS_MESSAGES.USER_ID_IS_REQUIRED },
+        isString: { errorMessage: CARDS_MESSAGES.USER_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: CARDS_MESSAGES.INVALID_USER_ID
+              })
+            }
+
+            const user = await databaseService.users.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!user) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: CARDS_MESSAGES.USER_NOT_FOUND
+              })
+            }
+
+            const card = (req as Request).card
+            const isMemberExists = card?.members?.some((id) => id.equals(new ObjectId(value)))
+
+            if (isMemberExists) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: CARDS_MESSAGES.MEMBER_ALREADY_EXISTS
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const cardMemberIdValidator = validate(
+  checkSchema(
+    {
+      user_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: CARDS_MESSAGES.INVALID_USER_ID
+              })
+            }
+
+            const card = (req as Request).card
+
+            const member = card?.members?.find((member) => member.equals(new ObjectId(value)))
+
+            if (!member) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: CARDS_MESSAGES.MEMBER_NOT_FOUND
               })
             }
 

@@ -1,5 +1,5 @@
 import { ParamsDictionary } from 'express-serve-static-core'
-import { WorkspaceGuestAction, WorkspaceMemberAction, WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { WorkspaceRole, WorkspaceType } from '~/constants/enums'
 
 export interface CreateWorkspaceReqBody {
   title: string
@@ -13,15 +13,24 @@ export interface WorkspaceParams extends ParamsDictionary {
 export interface UpdateWorkspaceReqBody extends CreateWorkspaceReqBody {
   type?: WorkspaceType
   logo?: string
-  member?: {
-    action: WorkspaceMemberAction
-    user_id: string
-    role?: WorkspaceRole
-    board_id?: string
-  }
-  guest?: {
-    action: WorkspaceGuestAction
-    user_id: string
-    board_id?: string
-  }
+}
+
+export interface EditWorkspaceMemberRoleReqBody {
+  role: WorkspaceRole
+}
+
+export interface WorkspaceMemberParams extends WorkspaceParams {
+  user_id: string
+}
+
+export interface WorkspaceGuestParams extends WorkspaceParams {
+  user_id: string
+}
+
+export interface RemoveWorkspaceMemberFromBoardReqBody {
+  board_id: string
+}
+
+export interface RemoveGuestFromBoardReqBody {
+  board_id: string
 }

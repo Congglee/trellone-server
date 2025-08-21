@@ -1,7 +1,5 @@
 import { ParamsDictionary } from 'express-serve-static-core'
-import { CardAttachmentAction, CardCommentAction, CardCommentReactionAction, CardMemberAction } from '~/constants/enums'
-import { FilterKeys } from '~/middlewares/common.middlewares'
-import { Attachment } from '~/models/Extensions'
+import { AttachmentType, CardCommentReactionAction } from '~/constants/enums'
 
 export interface CreateCardReqBody {
   title: string
@@ -16,34 +14,66 @@ export interface UpdateCardReqBody {
   description?: string
   cover_photo?: string
   _destroy?: boolean
-  comment?: {
-    action: CardCommentAction
-    content: string
-    comment_id?: string
-  }
-  member?: {
-    action: CardMemberAction
-    user_id: string
-  }
-  attachment?: Omit<Attachment, 'uploaded_by' | 'added_at'> & {
-    action?: CardAttachmentAction
-  }
 }
-
-export const updateCardReqBodyFields = [
-  'title',
-  'due_date',
-  'is_completed',
-  'description',
-  'cover_photo',
-  'comment',
-  'attachment',
-  'member',
-  '_destroy'
-] as FilterKeys<UpdateCardReqBody>
 
 export interface CardParams extends ParamsDictionary {
   card_id: string
+}
+
+export interface AddCardCommentReqBody {
+  content: string
+}
+
+export interface CardCommentParams extends CardParams {
+  comment_id: string
+}
+
+export interface UpdateCardCommentReqBody {
+  content: string
+}
+
+export interface AddCardAttachmentReqBody {
+  type: AttachmentType
+  file: {
+    url: string
+    mime_type: string
+    display_name: string
+    size: number
+    original_name: string
+  }
+  link: {
+    url: string
+    display_name: string
+    favicon_url: string
+  }
+}
+
+export interface CardAttachmentParams extends CardParams {
+  attachment_id: string
+}
+
+export interface UpdateCardAttachmentReqBody {
+  type: AttachmentType
+  file: {
+    url: string
+    mime_type: string
+    display_name: string
+    size: number
+    original_name: string
+  }
+  link: {
+    url: string
+    display_name: string
+    favicon_url: string
+  }
+}
+
+export interface AddCardMemberReqBody {
+  user_id: string
+}
+
+export interface CardMemberParams extends CardParams {
+  user_id: string
 }
 
 export interface ReactToCardCommentReqBody {

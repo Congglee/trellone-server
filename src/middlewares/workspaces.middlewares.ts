@@ -1,18 +1,21 @@
-import { Request } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
-import { BoardRole, WorkspaceGuestAction, WorkspaceMemberAction, WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { BoardRole, WorkspaceRole, WorkspaceType } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { WORKSPACES_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
 import { TokenPayload } from '~/models/requests/User.requests'
+import { WorkspaceGuestParams, WorkspaceMemberParams } from '~/models/requests/Workspace.requests'
 import Workspace from '~/models/schemas/Workspace.schema'
 import databaseService from '~/services/database.services'
 import { stringEnumToArray } from '~/utils/commons'
+import { wrapRequestHandler } from '~/utils/handlers'
 import { validate } from '~/utils/validation'
 
 const workspaceTypes = stringEnumToArray(WorkspaceType)
+const roleTypes = stringEnumToArray(WorkspaceRole)
 
 const workspaceTitleSchema: ParamSchema = {
   notEmpty: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TITLE_IS_REQUIRED },
@@ -73,8 +76,7 @@ export const workspaceIdValidator = validate(
                   { members: { $elemMatch: { user_id: new ObjectId(user_id) } } },
                   { guests: new ObjectId(user_id) }
                 ]
-              },
-              { _destroy: false }
+              }
             ]
 
             // Execute MongoDB aggregation pipeline to fetch workspace with related data
@@ -220,211 +222,323 @@ export const updateWorkspaceValidator = validate(
       logo: {
         optional: true,
         isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_LOGO_MUST_BE_STRING }
-      },
-      member: {
-        optional: true,
-        isObject: { errorMessage: WORKSPACES_MESSAGES.MEMBER_MUST_BE_OBJECT },
+      }
+    },
+    ['body']
+  )
+)
+
+export const workspaceMemberIdValidator = validate(
+  checkSchema(
+    {
+      user_id: {
         custom: {
           options: async (value, { req }) => {
-            // Ensure all required fields are present in the member object
-            const requiredFields = ['action', 'user_id']
-            const hasAllRequiredFields = requiredFields.every((field) => field in value)
-
-            if (!hasAllRequiredFields) {
-              throw new Error(`${WORKSPACES_MESSAGES.MEMBER_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.INVALID_USER_ID
+              })
             }
 
-            const workspaceMemberActions = [
-              WorkspaceMemberAction.EditRole,
-              WorkspaceMemberAction.RemoveFromWorkspace,
-              WorkspaceMemberAction.RemoveFromBoard,
-              WorkspaceMemberAction.Leave
-            ]
+            const user = await databaseService.users.findOne({
+              _id: new ObjectId(value)
+            })
 
-            // Case 01:Validate the action is either EditRole, RemoveFromWorkspace, RemoveFromBoard, Leave
-            if (!workspaceMemberActions.includes(value.action)) {
-              throw new Error(WORKSPACES_MESSAGES.INVALID_MEMBER_ACTION)
+            if (!user) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.USER_NOT_FOUND
+              })
             }
 
-            // Case 02: Validate the user_id is a valid ObjectId
-            if (typeof value.user_id !== 'string' || !ObjectId.isValid(value.user_id)) {
-              throw new Error(WORKSPACES_MESSAGES.INVALID_MEMBER_ID)
-            }
-
-            // Case 03: Validate the user_id is a member of the workspace
             const workspace = (req as Request).workspace
-            const isMemberExists = workspace?.members?.some((member) =>
-              member.user_id.equals(new ObjectId(value.user_id))
-            )
+            const isMemberExists = workspace?.members?.some((member) => member.user_id.equals(new ObjectId(value)))
 
             if (!isMemberExists) {
-              throw new Error(WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_WORKSPACE)
-            }
-
-            // Case 04: Validate the role if the action is EditRole
-            if (value.action === WorkspaceMemberAction.EditRole) {
-              if (!value.role) {
-                throw new Error(WORKSPACES_MESSAGES.WORKSPACE_ROLE_IS_REQUIRED)
-              }
-
-              if (![WorkspaceRole.Admin, WorkspaceRole.Normal].includes(value.role)) {
-                throw new Error(WORKSPACES_MESSAGES.INVALID_WORKSPACE_ROLE)
-              }
-            }
-
-            // Case 05: Ensure at least one admin remains in workspace applies to EditRole, RemoveFromWorkspace, and Leave actions
-            if (
-              [
-                WorkspaceMemberAction.EditRole,
-                WorkspaceMemberAction.RemoveFromWorkspace,
-                WorkspaceMemberAction.Leave
-              ].includes(value.action)
-            ) {
-              // Get current workspace admins
-              const currentAdmins = workspace?.members?.filter((member) => member.role === WorkspaceRole.Admin) || []
-
-              // Check if the user being modified is currently an admin
-              const targetMember = workspace?.members?.find((member) =>
-                member.user_id.equals(new ObjectId(value.user_id))
-              )
-              const isTargetCurrentlyAdmin = targetMember?.role === WorkspaceRole.Admin
-
-              // If there's only one admin and we're trying to modify that admin
-              if (currentAdmins.length === 1 && isTargetCurrentlyAdmin) {
-                // For EditRole: check if we're demoting the last admin to Normal
-                if (value.action === WorkspaceMemberAction.EditRole && value.role === WorkspaceRole.Normal) {
-                  throw new Error(WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_WORKSPACE_ADMIN)
-                }
-
-                // For RemoveFromWorkspace or Leave: cannot remove the last admin
-                if (
-                  value.action === WorkspaceMemberAction.RemoveFromWorkspace ||
-                  value.action === WorkspaceMemberAction.Leave
-                ) {
-                  throw new Error(WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_WORKSPACE_ADMIN)
-                }
-              }
-            }
-
-            // Case 06: Handle RemoveFromBoard action
-            if (value.action === WorkspaceMemberAction.RemoveFromBoard) {
-              // Require board_id for RemoveFromBoard action
-              if (!value.board_id) {
-                throw new Error(WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED)
-              }
-
-              // Validate board_id format
-              if (typeof value.board_id !== 'string' || !ObjectId.isValid(value.board_id)) {
-                throw new Error(WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED)
-              }
-
-              // Find the board and verify it belongs to this workspace
-              const board = await databaseService.boards.findOne({
-                _id: new ObjectId(value.board_id),
-                workspace_id: workspace?._id,
-                _destroy: false
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_WORKSPACE
               })
+            }
 
-              if (!board) {
-                throw new Error(WORKSPACES_MESSAGES.BOARD_NOT_FOUND)
-              }
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
 
-              // Check if the user is a member of this board
-              const isBoardMember = board.members?.some((member) => member.user_id.equals(new ObjectId(value.user_id)))
+export const editWorkspaceMemberRoleValidator = validate(
+  checkSchema(
+    {
+      role: {
+        isIn: {
+          options: [roleTypes],
+          errorMessage: WORKSPACES_MESSAGES.WORKSPACE_ROLE_MUST_BE_ADMIN_OR_NORMAL
+        },
+        custom: {
+          options: async (value, { req }) => {
+            // Ensure at least one admin remains in workspace
+            const workspace = (req as Request).workspace
+            const { user_id } = req.params as WorkspaceMemberParams
 
-              if (!isBoardMember) {
-                throw new Error(WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_BOARD)
-              }
+            // Get current workspace admins
+            const currentAdmins = workspace?.members?.filter((member) => member.role === WorkspaceRole.Admin) || []
 
-              // Ensure at least one admin remains on the board after removal
-              const boardAdmins = board.members?.filter((member) => member.role === BoardRole.Admin) || []
-              const targetBoardMember = board.members?.find((member) =>
-                member.user_id.equals(new ObjectId(value.user_id))
-              )
-              const isTargetBoardAdmin = targetBoardMember?.role === BoardRole.Admin
+            // Check if the user being modified is currently an admin
+            const targetMember = workspace?.members?.find((member) => member.user_id.equals(new ObjectId(user_id)))
+            const isTargetCurrentlyAdmin = targetMember?.role === WorkspaceRole.Admin
 
-              // If there's only one board admin and we're trying to remove that admin
-              if (boardAdmins.length === 1 && isTargetBoardAdmin) {
-                throw new Error(WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_BOARD_ADMIN)
+            // If there's only one admin and we're trying to modify that admin
+            if (currentAdmins.length === 1 && isTargetCurrentlyAdmin) {
+              if (value === WorkspaceRole.Normal) {
+                throw new ErrorWithStatus({
+                  status: HTTP_STATUS.BAD_REQUEST,
+                  message: WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_WORKSPACE_ADMIN
+                })
               }
             }
 
             return true
           }
         }
-      },
-      guest: {
-        optional: true,
-        isObject: { errorMessage: WORKSPACES_MESSAGES.GUEST_MUST_BE_OBJECT },
+      }
+    },
+    ['body']
+  )
+)
+
+export const leaveWorkspaceValidator = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const workspace = (req as Request).workspace
+
+  const isCurrentUserMember = workspace?.members?.some((member) => member.user_id.equals(new ObjectId(user_id)))
+
+  if (!isCurrentUserMember) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.FORBIDDEN,
+      message: WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_WORKSPACE
+    })
+  }
+
+  // Ensure at least one admin remains in workspace
+
+  // Get current workspace admins
+  const currentAdmins = workspace?.members?.filter((member) => member.role === WorkspaceRole.Admin) || []
+
+  // Check if the user being modified is currently an admin
+  const targetMember = workspace?.members?.find((member) => member.user_id.equals(new ObjectId(user_id)))
+  const isTargetCurrentlyAdmin = targetMember?.role === WorkspaceRole.Admin
+
+  // If there's only one admin and we're trying to modify that admin
+  if (currentAdmins.length === 1 && isTargetCurrentlyAdmin) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.BAD_REQUEST,
+      message: WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_WORKSPACE_ADMIN
+    })
+  }
+
+  next()
+})
+
+export const removeWorkspaceMemberValidator = validate(
+  checkSchema(
+    {
+      user_id: {
         custom: {
           options: async (value, { req }) => {
-            // Ensure all required fields are present in the member object
-            const requiredFields = ['action', 'user_id']
-            const hasAllRequiredFields = requiredFields.every((field) => field in value)
+            // Ensure at least one admin remains in workspace
+            const workspace = (req as Request).workspace
 
-            if (!hasAllRequiredFields) {
-              throw new Error(`${WORKSPACES_MESSAGES.MEMBER_MISSING_REQUIRED_FIELDS}: ${requiredFields.join(', ')}`)
+            // Get current workspace admins
+            const currentAdmins = workspace?.members?.filter((member) => member.role === WorkspaceRole.Admin) || []
+
+            // Check if the user being modified is currently an admin
+            const targetMember = workspace?.members?.find((member) => member.user_id.equals(new ObjectId(value)))
+            const isTargetCurrentlyAdmin = targetMember?.role === WorkspaceRole.Admin
+
+            // If there's only one admin and we're trying to modify that admin
+            if (currentAdmins.length === 1 && isTargetCurrentlyAdmin) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_WORKSPACE_ADMIN
+              })
             }
 
-            const workspaceGuestActions = [
-              WorkspaceGuestAction.AddToWorkspace,
-              WorkspaceGuestAction.RemoveFromWorkspace,
-              WorkspaceGuestAction.RemoveFromBoard
-            ]
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
 
-            // Case 01:Validate the action is either AddToWorkspace, RemoveFromWorkspace, RemoveFromBoard
-            if (!workspaceGuestActions.includes(value.action)) {
-              throw new Error(WORKSPACES_MESSAGES.INVALID_MEMBER_ACTION)
-            }
-
-            // Case 02: Validate the user_id is a valid ObjectId
-            if (typeof value.user_id !== 'string' || !ObjectId.isValid(value.user_id)) {
-              throw new Error(WORKSPACES_MESSAGES.INVALID_MEMBER_ID)
+export const removeWorkspaceMemberFromBoardValidator = validate(
+  checkSchema(
+    {
+      board_id: {
+        notEmpty: { errorMessage: WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED },
+        isString: { errorMessage: WORKSPACES_MESSAGES.BOARD_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.INVALID_BOARD_ID
+              })
             }
 
             const workspace = (req as Request).workspace
+            const { user_id } = req.params as WorkspaceMemberParams
 
-            // Case 03: Handle RemoveFromBoard action
-            if (value.action === WorkspaceGuestAction.RemoveFromBoard) {
-              // Require board_id for RemoveFromBoard action
-              if (!value.board_id) {
-                throw new Error(WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED)
-              }
+            // Find the board and verify it belongs to this workspace
+            const board = await databaseService.boards.findOne({
+              _id: new ObjectId(value),
+              workspace_id: workspace?._id,
+              _destroy: false
+            })
 
-              // Validate board_id format
-              if (typeof value.board_id !== 'string' || !ObjectId.isValid(value.board_id)) {
-                throw new Error(WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED)
-              }
-
-              // Find the board and verify it belongs to this workspace
-              const board = await databaseService.boards.findOne({
-                _id: new ObjectId(value.board_id),
-                workspace_id: workspace?._id,
-                _destroy: false
+            if (!board) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.BOARD_NOT_FOUND
               })
+            }
 
-              if (!board) {
-                throw new Error(WORKSPACES_MESSAGES.BOARD_NOT_FOUND)
-              }
+            // Check if the user is a member of this board
+            const isBoardMemberExists = board.members?.some((member) => member.user_id.equals(new ObjectId(user_id)))
 
-              // Check if the user is a member of this board
-              const isBoardMember = board.members?.some((member) => member.user_id.equals(new ObjectId(value.user_id)))
+            if (!isBoardMemberExists) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_BOARD
+              })
+            }
 
-              if (!isBoardMember) {
-                throw new Error(WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_BOARD)
-              }
+            // Ensure at least one admin remains on the board after removal
+            const boardAdmins = board.members?.filter((member) => member.role === BoardRole.Admin) || []
+            const targetBoardMember = board.members?.find((member) => member.user_id.equals(new ObjectId(user_id)))
 
-              // Ensure at least one admin remains on the board after removal
-              const boardAdmins = board.members?.filter((member) => member.role === BoardRole.Admin) || []
-              const targetBoardMember = board.members?.find((member) =>
-                member.user_id.equals(new ObjectId(value.user_id))
-              )
-              const isTargetBoardAdmin = targetBoardMember?.role === BoardRole.Admin
+            const isTargetBoardAdmin = targetBoardMember?.role === BoardRole.Admin
 
-              // If there's only one board admin and we're trying to remove that admin
-              if (boardAdmins.length === 1 && isTargetBoardAdmin) {
-                throw new Error(WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_BOARD_ADMIN)
-              }
+            if (boardAdmins.length === 1 && isTargetBoardAdmin) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_BOARD_ADMIN
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)
+
+export const workspaceGuestIdValidator = validate(
+  checkSchema(
+    {
+      user_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.INVALID_USER_ID
+              })
+            }
+
+            const user = await databaseService.users.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!user) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.USER_NOT_FOUND
+              })
+            }
+
+            const workspace = (req as Request).workspace
+            const isGuestExists = workspace?.guests?.some((guest: any) => guest._id.equals(new ObjectId(value)))
+
+            if (!isGuestExists) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.USER_NOT_GUEST_OF_WORKSPACE
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+export const removeGuestFromBoardValidator = validate(
+  checkSchema(
+    {
+      board_id: {
+        notEmpty: { errorMessage: WORKSPACES_MESSAGES.BOARD_ID_IS_REQUIRED },
+        isString: { errorMessage: WORKSPACES_MESSAGES.BOARD_ID_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.INVALID_BOARD_ID
+              })
+            }
+
+            const workspace = (req as Request).workspace
+            const { user_id } = req.params as WorkspaceGuestParams
+
+            // Find the board and verify it belongs to this workspace
+            const board = await databaseService.boards.findOne({
+              _id: new ObjectId(value),
+              workspace_id: workspace?._id,
+              _destroy: false
+            })
+
+            if (!board) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.BOARD_NOT_FOUND
+              })
+            }
+
+            // Check if the user is a member of this board
+            const isBoardMemberExists = board.members?.some((member) => member.user_id.equals(new ObjectId(user_id)))
+
+            if (!isBoardMemberExists) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: WORKSPACES_MESSAGES.USER_NOT_MEMBER_OF_BOARD
+              })
+            }
+
+            // Ensure at least one admin remains on the board after removal
+            const boardAdmins = board.members?.filter((member) => member.role === BoardRole.Admin) || []
+            const targetBoardMember = board.members?.find((member) => member.user_id.equals(new ObjectId(user_id)))
+
+            const isTargetBoardAdmin = targetBoardMember?.role === BoardRole.Admin
+
+            if (boardAdmins.length === 1 && isTargetBoardAdmin) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.CANNOT_REMOVE_LAST_BOARD_ADMIN
+              })
             }
 
             return true
