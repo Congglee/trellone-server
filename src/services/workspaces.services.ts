@@ -9,7 +9,7 @@ class WorkspacesService {
     const newWorkspace = new Workspace({
       title: body.title,
       description: body.description,
-      type: WorkspaceType.Private,
+      type: WorkspaceType.Public,
       members: [
         {
           user_id: new ObjectId(user_id),

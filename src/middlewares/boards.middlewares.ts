@@ -205,6 +205,26 @@ export const boardIdValidator = validate(
                           }
                         }
                       }
+                    },
+                    columns: {
+                      $map: {
+                        input: '$columns',
+                        as: 'column',
+                        in: {
+                          $mergeObjects: [
+                            '$$column',
+                            {
+                              cards: {
+                                $filter: {
+                                  input: '$cards',
+                                  as: 'card',
+                                  cond: { $eq: ['$$card.column_id', '$$column._id'] }
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
                     }
                   }
                 },
