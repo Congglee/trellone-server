@@ -65,18 +65,6 @@ export enum AttachmentType {
   Link = 'LINK'
 }
 
-export enum CardAttachmentAction {
-  Add = 'ADD',
-  Edit = 'EDIT',
-  Remove = 'REMOVE'
-}
-
-export enum CardCommentAction {
-  Add = 'ADD',
-  Edit = 'EDIT',
-  Remove = 'REMOVE'
-}
-
 export enum CardCommentReactionAction {
   Add = 'ADD',
   Remove = 'REMOVE'

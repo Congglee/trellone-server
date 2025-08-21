@@ -87,7 +87,7 @@ export const WORKSPACES_MESSAGES = {
 
   GET_WORKSPACES_SUCCESS: 'Get workspaces successfully',
 
-  WORKSPACE_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Workspace type must be public or private',
+  WORKSPACE_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Workspace type must be "Public" or "Private"',
   WORKSPACE_LOGO_MUST_BE_STRING: 'Workspace logo must be a string',
   MEMBER_MUST_BE_OBJECT: 'Member must be an object',
   MEMBER_MISSING_REQUIRED_FIELDS: 'Member missing required fields',
@@ -118,7 +118,7 @@ export const BOARDS_MESSAGES = {
   BOARD_TITLE_LENGTH_MUST_BE_BETWEEN_1_AND_50: 'Board title length must be between 1 and 50 characters',
   BOARD_DESCRIPTION_MUST_BE_STRING: 'Board description must be a string',
   BOARD_DESCRIPTION_LENGTH_MUST_BE_LESS_THAN_256: 'Board description length must be less than 256 characters',
-  BOARD_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Board type must be public or private',
+  BOARD_TYPE_MUST_BE_PUBLIC_OR_PRIVATE: 'Board type must be "Public" or "Private"',
   WORKSPACE_ID_IS_REQUIRED: 'Workspace id is required',
   WORKSPACE_ID_MUST_BE_STRING: 'Workspace id must be a string',
   INVALID_WORKSPACE_ID: 'Invalid workspace id',
@@ -193,8 +193,6 @@ export const CARDS_MESSAGES = {
   COVER_PHOTO_MUST_BE_STRING: 'Cover photo must be a string',
   COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
   CARD_ARCHIVE_STATUS_MUST_BE_BOOLEAN: 'Card archive status must be boolean',
-  COMMENT_MUST_BE_OBJECT: 'Comment must be an object',
-  COMMENT_MISSING_REQUIRED_FIELDS: 'Comment missing required fields',
   COMMENT_INVALID_USER_ID: 'Comment invalid user id',
   COMMENT_CONTENT_MUST_BE_STRING: 'Comment content must be a string',
   MEMBER_MUST_BE_OBJECT: 'Member must be an object',
@@ -203,18 +201,38 @@ export const CARDS_MESSAGES = {
   INVALID_MEMBER_ID: 'Invalid member id',
   MEMBER_ALREADY_EXISTS: 'Member already exists',
   MEMBER_NOT_FOUND: 'Member not found',
-  ATTACHMENT_MUST_BE_OBJECT: 'Attachment must be an object',
-  ATTACHMENT_MISSING_REQUIRED_FIELDS: 'Attachment missing required fields',
-  INVALID_ATTACHMENT_TYPE: 'Invalid attachment type',
   ATTACHMENT_FILE_MISSING_REQUIRED_FIELDS: 'Attachment file missing required fields',
   ATTACHMENT_LINK_MISSING_REQUIRED_FIELDS: 'Attachment link missing required fields',
-  INVALID_ATTACHMENT_ACTION: 'Invalid attachment action',
-  INVALID_ATTACHMENT_ID: 'Invalid attachment id',
-  ATTACHMENT_NOT_FOUND: 'Attachment not found',
-  INVALID_COMMENT_ACTION: 'Invalid comment action',
   INVALID_COMMENT_ID: 'Invalid comment id',
   COMMENT_NOT_FOUND: 'Comment not found',
-  COMMENT_ID_IS_REQUIRED: 'Comment id is required',
+  ATTACHMENT_TYPE_MUST_BE_FILE_OR_LINK: 'Attachment type must be "FILE" or "LINK"',
+  COMMENT_CONTENT_IS_REQUIRED: 'Comment content is required',
+  ATTACHMENT_FILE_MUST_BE_OBJECT: 'Attachment file must be an object',
+  ATTACHMENT_LINK_MUST_BE_OBJECT: 'Attachment link must be an object',
+  ATTACHMENT_FILE_IS_REQUIRED: 'Attachment file is required',
+  ATTACHMENT_LINK_IS_REQUIRED: 'Attachment link is required',
+  INVALID_ATTACHMENT_ID: 'Invalid attachment id',
+  ATTACHMENT_NOT_FOUND: 'Attachment not found',
+  USER_ID_IS_REQUIRED: 'User id is required',
+  USER_ID_MUST_BE_STRING: 'User id must be a string',
+  INVALID_USER_ID: 'Invalid user id',
+  USER_NOT_FOUND: 'User not found',
+
+  CREATE_CARD_COMMENT_SUCCESS: 'Create card comment successfully',
+
+  UPDATE_CARD_COMMENT_SUCCESS: 'Update card comment successfully',
+
+  REMOVE_CARD_COMMENT_SUCCESS: 'Remove card comment successfully',
+
+  ADD_CARD_ATTACHMENT_SUCCESS: 'Add card attachment successfully',
+
+  UPDATE_CARD_ATTACHMENT_SUCCESS: 'Update card attachment successfully',
+
+  REMOVE_ATTACHMENT_SUCCESS: 'Remove attachment successfully',
+
+  ADD_CARD_MEMBER_SUCCESS: 'Add card member successfully',
+
+  REMOVE_CARD_MEMBER_SUCCESS: 'Remove card member successfully',
 
   UPDATE_CARD_SUCCESS: 'Card updated successfully',
 

@@ -1,15 +1,15 @@
 import { ObjectId } from 'mongodb'
+import { AttachmentType, CardCommentReactionAction } from '~/constants/enums'
+import { Attachment } from '~/models/Extensions'
 import {
-  AttachmentType,
-  CardAttachmentAction,
-  CardCommentAction,
-  CardCommentReactionAction,
-  CardMemberAction
-} from '~/constants/enums'
-import {
+  AddCardAttachmentReqBody,
+  AddCardMemberReqBody,
+  AddCardCommentReqBody,
   CreateCardReqBody,
   MoveCardToDifferentColumnReqBody,
   ReactToCardCommentReqBody,
+  UpdateCardAttachmentReqBody,
+  UpdateCardCommentReqBody,
   UpdateCardReqBody
 } from '~/models/requests/Card.requests'
 import Card from '~/models/schemas/Card.schema'
@@ -35,163 +35,215 @@ class CardsService {
     return card
   }
 
-  async updateCard(card_id: string, user_id: string, body: UpdateCardReqBody) {
-    let updatedCard = null
+  async updateCard(card_id: string, body: UpdateCardReqBody) {
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      {
+        $set: body,
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
 
-    if (body.comment) {
-      // Case 1: Add, Edit or Remove comment from Card
-      let updateCondition = {}
-      const updateOptions: any = { returnDocument: 'after' }
+    return card
+  }
 
-      const user = await databaseService.users.findOne(
-        { _id: new ObjectId(user_id) },
-        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
-      )
+  async createCardComment({
+    card_id,
+    user_id,
+    body
+  }: {
+    card_id: string
+    user_id: string
+    body: AddCardCommentReqBody
+  }) {
+    const user = await databaseService.users.findOne(
+      { _id: new ObjectId(user_id) },
+      { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+    )
 
-      if (body.comment.action === CardCommentAction.Add) {
-        const comment = {
-          comment_id: new ObjectId(),
-          user_id,
-          user_email: user?.email,
-          user_avatar: user?.avatar,
-          user_display_name: user?.display_name,
-          content: body.comment.content,
-          commented_at: new Date()
-        }
-
-        updateCondition = { $push: { comments: { $each: [comment], $position: 0 } } }
-      }
-
-      if (body.comment.action === CardCommentAction.Edit) {
-        // First, find the comment to update by its ID
-        const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
-
-        const commentToUpdate = card?.comments?.find((comment) =>
-          comment.comment_id.equals(new ObjectId(body.comment?.comment_id))
-        )
-
-        // Second, put the necessary fields to update the comment into the payload
-        const payload = { ...commentToUpdate, content: body.comment.content }
-
-        // Finally, update the comment in the database
-        // Using `$[elem]` to update the specific comment in the array
-        updateCondition = { $set: { 'comments.$[elem]': payload } }
-
-        // Add arrayFilters only for EDIT action to find the correct comment
-        updateOptions.arrayFilters = [{ 'elem.comment_id': new ObjectId(body.comment.comment_id) }]
-      }
-
-      if (body.comment.action === CardCommentAction.Remove) {
-        updateCondition = { $pull: { comments: { comment_id: new ObjectId(body.comment.comment_id) } } }
-      }
-
-      updatedCard = await databaseService.cards.findOneAndUpdate(
-        { _id: new ObjectId(card_id) },
-        updateCondition,
-        updateOptions
-      )
-    } else if (body.attachment) {
-      // Case 2: Add, Edit or Remove attachment from Card
-      let updateCondition = {}
-      const updateOptions: any = { returnDocument: 'after' }
-
-      if (body.attachment.action === CardAttachmentAction.Add) {
-        const attachment = {
-          ...body.attachment,
-          attachment_id: new ObjectId(),
-          uploaded_by: user_id,
-          added_at: new Date()
-        }
-
-        // Remove the action property from the attachment object
-        delete attachment.action
-
-        updateCondition = {
-          $push: { attachments: { $each: [attachment], $position: 0 } }
-        }
-      }
-
-      if (body.attachment.action === CardAttachmentAction.Edit) {
-        // First, find the attachment to update by its ID
-        const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
-
-        const attachmentToUpdate = card?.attachments?.find((attachment) =>
-          attachment.attachment_id.equals(new ObjectId(body.attachment?.attachment_id))
-        )
-
-        // Second, put the necessary fields to update the attachment into the payload
-        let payload = {}
-
-        if (body.attachment.type === AttachmentType.Link) {
-          payload = {
-            ...attachmentToUpdate,
-            link: {
-              ...attachmentToUpdate?.link,
-              display_name: body.attachment.link.display_name,
-              url: body.attachment.link.url
-            }
-          }
-        }
-
-        if (body.attachment.type === AttachmentType.File) {
-          payload = {
-            ...attachmentToUpdate,
-            file: {
-              ...attachmentToUpdate?.file,
-              display_name: body.attachment.file.display_name
-            }
-          }
-        }
-
-        // Finally, update the attachment in the database
-        // Using `$[elem]` to update the specific attachment in the array
-        updateCondition = {
-          $set: { 'attachments.$[elem]': payload }
-        }
-
-        // Add arrayFilters only for EDIT action to find the correct attachment
-        updateOptions.arrayFilters = [{ 'elem.attachment_id': new ObjectId(body.attachment.attachment_id) }]
-      }
-
-      if (body.attachment.action === CardAttachmentAction.Remove) {
-        updateCondition = {
-          $pull: { attachments: { attachment_id: new ObjectId(body.attachment.attachment_id) } }
-        }
-      }
-
-      updatedCard = await databaseService.cards.findOneAndUpdate(
-        { _id: new ObjectId(card_id) },
-        updateCondition,
-        updateOptions
-      )
-    } else if (body.member) {
-      // Case 3: Add or Remove member from Card
-      let updateCondition = {}
-
-      if (body.member.action === CardMemberAction.Add) {
-        updateCondition = { $push: { members: new ObjectId(body.member.user_id) } }
-      }
-
-      if (body.member.action === CardMemberAction.Remove) {
-        updateCondition = { $pull: { members: new ObjectId(body.member.user_id) } }
-      }
-
-      updatedCard = await databaseService.cards.findOneAndUpdate({ _id: new ObjectId(card_id) }, updateCondition, {
-        returnDocument: 'after'
-      })
-    } else {
-      // Case 4: Common update cases such as title, description, cover_photo, etc.
-      updatedCard = await databaseService.cards.findOneAndUpdate(
-        { _id: new ObjectId(card_id) },
-        {
-          $set: body,
-          $currentDate: { updated_at: true }
-        },
-        { returnDocument: 'after' }
-      )
+    const comment = {
+      comment_id: new ObjectId(),
+      user_id,
+      user_email: user?.email || '',
+      user_avatar: user?.avatar || '',
+      user_display_name: user?.display_name || '',
+      content: body.content,
+      commented_at: new Date(),
+      reactions: []
     }
 
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      { $push: { comments: { $each: [comment], $position: 0 } } },
+      { returnDocument: 'after' }
+    )
+
+    return card
+  }
+
+  async updateCardComment({
+    card_id,
+    comment_id,
+    body
+  }: {
+    card_id: string
+    comment_id: string
+    body: UpdateCardCommentReqBody
+  }) {
+    const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
+
+    const comment = card?.comments?.find((comment) => comment.comment_id.equals(new ObjectId(comment_id)))
+
+    const payload = {
+      ...comment,
+      ...(body.content && { content: body.content })
+    }
+
+    const updatedCard = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id), 'comments.comment_id': new ObjectId(comment_id) },
+      { $set: { 'comments.$[elem]': payload } },
+      {
+        returnDocument: 'after',
+        arrayFilters: [{ 'elem.comment_id': new ObjectId(comment_id) }]
+      }
+    )
+
     return updatedCard
+  }
+
+  async removeCardComment(card_id: string, comment_id: string) {
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id), 'comments.comment_id': new ObjectId(comment_id) },
+      { $pull: { comments: { comment_id: new ObjectId(comment_id) } } },
+      { returnDocument: 'after' }
+    )
+
+    return card
+  }
+
+  async addCardAttachment({
+    card_id,
+    user_id,
+    body
+  }: {
+    card_id: string
+    user_id: string
+    body: AddCardAttachmentReqBody
+  }) {
+    let payload = {}
+
+    if (body.type === AttachmentType.Link) {
+      payload = {
+        type: body.type,
+        link: body.link,
+        attachment_id: new ObjectId(),
+        uploaded_by: user_id,
+        added_at: new Date()
+      }
+    }
+
+    if (body.type === AttachmentType.File) {
+      payload = {
+        type: body.type,
+        file: body.file,
+        attachment_id: new ObjectId(),
+        uploaded_by: user_id,
+        added_at: new Date()
+      }
+    }
+
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      {
+        $push: { attachments: { $each: [payload as Attachment], $position: 0 } }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return card
+  }
+
+  async updateCardAttachment({
+    card_id,
+    attachment_id,
+    body
+  }: {
+    card_id: string
+    attachment_id: string
+    body: UpdateCardAttachmentReqBody
+  }) {
+    const card = await databaseService.cards.findOne({ _id: new ObjectId(card_id) })
+
+    const attachment = card?.attachments?.find((attachment) =>
+      attachment.attachment_id.equals(new ObjectId(attachment_id))
+    )
+
+    let payload = {}
+
+    if (body.type === AttachmentType.Link) {
+      payload = {
+        ...attachment,
+        link: {
+          ...attachment?.link,
+          ...(body.link.display_name && { display_name: body.link.display_name }),
+          ...(body.link.url && { url: body.link.url })
+        }
+      }
+    }
+
+    if (body.type === AttachmentType.File) {
+      payload = {
+        ...attachment,
+        file: {
+          ...attachment?.file,
+          ...(body.file.display_name && { display_name: body.file.display_name })
+        }
+      }
+    }
+
+    const updatedCard = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id), 'attachments.attachment_id': new ObjectId(attachment_id) },
+      {
+        $set: { 'attachments.$[elem]': payload }
+      },
+      {
+        returnDocument: 'after',
+        arrayFilters: [{ 'elem.attachment_id': new ObjectId(attachment_id) }]
+      }
+    )
+
+    return updatedCard
+  }
+
+  async removeAttachment(card_id: string, attachment_id: string) {
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      { $pull: { attachments: { attachment_id: new ObjectId(attachment_id) } } },
+      { returnDocument: 'after' }
+    )
+
+    return card
+  }
+
+  async addCardMember(card_id: string, body: AddCardMemberReqBody) {
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      { $push: { members: new ObjectId(body.user_id) } },
+      { returnDocument: 'after' }
+    )
+
+    return card
+  }
+
+  async removeCardMember(card_id: string, user_id: string) {
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      { $pull: { members: new ObjectId(user_id) } },
+      { returnDocument: 'after' }
+    )
+
+    return card
   }
 
   async reactToCardComment({
