@@ -34,6 +34,12 @@ import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
 import { ReactToCardCommentReqBody, UpdateCardReqBody } from '~/models/requests/Card.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
+import {
+  requireBoardPermissionFromBody,
+  requireCardPermission,
+  requireCardPermissionFromBody
+} from '~/middlewares/rbac.middlewares'
+import { BoardPermission } from '~/constants/permissions'
 
 const cardsRouter = Router()
 
@@ -42,6 +48,7 @@ cardsRouter.post(
   accessTokenValidator,
   verifiedUserValidator,
   createCardValidator,
+  requireBoardPermissionFromBody(BoardPermission.CreateCard, 'board_id'),
   wrapRequestHandler(createCardController)
 )
 
@@ -52,6 +59,7 @@ cardsRouter.put(
   cardIdValidator,
   updateCardValidator,
   filterMiddleware<UpdateCardReqBody>(['title', 'due_date', 'is_completed', 'description', 'cover_photo', '_destroy']),
+  requireCardPermission(BoardPermission.EditCard),
   wrapRequestHandler(updateCardController)
 )
 
@@ -61,6 +69,7 @@ cardsRouter.post(
   verifiedUserValidator,
   cardIdValidator,
   addCardCommentValidator,
+  requireCardPermission(BoardPermission.Comment),
   wrapRequestHandler(addCardCommentController)
 )
 
@@ -71,6 +80,7 @@ cardsRouter.put(
   cardIdValidator,
   commentIdValidator,
   updateCardCommentValidator,
+  requireCardPermission(BoardPermission.Comment),
   wrapRequestHandler(updateCardCommentController)
 )
 
@@ -80,6 +90,7 @@ cardsRouter.delete(
   verifiedUserValidator,
   cardIdValidator,
   commentIdValidator,
+  requireCardPermission(BoardPermission.Comment),
   wrapRequestHandler(removeCardCommentController)
 )
 
@@ -89,6 +100,7 @@ cardsRouter.post(
   verifiedUserValidator,
   cardIdValidator,
   addCardAttachmentValidator,
+  requireCardPermission(BoardPermission.Attach),
   wrapRequestHandler(addCardAttachmentController)
 )
 
@@ -99,6 +111,7 @@ cardsRouter.put(
   cardIdValidator,
   attachmentIdValidator,
   updateCardAttachmentValidator,
+  requireCardPermission(BoardPermission.Attach),
   wrapRequestHandler(updateCardAttachmentController)
 )
 
@@ -108,6 +121,7 @@ cardsRouter.delete(
   verifiedUserValidator,
   cardIdValidator,
   attachmentIdValidator,
+  requireCardPermission(BoardPermission.Attach),
   wrapRequestHandler(removeCardAttachmentController)
 )
 
@@ -117,6 +131,7 @@ cardsRouter.post(
   verifiedUserValidator,
   cardIdValidator,
   addCardMemberValidator,
+  requireCardPermission(BoardPermission.EditCard),
   wrapRequestHandler(addCardMemberController)
 )
 
@@ -126,6 +141,7 @@ cardsRouter.delete(
   verifiedUserValidator,
   cardIdValidator,
   cardMemberIdValidator,
+  requireCardPermission(BoardPermission.EditCard),
   wrapRequestHandler(removeCardMemberController)
 )
 
@@ -137,6 +153,7 @@ cardsRouter.put(
   commentIdValidator,
   reactionToCardCommentValidator,
   filterMiddleware<ReactToCardCommentReqBody>(['action', 'emoji', 'reaction_id']),
+  requireCardPermission(BoardPermission.Comment),
   wrapRequestHandler(reactToCardCommentController)
 )
 
@@ -145,6 +162,7 @@ cardsRouter.delete(
   accessTokenValidator,
   verifiedUserValidator,
   cardIdValidator,
+  requireCardPermission(BoardPermission.DeleteCard),
   wrapRequestHandler(deleteCardController)
 )
 
@@ -160,6 +178,7 @@ cardsRouter.put(
     'next_column_id',
     'next_card_order_ids'
   ]),
+  requireCardPermissionFromBody(BoardPermission.EditCard, 'current_card_id'),
   wrapRequestHandler(moveCardToDifferentColumnController)
 )
 

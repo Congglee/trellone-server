@@ -16,6 +16,8 @@ import { filterMiddleware, paginationValidator } from '~/middlewares/common.midd
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
 import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
+import { requireBoardPermission } from '~/middlewares/rbac.middlewares'
+import { BoardPermission } from '~/constants/permissions'
 
 const boardsRouter = Router()
 
@@ -40,6 +42,7 @@ boardsRouter.get(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
+  requireBoardPermission(BoardPermission.ViewBoard),
   wrapRequestHandler(getBoardController)
 )
 
@@ -57,6 +60,7 @@ boardsRouter.put(
     'column_order_ids',
     'cover_photo'
   ]),
+  requireBoardPermission(BoardPermission.ManageBoard),
   wrapRequestHandler(updateBoardController)
 )
 
