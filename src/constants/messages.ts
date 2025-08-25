@@ -34,7 +34,9 @@ export const AUTH_MESSAGES = {
   INVALID_FORGOT_PASSWORD_TOKEN: 'Invalid forgot password token',
   VERIFY_FORGOT_PASSWORD_SUCCESS: 'Verify forgot password successfully',
   RESET_PASSWORD_SUCCESS: 'Reset password successfully',
-  GMAIL_NOT_VERIFIED: 'Gmail not verified'
+  GMAIL_NOT_VERIFIED: 'Gmail not verified',
+  INSUFFICIENT_WORKSPACE_PERMISSIONS: 'Insufficient workspace permissions',
+  INSUFFICIENT_BOARD_PERMISSIONS: 'Insufficient board permissions'
 }
 
 export const USERS_MESSAGES = {

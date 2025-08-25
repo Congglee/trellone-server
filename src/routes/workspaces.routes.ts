@@ -30,6 +30,8 @@ import {
 } from '~/middlewares/workspaces.middlewares'
 import { UpdateWorkspaceReqBody } from '~/models/requests/Workspace.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
+import { requireWorkspacePermission } from '~/middlewares/rbac.middlewares'
+import { WorkspacePermission } from '~/constants/permissions'
 
 const workspacesRouter = Router()
 
@@ -48,6 +50,7 @@ workspacesRouter.get(
   accessTokenValidator,
   verifiedUserValidator,
   workspaceIdValidator,
+  requireWorkspacePermission(WorkspacePermission.ViewWorkspace),
   wrapRequestHandler(getWorkspaceController)
 )
 
@@ -58,6 +61,7 @@ workspacesRouter.put(
   workspaceIdValidator,
   updateWorkspaceValidator,
   filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo']),
+  requireWorkspacePermission(WorkspacePermission.ManageWorkspace),
   wrapRequestHandler(updateWorkspaceController)
 )
 
@@ -68,6 +72,7 @@ workspacesRouter.put(
   workspaceIdValidator,
   workspaceMemberIdValidator,
   editWorkspaceMemberRoleValidator,
+  requireWorkspacePermission(WorkspacePermission.ManageMembers),
   wrapRequestHandler(editWorkspaceMemberRoleController)
 )
 
@@ -87,6 +92,7 @@ workspacesRouter.delete(
   workspaceIdValidator,
   workspaceMemberIdValidator,
   removeWorkspaceMemberValidator,
+  requireWorkspacePermission(WorkspacePermission.ManageMembers),
   wrapRequestHandler(removeWorkspaceMemberController)
 )
 
@@ -97,6 +103,7 @@ workspacesRouter.delete(
   workspaceIdValidator,
   workspaceMemberIdValidator,
   removeWorkspaceMemberFromBoardValidator,
+  requireWorkspacePermission(WorkspacePermission.ManageMembers),
   wrapRequestHandler(removeWorkspaceMemberFromBoardController)
 )
 
@@ -106,6 +113,7 @@ workspacesRouter.post(
   verifiedUserValidator,
   workspaceIdValidator,
   workspaceGuestIdValidator,
+  requireWorkspacePermission(WorkspacePermission.ManageGuests),
   wrapRequestHandler(addGuestToWorkspaceController)
 )
 
@@ -115,6 +123,7 @@ workspacesRouter.delete(
   verifiedUserValidator,
   workspaceIdValidator,
   workspaceGuestIdValidator,
+  requireWorkspacePermission(WorkspacePermission.ManageGuests),
   wrapRequestHandler(removeGuestFromWorkspaceController)
 )
 
@@ -125,6 +134,7 @@ workspacesRouter.delete(
   workspaceIdValidator,
   workspaceGuestIdValidator,
   removeGuestFromBoardValidator,
+  requireWorkspacePermission(WorkspacePermission.ManageGuests),
   wrapRequestHandler(removeGuestFromBoardController)
 )
 
@@ -133,6 +143,7 @@ workspacesRouter.delete(
   accessTokenValidator,
   verifiedUserValidator,
   workspaceIdValidator,
+  requireWorkspacePermission(WorkspacePermission.DeleteWorkspace),
   wrapRequestHandler(deleteWorkspaceController)
 )
 
