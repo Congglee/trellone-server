@@ -1,4 +1,4 @@
-mdx/
-uploads/
-node_modules/
-dist/
+mdx
+uploads
+node_modules
+dist
