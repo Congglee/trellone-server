@@ -1,10 +1,10 @@
 .git
 .github
 .cursor
+.kilocode
 .vscode
 node_modules
 npm-debug.log
-memory-bank
 README.md
 nodemon.json
 mdx

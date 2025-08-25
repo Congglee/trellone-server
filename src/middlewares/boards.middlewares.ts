@@ -102,22 +102,9 @@ export const boardIdValidator = validate(
 
             const { user_id } = (req as Request).decoded_authorization as TokenPayload
 
-            const queryConditions = [
-              { _id: new ObjectId(value) },
-              { members: { $elemMatch: { user_id: new ObjectId(user_id) } } }
-            ]
-
-            // Execute MongoDB aggregation pipeline to fetch board with related data
             const [board] = await databaseService.boards
               .aggregate<Board>([
-                // Stage 1: $match - Filter documents based on query conditions
-                // This stage finds the board by ID, ensures it's not destroyed,
-                // and verifies the current user is a member of the board
-                {
-                  $match: { $and: queryConditions }
-                },
-                // Stage 2: $lookup - Join with columns collection
-                // This performs a left outer join to fetch all columns associated with this board
+                { $match: { _id: new ObjectId(value) } },
                 {
                   $lookup: {
                     from: envConfig.dbColumnsCollection,
@@ -126,8 +113,6 @@ export const boardIdValidator = validate(
                     as: 'columns'
                   }
                 },
-                // Stage 3: $lookup - Join with cards collection
-                // This fetches all cards associated with this board for column organization
                 {
                   $lookup: {
                     from: envConfig.dbCardsCollection,
@@ -136,61 +121,69 @@ export const boardIdValidator = validate(
                     as: 'cards'
                   }
                 },
-                // Stage 4: $lookup - Join with workspaces collection
-                // This fetches workspace information and all boards within that workspace
                 {
                   $lookup: {
                     from: envConfig.dbWorkspacesCollection,
-                    localField: 'workspace_id', // Board's workspace_id field
-                    foreignField: '_id', // Workspace document _id field
-                    as: 'workspaceData', // Store results in temporary field
+                    localField: 'workspace_id',
+                    foreignField: '_id',
+                    as: 'workspaceData',
                     pipeline: [
                       {
-                        // Sub-pipeline: $lookup - Join with boards collection for workspace boards
-                        // This fetches all boards within the workspace for navigation purposes
                         $lookup: {
                           from: envConfig.dbBoardsCollection,
-                          localField: '_id', // Workspace _id
-                          foreignField: 'workspace_id', // Board's workspace_id reference
-                          as: 'boards', // Store workspace boards in boards array
+                          localField: '_id',
+                          foreignField: 'workspace_id',
+                          as: 'boards',
                           pipeline: [
                             {
-                              // Nested sub-pipeline: $project - Only fetch required board fields
-                              // This optimizes performance by excluding unnecessary board data
                               $project: { title: 1, cover_photo: 1 }
                             },
                             {
-                              // Filter out destroyed boards for clean workspace navigation
                               $match: { _destroy: { $ne: true } }
                             }
                           ]
                         }
                       },
                       {
-                        // Sub-pipeline: $project - Only fetch required workspace fields
-                        // This maintains data privacy by excluding sensitive workspace information
                         $project: {
                           title: 1,
                           logo: 1,
-                          boards: 1
+                          boards: 1,
+                          members: 1,
+                          guests: 1
                         }
                       }
                     ]
                   }
                 },
-                // Stage 5: $lookup - Join with users collection for member details
-                // This fetches user information for all board members
-                // Uses a sub-pipeline to exclude sensitive user data (passwords, tokens)
+                {
+                  $match: {
+                    $or: [
+                      {
+                        members: {
+                          $elemMatch: {
+                            user_id: new ObjectId(user_id)
+                          }
+                        }
+                      },
+                      {
+                        'workspaceData.members': {
+                          $elemMatch: {
+                            user_id: new ObjectId(user_id)
+                          }
+                        }
+                      }
+                    ]
+                  }
+                },
                 {
                   $lookup: {
                     from: envConfig.dbUsersCollection,
-                    localField: 'members.user_id', // Array of user IDs from board members
-                    foreignField: '_id', // User document _id field
-                    as: 'memberUsers', // Store results in temporary field
+                    localField: 'members.user_id',
+                    foreignField: '_id',
+                    as: 'memberUsers',
                     pipeline: [
                       {
-                        // Sub-pipeline: $project - Exclude sensitive user fields
-                        // This ensures passwords and security tokens are not returned
                         $project: {
                           password: 0,
                           email_verify_token: 0,
@@ -200,46 +193,32 @@ export const boardIdValidator = validate(
                     ]
                   }
                 },
-                // Stage 6: $addFields - Transform member data structure, organize columns, and add workspace
-                // This stage restructures the members array to include user details directly,
-                // organizes cards within their respective columns, and adds workspace information
                 {
                   $addFields: {
                     members: {
-                      // $map - Transform each element in the members array
                       $map: {
-                        input: '$members', // Process each member in the array
-                        as: 'member', // Variable name for current member
+                        input: '$members',
+                        as: 'member',
                         in: {
-                          // $let - Define variables for use in expression
                           $let: {
                             vars: {
-                              // Find the corresponding user document for this member
                               user: {
-                                // $arrayElemAt - Get the first element from filtered array
                                 $arrayElemAt: [
                                   {
-                                    // $filter - Find user document matching member's user_id
                                     $filter: {
-                                      input: '$memberUsers', // Search in fetched user documents
-                                      as: 'user', // Variable name for current user
+                                      input: '$memberUsers',
+                                      as: 'user',
                                       cond: {
-                                        // $eq - Match user._id with member.user_id
                                         $eq: ['$$user._id', '$$member.user_id']
                                       }
                                     }
                                   },
-                                  0 // Get first (and only) matching element
+                                  0
                                 ]
                               }
                             },
                             in: {
-                              // $mergeObjects - Combine member and user data into single object
-                              // Keep user_id field from member object for downstream processing
-                              $mergeObjects: [
-                                '$$member', // Keep all member fields including user_id
-                                '$$user' // Merge all user fields into member object
-                              ]
+                              $mergeObjects: ['$$member', '$$user']
                             }
                           }
                         }
@@ -266,19 +245,15 @@ export const boardIdValidator = validate(
                       }
                     },
                     workspace: {
-                      // $arrayElemAt - Extract the first (and only) workspace from workspaceData array
-                      // Since we're joining on workspace_id, there should be exactly one match
                       $arrayElemAt: ['$workspaceData', 0]
                     }
                   }
                 },
-                // Stage 7: $project - Clean up temporary fields
-                // Remove temporary fields that are no longer needed
                 {
                   $project: {
-                    cards: 0, // Remove cards array as they're now nested in columns
-                    memberUsers: 0, // Remove temporary memberUsers field
-                    workspaceData: 0 // Remove temporary workspaceData field as it's now in workspace
+                    cards: 0,
+                    memberUsers: 0,
+                    workspaceData: 0
                   }
                 }
               ])
