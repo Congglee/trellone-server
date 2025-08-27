@@ -34,3 +34,7 @@ export interface RemoveWorkspaceMemberFromBoardReqBody {
 export interface RemoveGuestFromBoardReqBody {
   board_id: string
 }
+
+export interface WorkspaceBoardParams extends WorkspaceParams {
+  board_id: string
+}

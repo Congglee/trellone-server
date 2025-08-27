@@ -86,6 +86,29 @@ class BoardsService {
 
     return board
   }
+
+  async leaveBoard(board_id: string, user_id: string) {
+    // Step 1: Remove user from board members
+    const board = await databaseService.boards.findOneAndUpdate(
+      { _id: new ObjectId(board_id) },
+      {
+        $pull: { members: { user_id: new ObjectId(user_id) } },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    // Step 2: Remove user from all cards in this board where the user is a member
+    await databaseService.cards.updateMany(
+      { board_id: new ObjectId(board_id), members: new ObjectId(user_id) },
+      {
+        $pull: { members: new ObjectId(user_id) },
+        $currentDate: { updated_at: true }
+      }
+    )
+
+    return board
+  }
 }
 
 const boardsService = new BoardsService()

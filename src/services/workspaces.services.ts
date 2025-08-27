@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { BoardRole, WorkspaceRole, WorkspaceType } from '~/constants/enums'
 import {
   CreateWorkspaceReqBody,
   EditWorkspaceMemberRoleReqBody,
@@ -327,6 +327,25 @@ class WorkspacesService {
         $currentDate: { updated_at: true }
       }
     )
+  }
+
+  async joinWorkspaceBoard(board_id: string, user_id: string) {
+    const board = await databaseService.boards.findOneAndUpdate(
+      { _id: new ObjectId(board_id) },
+      {
+        $push: {
+          members: {
+            user_id: new ObjectId(user_id),
+            role: BoardRole.Member,
+            joined_at: new Date()
+          }
+        },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return board
   }
 }
 

@@ -8,6 +8,7 @@ import {
   RemoveGuestFromBoardReqBody,
   RemoveWorkspaceMemberFromBoardReqBody,
   UpdateWorkspaceReqBody,
+  WorkspaceBoardParams,
   WorkspaceGuestParams,
   WorkspaceMemberParams,
   WorkspaceParams
@@ -135,4 +136,13 @@ export const deleteWorkspaceController = async (req: Request<WorkspaceParams, an
   await workspacesService.deleteWorkspace(workspace_id)
 
   return res.json({ message: WORKSPACES_MESSAGES.DELETE_WORKSPACE_SUCCESS })
+}
+
+export const joinWorkspaceBoardController = async (req: Request<WorkspaceBoardParams, any, any>, res: Response) => {
+  const { board_id } = req.params
+  const { user_id } = req.decoded_authorization as TokenPayload
+
+  const result = await workspacesService.joinWorkspaceBoard(board_id, user_id)
+
+  return res.json({ message: WORKSPACES_MESSAGES.JOIN_WORKSPACE_BOARD_SUCCESS, result })
 }
