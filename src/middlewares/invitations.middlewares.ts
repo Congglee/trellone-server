@@ -192,7 +192,7 @@ export const createNewBoardInvitationValidator = validate(
   )
 )
 
-export const checkInviteeMembershipValidator = wrapRequestHandler(
+export const verifyInviteeMembershipValidator = wrapRequestHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const invitee = req.invitee as User
     const board = req.board as Board

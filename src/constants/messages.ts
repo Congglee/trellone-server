@@ -86,7 +86,9 @@ export const WORKSPACES_MESSAGES = {
   BOARD_ID_IS_REQUIRED: 'Board id is required for remove from board action',
   BOARD_NOT_FOUND: 'Board not found or does not belong to this workspace',
   USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board',
-  CANNOT_REMOVE_LAST_BOARD_ADMIN: 'Cannot remove the last admin from board. At least one admin must remain.'
+  CANNOT_REMOVE_LAST_BOARD_ADMIN: 'Cannot remove the last admin from board. At least one admin must remain.',
+  USER_ALREADY_JOINED_BOARD: 'User is already a member of this board',
+  JOIN_WORKSPACE_BOARD_SUCCESS: 'Join workspace board successfully'
 }
 
 export const BOARDS_MESSAGES = {
@@ -111,7 +113,10 @@ export const BOARDS_MESSAGES = {
   COVER_PHOTO_MUST_BE_STRING: 'Cover photo must be a string',
   COVER_PHOTO_LENGTH_MUST_BE_BETWEEN_1_AND_400: 'Cover photo length must be between 1 and 400 characters',
   INVALID_COLUMN_ID: 'Invalid column id',
-  UPDATE_BOARD_SUCCESS: 'Board updated successfully'
+  UPDATE_BOARD_SUCCESS: 'Board updated successfully',
+  CANNOT_REMOVE_LAST_BOARD_ADMIN: 'Cannot remove the last admin from board. At least one admin must remain.',
+  LEAVE_BOARD_SUCCESS: 'Leave board successfully',
+  USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board'
 }
 
 export const COLUMNS_MESSAGES = {
@@ -254,5 +259,6 @@ export const INVITATIONS_MESSAGES = {
   BOARD_INVITATION_NOT_FOUND: 'Board invitation not found',
   USER_DOES_NOT_HAVE_ACCESS_TO_BOARD_INVITATION: 'User does not have access to this board invitation',
   UPDATE_WORKSPACE_INVITATION_SUCCESS: 'Update workspace invitation successfully',
-  UPDATE_BOARD_INVITATION_SUCCESS: 'Update board invitation successfully'
+  UPDATE_BOARD_INVITATION_SUCCESS: 'Update board invitation successfully',
+  USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board'
 }

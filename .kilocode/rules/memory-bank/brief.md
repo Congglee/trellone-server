@@ -129,6 +129,8 @@ TrellOne API is a modern, collaborative project management backend system inspir
 - ✅ **File Management**: Image processing and external storage integration
 - ✅ **Email System**: Professional email delivery with HTML templates
 - ✅ **Comment System**: Full commenting with emoji reactions
+- ✅ **Role-Based Access Control**: Fine-grained permissions with inheritance model
+- ✅ **Invitation System**: Workspace and board invitations with email notifications
 
 ### Technical Readiness
 

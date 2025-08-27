@@ -3,6 +3,7 @@ import {
   createBoardController,
   getBoardController,
   getBoardsController,
+  leaveBoardController,
   updateBoardController
 } from '~/controllers/boards.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
@@ -10,6 +11,8 @@ import {
   boardIdValidator,
   createBoardValidator,
   getBoardsValidator,
+  leaveBoardValidator,
+  requireBoardMembership,
   updateBoardValidator
 } from '~/middlewares/boards.middlewares'
 import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
@@ -51,6 +54,7 @@ boardsRouter.put(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
+  requireBoardMembership,
   updateBoardValidator,
   filterMiddleware<UpdateBoardReqBody>([
     'title',
@@ -62,6 +66,16 @@ boardsRouter.put(
   ]),
   requireBoardPermission(BoardPermission.ManageBoard),
   wrapRequestHandler(updateBoardController)
+)
+
+boardsRouter.post(
+  '/:board_id/members/me/leave',
+  accessTokenValidator,
+  verifiedUserValidator,
+  boardIdValidator,
+  requireBoardMembership,
+  leaveBoardValidator,
+  wrapRequestHandler(leaveBoardController)
 )
 
 export default boardsRouter

@@ -6,6 +6,7 @@ import {
   editWorkspaceMemberRoleController,
   getWorkspaceController,
   getWorkspacesController,
+  joinWorkspaceBoardController,
   leaveWorkspaceController,
   removeGuestFromBoardController,
   removeGuestFromWorkspaceController,
@@ -26,12 +27,14 @@ import {
   removeWorkspaceMemberValidator,
   removeWorkspaceMemberFromBoardValidator,
   workspaceGuestIdValidator,
-  removeGuestFromBoardValidator
+  removeGuestFromBoardValidator,
+  joinWorkspaceBoardValidator
 } from '~/middlewares/workspaces.middlewares'
 import { UpdateWorkspaceReqBody } from '~/models/requests/Workspace.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { requireWorkspacePermission } from '~/middlewares/rbac.middlewares'
 import { WorkspacePermission } from '~/constants/permissions'
+import { boardIdValidator } from '~/middlewares/boards.middlewares'
 
 const workspacesRouter = Router()
 
@@ -145,6 +148,17 @@ workspacesRouter.delete(
   workspaceIdValidator,
   requireWorkspacePermission(WorkspacePermission.DeleteWorkspace),
   wrapRequestHandler(deleteWorkspaceController)
+)
+
+workspacesRouter.post(
+  '/:workspace_id/join/:board_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  workspaceIdValidator,
+  boardIdValidator,
+  joinWorkspaceBoardValidator,
+  requireWorkspacePermission(WorkspacePermission.JoinWorkspaceBoard),
+  wrapRequestHandler(joinWorkspaceBoardController)
 )
 
 export default workspacesRouter

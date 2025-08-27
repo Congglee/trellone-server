@@ -39,3 +39,12 @@ export const updateBoardController = async (req: Request<BoardParams, any, Updat
   const result = await boardsService.updateBoard(board_id, req.body)
   return res.json({ message: BOARDS_MESSAGES.UPDATE_BOARD_SUCCESS, result })
 }
+
+export const leaveBoardController = async (req: Request<BoardParams>, res: Response) => {
+  const { board_id } = req.params
+  const { user_id } = req.decoded_authorization as TokenPayload
+
+  const result = await boardsService.leaveBoard(board_id, user_id)
+
+  return res.json({ message: BOARDS_MESSAGES.LEAVE_BOARD_SUCCESS, result })
+}

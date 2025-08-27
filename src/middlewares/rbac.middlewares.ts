@@ -118,6 +118,15 @@ export const requireBoardPermissionFromBody = (permission: BoardPermission, fiel
 
     const { user_id } = req.decoded_authorization as TokenPayload
 
+    const isBoardMember = board.members?.some((member) => member.user_id.equals(new ObjectId(user_id)))
+
+    if (!isBoardMember) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.FORBIDDEN,
+        message: BOARDS_MESSAGES.USER_NOT_MEMBER_OF_BOARD
+      })
+    }
+
     const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
 
     if (!allowed) {
