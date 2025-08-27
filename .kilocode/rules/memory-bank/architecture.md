@@ -90,6 +90,13 @@ src/
 - **Role-based Access**: Admin/Normal roles across workspaces and boards
 - **Data Hierarchy**: Workspaces → Boards → Columns → Cards
 
+### 5. Role-Based Access Control (RBAC)
+
+- **Granular Permissions**: Fine-grained permissions for workspaces and boards
+- **Permission Inheritance**: Board roles can inherit from workspace roles
+- **Explicit Overrides**: Board-level roles can override workspace-level roles
+- **Middleware Integration**: RBAC checks integrated into route middleware chains
+
 ## Design Patterns
 
 ### 1. Service Layer Pattern
@@ -141,6 +148,21 @@ router.put(
 )
 ```
 
+### 5. RBAC Middleware Pattern
+
+```typescript
+router.put(
+  '/:workspace_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  workspaceIdValidator,
+  updateWorkspaceValidator,
+  filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo']),
+  requireWorkspacePermission(WorkspacePermission.ManageWorkspace), // RBAC check
+  wrapRequestHandler(updateWorkspaceController)
+)
+```
+
 ## Component Relationships
 
 ### 1. Authentication Flow
@@ -173,6 +195,12 @@ Upload → Temp Storage → Sharp Processing → UploadThing → Cleanup
 Workspace Operation → Board Impact → Column Impact → Card Impact
 ```
 
+### 6. RBAC Permission Flow
+
+```
+Request → Authentication → Resource Validation → RBAC Check → Controller
+```
+
 ## Critical Implementation Paths
 
 ### 1. User Registration Flow
@@ -180,7 +208,8 @@ Workspace Operation → Board Impact → Column Impact → Card Impact
 ```
 POST /auth/register → registerValidator → registerController →
 authService.register() → User.schema → database.users.insertOne() →
-sendVerifyEmail() → JWT generation → Cookie setting
+sendVerifyEmail() → JWT generation → Cookie setting →
+Auto-create workspace
 ```
 
 ### 2. Workspace Creation Flow
@@ -259,6 +288,20 @@ cardsService.reactCardComment() → MongoDB positional update →
 Reaction management → Socket broadcast → Real-time updates
 ```
 
+### 11. RBAC Permission Check Flow
+
+```
+Route Access → Authentication → Resource Validation →
+RBAC Middleware → Permission Check → Controller
+```
+
+### 12. Invitation Flow
+
+```
+POST /invitations/workspace → Authentication → Validation →
+Invitation Creation → Email Sending → Database Storage
+```
+
 ## Error Handling Architecture
 
 ### 1. Centralized Error Handler
@@ -317,6 +360,13 @@ export class ErrorWithStatus extends Error {
 - **Workspace Roles**: Admin/Normal permissions within workspaces
 - **Board Access**: Workspace membership determines board access
 - **Resource Authorization**: Middleware validates user permissions
+- **Granular Permissions**: Fine-grained control over actions
+
+### 4. RBAC Security
+
+- **Permission-based Access**: Actions require specific permissions
+- **Inheritance Model**: Roles inherit permissions from parent roles
+- **Explicit Overrides**: Fine-grained control at resource level
 
 ## External Service Integration
 
@@ -334,4 +384,4 @@ export const sendVerifyRegisterEmail = async (email: string, token: string) => {
 }
 ```
 
-This architecture ensures maintainability, scalability, and clear separation of concerns while following established Node.js and Express.js best practices. The enhanced workspace management system provides enterprise-grade organizational capabilities while maintaining architectural consistency.
+This architecture ensures maintainability, scalability, and clear separation of concerns while following established Node.js and Express.js best practices. The enhanced workspace management system provides enterprise-grade organizational capabilities while maintaining architectural consistency. The RBAC system adds fine-grained access control for secure collaboration.
