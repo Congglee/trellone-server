@@ -8,6 +8,7 @@ import {
   RemoveGuestFromBoardReqBody,
   RemoveWorkspaceMemberFromBoardReqBody,
   UpdateWorkspaceReqBody,
+  WorkspaceBoardParams,
   WorkspaceGuestParams,
   WorkspaceMemberParams,
   WorkspaceParams
@@ -69,7 +70,7 @@ export const editWorkspaceMemberRoleController = async (
   return res.json({ message: WORKSPACES_MESSAGES.EDIT_WORKSPACE_MEMBER_ROLE_SUCCESS, result })
 }
 
-export const leaveWorkspaceController = async (req: Request<WorkspaceParams, any, any>, res: Response) => {
+export const leaveWorkspaceController = async (req: Request<WorkspaceParams>, res: Response) => {
   const { workspace_id } = req.params
   const { user_id } = req.decoded_authorization as TokenPayload
 
@@ -78,7 +79,7 @@ export const leaveWorkspaceController = async (req: Request<WorkspaceParams, any
   return res.json({ message: WORKSPACES_MESSAGES.LEAVE_WORKSPACE_SUCCESS, result })
 }
 
-export const removeWorkspaceMemberController = async (req: Request<WorkspaceMemberParams, any, any>, res: Response) => {
+export const removeWorkspaceMemberController = async (req: Request<WorkspaceMemberParams>, res: Response) => {
   const { workspace_id, user_id } = req.params
 
   const result = await workspacesService.removeWorkspaceMember(workspace_id, user_id)
@@ -98,7 +99,7 @@ export const removeWorkspaceMemberFromBoardController = async (
   return res.json({ message: WORKSPACES_MESSAGES.REMOVE_WORKSPACE_MEMBER_FROM_BOARD_SUCCESS, result })
 }
 
-export const addGuestToWorkspaceController = async (req: Request<WorkspaceGuestParams, any, any>, res: Response) => {
+export const addGuestToWorkspaceController = async (req: Request<WorkspaceGuestParams>, res: Response) => {
   const { workspace_id, user_id } = req.params
 
   const result = await workspacesService.addGuestToWorkspace(workspace_id, user_id)
@@ -106,10 +107,7 @@ export const addGuestToWorkspaceController = async (req: Request<WorkspaceGuestP
   return res.json({ message: WORKSPACES_MESSAGES.ADD_GUEST_TO_WORKSPACE_SUCCESS, result })
 }
 
-export const removeGuestFromWorkspaceController = async (
-  req: Request<WorkspaceGuestParams, any, any>,
-  res: Response
-) => {
+export const removeGuestFromWorkspaceController = async (req: Request<WorkspaceGuestParams>, res: Response) => {
   const { workspace_id, user_id } = req.params
 
   const result = await workspacesService.removeGuestFromWorkspace(workspace_id, user_id)
@@ -129,10 +127,19 @@ export const removeGuestFromBoardController = async (
   return res.json({ message: WORKSPACES_MESSAGES.REMOVE_GUEST_FROM_BOARD_SUCCESS, result })
 }
 
-export const deleteWorkspaceController = async (req: Request<WorkspaceParams, any, any>, res: Response) => {
+export const deleteWorkspaceController = async (req: Request<WorkspaceParams>, res: Response) => {
   const { workspace_id } = req.params
 
   await workspacesService.deleteWorkspace(workspace_id)
 
   return res.json({ message: WORKSPACES_MESSAGES.DELETE_WORKSPACE_SUCCESS })
+}
+
+export const joinWorkspaceBoardController = async (req: Request<WorkspaceBoardParams>, res: Response) => {
+  const { board_id } = req.params
+  const { user_id } = req.decoded_authorization as TokenPayload
+
+  const result = await workspacesService.joinWorkspaceBoard(board_id, user_id)
+
+  return res.json({ message: WORKSPACES_MESSAGES.JOIN_WORKSPACE_BOARD_SUCCESS, result })
 }

@@ -19,7 +19,7 @@ export const updateColumnController = async (req: Request<ColumnParams, any, Upd
   return res.json({ message: COLUMNS_MESSAGES.UPDATE_COLUMN_SUCCESS, result })
 }
 
-export const deleteColumnController = async (req: Request<ColumnParams, any, any>, res: Response) => {
+export const deleteColumnController = async (req: Request<ColumnParams>, res: Response) => {
   const { column_id } = req.params
   const board_id = (req.column as Column & { board_id: string }).board_id
 

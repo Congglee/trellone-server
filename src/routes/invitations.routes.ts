@@ -11,7 +11,7 @@ import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
 import {
   boardInvitationUpdateGuard,
-  checkInviteeMembershipValidator,
+  verifyInviteeMembershipValidator,
   createNewBoardInvitationValidator,
   createNewWorkspaceInvitationValidator,
   invitationIdValidator,
@@ -31,7 +31,7 @@ invitationsRouter.post(
   accessTokenValidator,
   verifiedUserValidator,
   createNewWorkspaceInvitationValidator,
-  checkInviteeMembershipValidator,
+  verifyInviteeMembershipValidator,
   wrapRequestHandler(createNewWorkspaceInvitationController)
 )
 
@@ -40,7 +40,7 @@ invitationsRouter.post(
   accessTokenValidator,
   verifiedUserValidator,
   createNewBoardInvitationValidator,
-  checkInviteeMembershipValidator,
+  verifyInviteeMembershipValidator,
   wrapRequestHandler(createNewBoardInvitationController)
 )
 

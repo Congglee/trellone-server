@@ -64,6 +64,38 @@ class BoardsService {
     return { boards, total }
   }
 
+  async getJoinedWorkspaceBoards({
+    workspace_id,
+    user_id,
+    limit,
+    page
+  }: {
+    workspace_id: string
+    user_id: string
+    limit: number
+    page: number
+  }) {
+    const queryConditions: any[] = [
+      { workspace_id: new ObjectId(workspace_id) },
+      { members: { $elemMatch: { user_id: new ObjectId(user_id) } } },
+      { _destroy: false }
+    ]
+
+    const [boards, total] = await Promise.all([
+      await databaseService.boards
+        .aggregate<Board>([
+          { $match: { $and: queryConditions } },
+          { $sort: { title: 1 } },
+          { $skip: limit * (page - 1) },
+          { $limit: limit }
+        ])
+        .toArray(),
+      await databaseService.boards.countDocuments({ $and: queryConditions })
+    ])
+
+    return { boards, total }
+  }
+
   async updateBoard(board_id: string, body: UpdateBoardReqBody) {
     const payload: any = { ...body }
 
@@ -82,6 +114,29 @@ class BoardsService {
         $currentDate: { updated_at: true }
       },
       { returnDocument: 'after' }
+    )
+
+    return board
+  }
+
+  async leaveBoard(board_id: string, user_id: string) {
+    // Step 1: Remove user from board members
+    const board = await databaseService.boards.findOneAndUpdate(
+      { _id: new ObjectId(board_id) },
+      {
+        $pull: { members: { user_id: new ObjectId(user_id) } },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    // Step 2: Remove user from all cards in this board where the user is a member
+    await databaseService.cards.updateMany(
+      { board_id: new ObjectId(board_id), members: new ObjectId(user_id) },
+      {
+        $pull: { members: new ObjectId(user_id) },
+        $currentDate: { updated_at: true }
+      }
     )
 
     return board

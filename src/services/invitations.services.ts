@@ -346,7 +346,7 @@ class InvitationsService {
       { returnDocument: 'after' }
     )
 
-    // Step 2: If the case is a successful invitation, it is necessary to add more information of the user (UserID) to the member_ids record in the Board collection.
+    // Step 2: If the case is a successful invitation, it is necessary to add more information of the user (UserID) to the `members` array in the Board collection.
     if (body.status === BoardInvitationStatus.Accepted) {
       await databaseService.boards.findOneAndUpdate(
         { _id: new ObjectId(body.board_id) },

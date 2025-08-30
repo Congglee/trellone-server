@@ -58,7 +58,7 @@ export const updateCardCommentController = async (
   return res.json({ message: CARDS_MESSAGES.UPDATE_CARD_COMMENT_SUCCESS, result })
 }
 
-export const removeCardCommentController = async (req: Request<CardCommentParams, any, any>, res: Response) => {
+export const removeCardCommentController = async (req: Request<CardCommentParams>, res: Response) => {
   const { card_id, comment_id } = req.params
 
   const result = await cardsService.removeCardComment(card_id, comment_id)
@@ -89,7 +89,7 @@ export const updateCardAttachmentController = async (
   return res.json({ message: CARDS_MESSAGES.UPDATE_CARD_ATTACHMENT_SUCCESS, result })
 }
 
-export const removeCardAttachmentController = async (req: Request<CardAttachmentParams, any, any>, res: Response) => {
+export const removeCardAttachmentController = async (req: Request<CardAttachmentParams>, res: Response) => {
   const { card_id, attachment_id } = req.params
 
   const result = await cardsService.removeAttachment(card_id, attachment_id)
@@ -105,7 +105,7 @@ export const addCardMemberController = async (req: Request<CardParams, any, AddC
   return res.json({ message: CARDS_MESSAGES.ADD_CARD_MEMBER_SUCCESS, result })
 }
 
-export const removeCardMemberController = async (req: Request<CardMemberParams, any, any>, res: Response) => {
+export const removeCardMemberController = async (req: Request<CardMemberParams>, res: Response) => {
   const { card_id, user_id } = req.params
 
   const result = await cardsService.removeCardMember(card_id, user_id)
@@ -125,7 +125,7 @@ export const reactToCardCommentController = async (
   return res.json({ message: CARDS_MESSAGES.REACT_CARD_COMMENT_SUCCESS, result })
 }
 
-export const deleteCardController = async (req: Request<CardParams, any, any>, res: Response) => {
+export const deleteCardController = async (req: Request<CardParams>, res: Response) => {
   const { card_id } = req.params
   const column_id = (req.card as Card & { column_id: string }).column_id
 

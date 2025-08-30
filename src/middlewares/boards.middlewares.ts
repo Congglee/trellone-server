@@ -2,16 +2,17 @@ import { validate } from '~/utils/validation'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { BOARDS_MESSAGES } from '~/constants/messages'
 import { stringEnumToArray } from '~/utils/commons'
-import { BoardType } from '~/constants/enums'
+import { BoardRole, BoardType } from '~/constants/enums'
 import { ObjectId } from 'mongodb'
 import { ErrorWithStatus } from '~/models/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
 import databaseService from '~/services/database.services'
-import { Request } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import Board from '~/models/schemas/Board.schema'
 import { envConfig } from '~/config/environment'
 import { isEmpty } from 'lodash'
 import { TokenPayload } from '~/models/requests/User.requests'
+import { wrapRequestHandler } from '~/utils/handlers'
 
 const boardTypes = stringEnumToArray(BoardType)
 
@@ -129,26 +130,9 @@ export const boardIdValidator = validate(
                     as: 'workspaceData',
                     pipeline: [
                       {
-                        $lookup: {
-                          from: envConfig.dbBoardsCollection,
-                          localField: '_id',
-                          foreignField: 'workspace_id',
-                          as: 'boards',
-                          pipeline: [
-                            {
-                              $project: { title: 1, cover_photo: 1 }
-                            },
-                            {
-                              $match: { _destroy: { $ne: true } }
-                            }
-                          ]
-                        }
-                      },
-                      {
                         $project: {
                           title: 1,
                           logo: 1,
-                          boards: 1,
                           members: 1,
                           guests: 1
                         }
@@ -336,3 +320,39 @@ export const updateBoardValidator = validate(
     ['body']
   )
 )
+
+export const leaveBoardValidator = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const board = (req as Request).board as Board
+
+  // Ensure at least one admin remains on the board after removal
+  const boardAdmins = board.members?.filter((member) => member.role === BoardRole.Admin) || []
+  const targetBoardMember = board.members?.find((member) => member.user_id.equals(new ObjectId(user_id)))
+
+  const isTargetBoardAdmin = targetBoardMember?.role === BoardRole.Admin
+
+  if (boardAdmins.length === 1 && isTargetBoardAdmin) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.BAD_REQUEST,
+      message: BOARDS_MESSAGES.CANNOT_REMOVE_LAST_BOARD_ADMIN
+    })
+  }
+
+  next()
+})
+
+export const requireBoardMembership = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const board = (req as Request).board as Board
+
+  const isBoardMember = board.members?.some((member) => member.user_id.equals(new ObjectId(user_id))) || false
+
+  if (!isBoardMember) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.FORBIDDEN,
+      message: BOARDS_MESSAGES.USER_NOT_MEMBER_OF_BOARD
+    })
+  }
+
+  next()
+})

@@ -512,3 +512,21 @@ export const removeGuestFromBoardValidator = validate(
     ['body']
   )
 )
+
+export const joinWorkspaceBoardValidator = wrapRequestHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { user_id } = req.decoded_authorization as TokenPayload
+    const board = (req as Request).board
+
+    const isAlreadyBoardMember = board?.members?.some((member) => member.user_id.equals(new ObjectId(user_id)))
+
+    if (isAlreadyBoardMember) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.BAD_REQUEST,
+        message: WORKSPACES_MESSAGES.USER_ALREADY_JOINED_BOARD
+      })
+    }
+
+    next()
+  }
+)
