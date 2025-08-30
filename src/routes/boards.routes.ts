@@ -3,6 +3,7 @@ import {
   createBoardController,
   getBoardController,
   getBoardsController,
+  getJoinedWorkspaceBoardsController,
   leaveBoardController,
   updateBoardController
 } from '~/controllers/boards.controllers'
@@ -21,6 +22,7 @@ import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { requireBoardPermission } from '~/middlewares/rbac.middlewares'
 import { BoardPermission } from '~/constants/permissions'
+import { workspaceIdValidator } from '~/middlewares/workspaces.middlewares'
 
 const boardsRouter = Router()
 
@@ -38,6 +40,14 @@ boardsRouter.get(
   paginationValidator,
   getBoardsValidator,
   wrapRequestHandler(getBoardsController)
+)
+
+boardsRouter.get(
+  '/workspace/:workspace_id',
+  accessTokenValidator,
+  paginationValidator,
+  workspaceIdValidator,
+  wrapRequestHandler(getJoinedWorkspaceBoardsController)
 )
 
 boardsRouter.get(

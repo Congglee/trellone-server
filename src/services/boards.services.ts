@@ -64,6 +64,38 @@ class BoardsService {
     return { boards, total }
   }
 
+  async getJoinedWorkspaceBoards({
+    workspace_id,
+    user_id,
+    limit,
+    page
+  }: {
+    workspace_id: string
+    user_id: string
+    limit: number
+    page: number
+  }) {
+    const queryConditions: any[] = [
+      { workspace_id: new ObjectId(workspace_id) },
+      { members: { $elemMatch: { user_id: new ObjectId(user_id) } } },
+      { _destroy: false }
+    ]
+
+    const [boards, total] = await Promise.all([
+      await databaseService.boards
+        .aggregate<Board>([
+          { $match: { $and: queryConditions } },
+          { $sort: { title: 1 } },
+          { $skip: limit * (page - 1) },
+          { $limit: limit }
+        ])
+        .toArray(),
+      await databaseService.boards.countDocuments({ $and: queryConditions })
+    ])
+
+    return { boards, total }
+  }
+
   async updateBoard(board_id: string, body: UpdateBoardReqBody) {
     const payload: any = { ...body }
 

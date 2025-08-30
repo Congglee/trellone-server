@@ -17,6 +17,10 @@ export interface BoardParams extends ParamsDictionary {
   board_id: string
 }
 
+export interface JoinedWorkspaceBoardQuery extends Pagination, Query {
+  workspace_id: string
+}
+
 export interface UpdateBoardReqBody extends CreateBoardReqBody {
   column_order_ids: string[]
   cover_photo?: string

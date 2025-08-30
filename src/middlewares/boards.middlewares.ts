@@ -1,6 +1,6 @@
 import { validate } from '~/utils/validation'
 import { checkSchema, ParamSchema } from 'express-validator'
-import { BOARDS_MESSAGES, WORKSPACES_MESSAGES } from '~/constants/messages'
+import { BOARDS_MESSAGES } from '~/constants/messages'
 import { stringEnumToArray } from '~/utils/commons'
 import { BoardRole, BoardType } from '~/constants/enums'
 import { ObjectId } from 'mongodb'
@@ -130,26 +130,9 @@ export const boardIdValidator = validate(
                     as: 'workspaceData',
                     pipeline: [
                       {
-                        $lookup: {
-                          from: envConfig.dbBoardsCollection,
-                          localField: '_id',
-                          foreignField: 'workspace_id',
-                          as: 'boards',
-                          pipeline: [
-                            {
-                              $project: { title: 1, cover_photo: 1 }
-                            },
-                            {
-                              $match: { _destroy: { $ne: true } }
-                            }
-                          ]
-                        }
-                      },
-                      {
                         $project: {
                           title: 1,
                           logo: 1,
-                          boards: 1,
                           members: 1,
                           guests: 1
                         }

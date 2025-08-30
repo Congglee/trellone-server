@@ -116,7 +116,8 @@ export const BOARDS_MESSAGES = {
   UPDATE_BOARD_SUCCESS: 'Board updated successfully',
   CANNOT_REMOVE_LAST_BOARD_ADMIN: 'Cannot remove the last admin from board. At least one admin must remain.',
   LEAVE_BOARD_SUCCESS: 'Leave board successfully',
-  USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board'
+  USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board',
+  GET_JOINED_WORKSPACE_BOARDS_SUCCESS: 'Get joined workspace boards successfully'
 }
 
 export const COLUMNS_MESSAGES = {
