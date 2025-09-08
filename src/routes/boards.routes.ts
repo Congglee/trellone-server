@@ -10,6 +10,7 @@ import {
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import {
   boardIdValidator,
+  boardWorkspaceIdValidator,
   createBoardValidator,
   getBoardsValidator,
   leaveBoardValidator,
@@ -22,7 +23,6 @@ import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { requireBoardPermission } from '~/middlewares/rbac.middlewares'
 import { BoardPermission } from '~/constants/permissions'
-import { workspaceIdValidator } from '~/middlewares/workspaces.middlewares'
 
 const boardsRouter = Router()
 
@@ -46,7 +46,7 @@ boardsRouter.get(
   '/workspace/:workspace_id',
   accessTokenValidator,
   paginationValidator,
-  workspaceIdValidator,
+  boardWorkspaceIdValidator,
   wrapRequestHandler(getJoinedWorkspaceBoardsController)
 )
 
