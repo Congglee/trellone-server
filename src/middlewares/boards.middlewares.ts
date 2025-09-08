@@ -356,3 +356,25 @@ export const requireBoardMembership = wrapRequestHandler(async (req: Request, re
 
   next()
 })
+
+export const boardWorkspaceIdValidator = validate(
+  checkSchema(
+    {
+      workspace_id: {
+        custom: {
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: BOARDS_MESSAGES.INVALID_WORKSPACE_ID
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)

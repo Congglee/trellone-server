@@ -56,7 +56,7 @@ class WorkspacesService {
               foreignField: 'workspace_id',
               as: 'boards',
               pipeline: [
-                { $match: { _destroy: false } },
+                { $match: { _destroy: false, 'members.user_id': new ObjectId(user_id) } },
                 {
                   $project: {
                     title: 1,
@@ -249,6 +249,18 @@ class WorkspacesService {
   }
 
   async removeGuestFromWorkspace(workspace_id: string, user_id: string) {
+    const affectedBoardIds = await databaseService.boards
+      .find(
+        {
+          workspace_id: new ObjectId(workspace_id),
+          _destroy: false,
+          'members.user_id': new ObjectId(user_id)
+        },
+        { projection: { _id: 1 } }
+      )
+      .map((board) => board._id.toString())
+      .toArray()
+
     // Remove guest from workspace guests array and from all boards within the workspace
     await databaseService.boards.updateMany(
       {
@@ -271,7 +283,7 @@ class WorkspacesService {
       { returnDocument: 'after' }
     )
 
-    return workspace
+    return { workspace, affectedBoardIds }
   }
 
   async removeGuestFromBoard(workspace_id: string, board_id: string, user_id: string) {
