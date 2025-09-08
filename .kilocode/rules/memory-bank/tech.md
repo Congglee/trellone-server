@@ -6,11 +6,19 @@
 
 - **Node.js** with **TypeScript 5.8.2** - Latest stable TypeScript with modern ES features
 - **Express.js 4.21.2** - Mature, stable web framework for Node.js
-- **MongoDB 6.14.2** - Latest MongoDB driver with improved performance and security
+- **MongoDB 6.14.2** - Latest MongoDB driver with improved performance and security.
 
 ### Real-time Communication
 
 - **Socket.IO 4.8.1** - WebSocket library for real-time bidirectional communication
+
+## Version alignment and sources
+
+- Versions in this document reflect the currently installed dependencies in [package.json](package.json:1) at project version 1.0.0.
+- Invitations stack present and verified:
+  - Service: [invitations.services.ts](src/services/invitations.services.ts:1)
+  - Templates: [board-invitation.html](src/templates/board-invitation.html:1), [workspace-invitation.html](src/templates/workspace-invitation.html:1)
+  - Socket handler: [invitations.sockets.ts](src/sockets/invitations.sockets.ts:1)
 
 ## Key Dependencies
 

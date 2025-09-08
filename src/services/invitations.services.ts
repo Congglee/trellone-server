@@ -274,7 +274,16 @@ class InvitationsService {
               as: 'board'
             }
           },
-          { $unwind: '$board' },
+          { $unwind: { path: '$board', preserveNullAndEmptyArrays: true } },
+          {
+            $lookup: {
+              from: envConfig.dbWorkspacesCollection,
+              localField: 'workspace_invitation.workspace_id',
+              foreignField: '_id',
+              as: 'workspace'
+            }
+          },
+          { $unwind: { path: '$workspace', preserveNullAndEmptyArrays: true } },
           { $sort: { created_at: -1 } },
           { $skip: limit * (page - 1) },
           { $limit: limit }
