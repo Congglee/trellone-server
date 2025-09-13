@@ -13,6 +13,7 @@ import { envConfig } from '~/config/environment'
 import { isEmpty } from 'lodash'
 import { TokenPayload } from '~/models/requests/User.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
+import { assertBoardIsOpen } from '~/utils/guards'
 
 const boardTypes = stringEnumToArray(BoardType)
 
@@ -315,6 +316,19 @@ export const updateBoardValidator = validate(
       cover_photo: {
         optional: true,
         isString: { errorMessage: BOARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING }
+      },
+      _destroy: {
+        optional: true,
+        custom: {
+          options: (value) => {
+            if (typeof value !== 'boolean' && typeof value !== 'undefined') {
+              throw new Error(BOARDS_MESSAGES.BOARD_ARCHIVE_STATUS_MUST_BE_BOOLEAN)
+            }
+
+            return true
+          }
+        },
+        toBoolean: true
       }
     },
     ['body']
@@ -378,3 +392,34 @@ export const boardWorkspaceIdValidator = validate(
     ['params']
   )
 )
+
+export const rejectIfBoardClosed = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const board = (req as Request).board as Board
+
+  if (!board || !board._destroy) {
+    return next()
+  }
+
+  // Get body from request, if not exists then assign empty object
+  const body = (req.body || {}) as Record<string, unknown>
+
+  // Check if the request is only for reopening the board
+  // hasOnlyReopenFlag will be true if:
+  // 1. Body contains '_destroy' property
+  // 2. Value of '_destroy' is false (meaning want to reopen the board)
+  // 3. Body contains only '_destroy' property (no other properties)
+  const hasOnlyReopenFlag =
+    Object.prototype.hasOwnProperty.call(body, '_destroy') &&
+    body._destroy === false &&
+    Object.keys(body).every((key) => key === '_destroy')
+
+  // If the request is not for reopening the board (hasOnlyReopenFlag = false)
+  // then check if the board is closed, if closed then throw error
+  // This means: only allow reopening operation when board is closed,
+  // other operations will be rejected
+  if (!hasOnlyReopenFlag) {
+    assertBoardIsOpen(board)
+  }
+
+  return next()
+})

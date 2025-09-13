@@ -24,4 +24,5 @@ export interface JoinedWorkspaceBoardQuery extends Pagination, Query {
 export interface UpdateBoardReqBody extends CreateBoardReqBody {
   column_order_ids: string[]
   cover_photo?: string
+  _destroy?: boolean
 }
