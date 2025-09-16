@@ -11,6 +11,8 @@ export interface CreateBoardReqBody {
 
 export interface BoardQuery extends Pagination, Query {
   keyword: string
+  state?: string
+  workspace?: string
 }
 
 export interface BoardParams extends ParamsDictionary {

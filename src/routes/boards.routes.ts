@@ -86,7 +86,6 @@ boardsRouter.post(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
-  rejectIfBoardClosed,
   requireBoardMembership,
   leaveBoardValidator,
   wrapRequestHandler(leaveBoardController)

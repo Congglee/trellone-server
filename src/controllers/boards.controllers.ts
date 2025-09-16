@@ -22,7 +22,14 @@ export const getBoardsController = async (req: Request<ParamsDictionary, any, an
   const limit = Number(req.query.limit)
   const page = Number(req.query.page)
 
-  const result = await boardsService.getBoards({ user_id, limit, page, keyword: req.query.keyword })
+  const result = await boardsService.getBoards({
+    user_id,
+    limit,
+    page,
+    keyword: req.query.keyword,
+    state: req.query.state,
+    workspace: req.query.workspace
+  })
 
   return res.json({
     message: BOARDS_MESSAGES.GET_BOARDS_SUCCESS,

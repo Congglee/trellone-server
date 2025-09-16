@@ -119,7 +119,9 @@ export const BOARDS_MESSAGES = {
   USER_NOT_MEMBER_OF_BOARD: 'User is not a member of this board',
   GET_JOINED_WORKSPACE_BOARDS_SUCCESS: 'Get joined workspace boards successfully',
   BOARD_ARCHIVE_STATUS_MUST_BE_BOOLEAN: 'Board archive status must be boolean',
-  BOARD_IS_CLOSED_REOPEN_REQUIRED: 'Board is closed. Please reopen the board before making changes'
+  BOARD_IS_CLOSED_REOPEN_REQUIRED: 'Board is closed. Please reopen the board before making changes',
+  STATE_MUST_BE_STRING: 'State must be a string',
+  STATE_MUST_BE_CLOSED_OR_ACTIVE: 'State must be "closed" or "active"'
 }
 
 export const COLUMNS_MESSAGES = {

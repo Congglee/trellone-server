@@ -56,12 +56,13 @@ class WorkspacesService {
               foreignField: 'workspace_id',
               as: 'boards',
               pipeline: [
-                { $match: { _destroy: false, 'members.user_id': new ObjectId(user_id) } },
+                { $match: { 'members.user_id': new ObjectId(user_id) } },
                 {
                   $project: {
                     title: 1,
                     description: 1,
-                    cover_photo: 1
+                    cover_photo: 1,
+                    _destroy: 1
                   }
                 }
               ]

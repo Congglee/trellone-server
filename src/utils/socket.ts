@@ -87,9 +87,9 @@ const initSocket = (httpServer: ServerHttp) => {
     // Call the socket event handlers here depending on the features
     inviteUserToWorkspaceSocket(io, socket, users)
     inviteUserToBoardSocket(io, socket, users)
-    manageWorkspaceSocketEvents(socket)
+    manageWorkspaceSocketEvents(io, socket)
     manageBoardSocketEvents(socket)
-    updateWorkspaceSocket(socket)
+    updateWorkspaceSocket(io, socket)
     createWorkspaceBoardSocket(socket)
     updateBoardSocket(socket)
     acceptBoardInvitationSocket(socket)

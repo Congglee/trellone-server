@@ -3,6 +3,7 @@ import { BoardRole } from '~/constants/enums'
 import { CreateBoardReqBody, UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import Board from '~/models/schemas/Board.schema'
 import databaseService from '~/services/database.services'
+import { envConfig } from '~/config/environment'
 
 class BoardsService {
   async createBoard(user_id: string, body: CreateBoardReqBody) {
@@ -31,17 +32,28 @@ class BoardsService {
     user_id,
     limit,
     page,
-    keyword
+    keyword,
+    state,
+    workspace
   }: {
     user_id: string
     limit: number
     page: number
     keyword: string
+    state?: string
+    workspace?: string
   }) {
+    const normalizedState = state?.toLowerCase()
+    const destroyFilterValue = normalizedState === 'closed' ? true : false
+
     const queryConditions: any[] = [
       { members: { $elemMatch: { user_id: new ObjectId(user_id) } } },
-      { _destroy: false }
+      { _destroy: destroyFilterValue }
     ]
+
+    if (workspace) {
+      queryConditions.push({ workspace_id: new ObjectId(workspace) })
+    }
 
     if (keyword) {
       queryConditions.push({
@@ -55,7 +67,30 @@ class BoardsService {
           { $match: { $and: queryConditions } },
           { $sort: { title: 1 } },
           { $skip: limit * (page - 1) },
-          { $limit: limit }
+          { $limit: limit },
+          {
+            $lookup: {
+              from: envConfig.dbWorkspacesCollection,
+              localField: 'workspace_id',
+              foreignField: '_id',
+              as: 'workspaceData',
+              pipeline: [
+                {
+                  $project: { title: 1 }
+                }
+              ]
+            }
+          },
+          {
+            $addFields: {
+              workspace: { $arrayElemAt: ['$workspaceData', 0] }
+            }
+          },
+          {
+            $project: {
+              workspaceData: 0
+            }
+          }
         ])
         .toArray(),
       await databaseService.boards.countDocuments({ $and: queryConditions })

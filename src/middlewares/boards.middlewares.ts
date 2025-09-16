@@ -83,6 +83,14 @@ export const getBoardsValidator = validate(
       keyword: {
         optional: true,
         isString: { errorMessage: BOARDS_MESSAGES.KEYWORD_MUST_BE_STRING }
+      },
+      state: {
+        optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.STATE_MUST_BE_STRING },
+        isIn: {
+          options: [['closed', 'active']],
+          errorMessage: BOARDS_MESSAGES.STATE_MUST_BE_CLOSED_OR_ACTIVE
+        }
       }
     },
     ['query']
