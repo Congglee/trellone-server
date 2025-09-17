@@ -233,3 +233,84 @@ TrellOne API is currently in a **stable, production-ready state** with all core 
 The immediate focus should be on **API documentation** and **testing infrastructure** to support production deployment and team scaling, rather than core functionality development.
 
 **Recommendation**: Proceed with production deployment preparation while building documentation and testing infrastructure in parallel.
+
+## References and Code Anchors
+
+- Core application
+
+  - [app.ts](src/app.ts:1)
+  - [index.ts](src/index.ts:1)
+  - [package.json](package.json:1)
+
+- Routes
+
+  - [auth.routes.ts](src/routes/auth.routes.ts:1)
+  - [workspaces.routes.ts](src/routes/workspaces.routes.ts:1)
+  - [boards.routes.ts](src/routes/boards.routes.ts:1)
+  - [columns.routes.ts](src/routes/columns.routes.ts:1)
+  - [cards.routes.ts](src/routes/cards.routes.ts:1)
+  - [invitations.routes.ts](src/routes/invitations.routes.ts:1)
+  - [medias.routes.ts](src/routes/medias.routes.ts:1)
+  - [users.routes.ts](src/routes/users.routes.ts:1)
+
+- RBAC middlewares
+
+  - [requireWorkspacePermission()](src/middlewares/rbac.middlewares.ts:24)
+  - [requireBoardPermission()](src/middlewares/rbac.middlewares.ts:59)
+  - [requireBoardPermissionFromBody()](src/middlewares/rbac.middlewares.ts:136)
+  - [requireColumnPermission()](src/middlewares/rbac.middlewares.ts:177)
+  - [requireCardPermission()](src/middlewares/rbac.middlewares.ts:209)
+  - [requireCardPermissionFromBody()](src/middlewares/rbac.middlewares.ts:241)
+
+- Services
+
+  - [auth.services.ts](src/services/auth.services.ts:1)
+  - [workspaces.services.ts](src/services/workspaces.services.ts:1)
+  - [boards.services.ts](src/services/boards.services.ts:1)
+  - [columns.services.ts](src/services/columns.services.ts:1)
+  - [cards.services.ts](src/services/cards.services.ts:1)
+  - [invitations.services.ts](src/services/invitations.services.ts:1)
+  - [medias.services.ts](src/services/medias.services.ts:1)
+  - [users.services.ts](src/services/users.services.ts:1)
+
+- Schemas
+
+  - [User.schema.ts](src/models/schemas/User.schema.ts:1)
+  - [Workspace.schema.ts](src/models/schemas/Workspace.schema.ts:1)
+  - [Board.schema.ts](src/models/schemas/Board.schema.ts:1)
+  - [Column.schema.ts](src/models/schemas/Column.schema.ts:1)
+  - [Card.schema.ts](src/models/schemas/Card.schema.ts:1)
+  - [Invitation.schema.ts](src/models/schemas/Invitation.schema.ts:1)
+  - [RefreshToken.schema.ts](src/models/schemas/RefreshToken.schema.ts:1)
+
+- Sockets
+
+  - [workspaces.sockets.ts](src/sockets/workspaces.sockets.ts:1)
+  - [boards.sockets.ts](src/sockets/boards.sockets.ts:1)
+  - [cards.sockets.ts](src/sockets/cards.sockets.ts:1)
+  - [invitations.sockets.ts](src/sockets/invitations.sockets.ts:1)
+
+- Utilities
+  - [rbac.ts](src/utils/rbac.ts:1)
+  - [handlers.ts](src/utils/handlers.ts:1)
+  - [jwt.ts](src/utils/jwt.ts:1)
+  - [validation.ts](src/utils/validation.ts:1)
+  - [guards.ts](src/utils/guards.ts:1)
+
+## Maintenance Workflow for Memory Bank Updates
+
+- When to update
+
+  - After adding/modifying routes: update links under Routes and Architecture diagrams
+  - After changing middlewares or permissions: update RBAC links and Architecture notes
+  - After service or schema changes: update Services/Schemas anchors and Architecture flows
+  - After dependency/version changes: update versions and notes in [tech.md](.kilocode/rules/memory-bank/tech.md:1) and reflect key changes in this Context
+  - After real-time event changes: update Sockets references and Architecture diagrams
+  - After major product scope shifts: update [product.md](.kilocode/rules/memory-bank/product.md:1) and [brief.md](.kilocode/rules/memory-bank/brief.md:1)
+
+- How to update (order of operations)
+  1. Update [context.md](.kilocode/rules/memory-bank/context.md:1) with Current Work Focus, Recent Changes, and Next Steps
+  2. Update [architecture.md](.kilocode/rules/memory-bank/architecture.md:1) with any new flows, diagrams, and layer responsibilities
+  3. Update [tech.md](.kilocode/rules/memory-bank/tech.md:1) if versions, tools, or constraints changed
+  4. Update [product.md](.kilocode/rules/memory-bank/product.md:1) for user journeys or personas impact
+  5. Keep [brief.md](.kilocode/rules/memory-bank/brief.md:1) as the high-level source of truth; propose edits to the developer rather than modifying directly

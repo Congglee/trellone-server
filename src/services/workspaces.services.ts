@@ -250,7 +250,7 @@ class WorkspacesService {
   }
 
   async removeGuestFromWorkspace(workspace_id: string, user_id: string) {
-    const affectedBoardIds = await databaseService.boards
+    const affected_board_ids = await databaseService.boards
       .find(
         {
           workspace_id: new ObjectId(workspace_id),
@@ -284,7 +284,7 @@ class WorkspacesService {
       { returnDocument: 'after' }
     )
 
-    return { workspace, affectedBoardIds }
+    return { workspace, affected_board_ids }
   }
 
   async removeGuestFromBoard(workspace_id: string, board_id: string, user_id: string) {
