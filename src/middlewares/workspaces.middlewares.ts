@@ -84,8 +84,7 @@ export const workspaceIdValidator = validate(
                     from: envConfig.dbBoardsCollection,
                     localField: '_id',
                     foreignField: 'workspace_id',
-                    as: 'boards',
-                    pipeline: [{ $match: { _destroy: false } }]
+                    as: 'boards'
                   }
                 },
                 {
