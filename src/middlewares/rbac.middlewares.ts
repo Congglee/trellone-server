@@ -18,6 +18,8 @@ import Workspace from '~/models/schemas/Workspace.schema'
 import databaseService from '~/services/database.services'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { hasBoardPermission, hasWorkspacePermission } from '~/utils/rbac'
+import { assertBoardIsOpen } from '~/utils/guards'
+import { BoardRole } from '~/constants/enums'
 
 export const requireWorkspacePermission = (permission: WorkspacePermission) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -70,6 +72,44 @@ export const requireBoardPermission = (permission: BoardPermission) => {
     // Workspace is optionally attached by validators/aggregations
     const workspace = (board as { workspace?: Workspace }).workspace || null
 
+    if (permission !== BoardPermission.ViewBoard) {
+      if (permission === BoardPermission.DeleteBoard) {
+        // Only allow deleting a board if it is already closed
+        if (!board._destroy) {
+          throw new ErrorWithStatus({
+            status: HTTP_STATUS.FORBIDDEN,
+            message: BOARDS_MESSAGES.BOARD_MUST_BE_CLOSED_BEFORE_DELETION
+          })
+        }
+      } else {
+        const body = (req.body || {}) as Record<string, unknown>
+
+        const isReopenAttempt =
+          typeof req.params.board_id === 'string' &&
+          Object.prototype.hasOwnProperty.call(body, '_destroy') &&
+          body._destroy === false &&
+          Object.keys(body).every((key) => key === '_destroy')
+
+        if (!isReopenAttempt) {
+          assertBoardIsOpen(board)
+        }
+      }
+    }
+
+    // If board is closed, only Board Admins can view its details
+    if (permission === BoardPermission.ViewBoard && board._destroy) {
+      const isAdmin = (board.members || []).some(
+        (member) => member.user_id.equals(new ObjectId(user_id)) && member.role === BoardRole.Admin
+      )
+
+      if (!isAdmin) {
+        throw new ErrorWithStatus({
+          status: HTTP_STATUS.FORBIDDEN,
+          message: `${board.title} has been closed. Please contact the board admin to reopen it.`
+        })
+      }
+    }
+
     const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
 
     if (!allowed) {
@@ -116,6 +156,10 @@ export const requireBoardPermissionFromBody = (permission: BoardPermission, fiel
 
     const { board, workspace } = await getBoardContext(new ObjectId(boardId))
 
+    if (permission !== BoardPermission.ViewBoard) {
+      assertBoardIsOpen(board)
+    }
+
     const { user_id } = req.decoded_authorization as TokenPayload
 
     const isBoardMember = board.members?.some((member) => member.user_id.equals(new ObjectId(user_id)))
@@ -153,6 +197,10 @@ export const requireColumnPermission = (permission: BoardPermission) => {
 
     const { board, workspace } = await getBoardContext(column.board_id)
 
+    if (permission !== BoardPermission.ViewBoard) {
+      assertBoardIsOpen(board)
+    }
+
     const { user_id } = req.decoded_authorization as TokenPayload
 
     const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
@@ -180,6 +228,10 @@ export const requireCardPermission = (permission: BoardPermission) => {
     }
 
     const { board, workspace } = await getBoardContext(card.board_id)
+
+    if (permission !== BoardPermission.ViewBoard) {
+      assertBoardIsOpen(board)
+    }
 
     const { user_id } = req.decoded_authorization as TokenPayload
 
@@ -217,6 +269,10 @@ export const requireCardPermissionFromBody = (permission: BoardPermission, field
     }
 
     const { board, workspace } = await getBoardContext(card.board_id)
+
+    if (permission !== BoardPermission.ViewBoard) {
+      assertBoardIsOpen(board)
+    }
 
     const { user_id } = req.decoded_authorization as TokenPayload
 

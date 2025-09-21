@@ -4,7 +4,12 @@ import { corsOptions } from '~/config/cors'
 import logger from '~/config/logger'
 import { TokenPayload } from '~/models/requests/User.requests'
 import { inviteUserToBoardSocket, inviteUserToWorkspaceSocket } from '~/sockets/invitations.sockets'
-import { manageBoardSocketEvents, updateBoardSocket, acceptBoardInvitationSocket } from '~/sockets/boards.sockets'
+import {
+  manageBoardSocketEvents,
+  updateBoardSocket,
+  acceptBoardInvitationSocket,
+  deleteBoardSocket
+} from '~/sockets/boards.sockets'
 import { updateCardSocket } from '~/sockets/cards.sockets'
 import { verifyAccessToken } from '~/utils/jwt'
 import {
@@ -87,12 +92,13 @@ const initSocket = (httpServer: ServerHttp) => {
     // Call the socket event handlers here depending on the features
     inviteUserToWorkspaceSocket(io, socket, users)
     inviteUserToBoardSocket(io, socket, users)
-    manageWorkspaceSocketEvents(socket)
+    manageWorkspaceSocketEvents(io, socket)
     manageBoardSocketEvents(socket)
-    updateWorkspaceSocket(socket)
+    updateWorkspaceSocket(io, socket)
     createWorkspaceBoardSocket(socket)
     updateBoardSocket(socket)
     acceptBoardInvitationSocket(socket)
+    deleteBoardSocket(socket)
     updateCardSocket(socket)
 
     socket.on('disconnect', () => {

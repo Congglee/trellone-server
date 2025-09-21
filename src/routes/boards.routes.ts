@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   createBoardController,
+  deleteBoardController,
   getBoardController,
   getBoardsController,
   getJoinedWorkspaceBoardsController,
@@ -14,6 +15,7 @@ import {
   createBoardValidator,
   getBoardsValidator,
   leaveBoardValidator,
+  rejectIfBoardClosed,
   requireBoardMembership,
   updateBoardValidator
 } from '~/middlewares/boards.middlewares'
@@ -64,6 +66,7 @@ boardsRouter.put(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
+  rejectIfBoardClosed,
   requireBoardMembership,
   updateBoardValidator,
   filterMiddleware<UpdateBoardReqBody>([
@@ -72,7 +75,8 @@ boardsRouter.put(
     'type',
     'workspace_id',
     'column_order_ids',
-    'cover_photo'
+    'cover_photo',
+    '_destroy'
   ]),
   requireBoardPermission(BoardPermission.ManageBoard),
   wrapRequestHandler(updateBoardController)
@@ -86,6 +90,16 @@ boardsRouter.post(
   requireBoardMembership,
   leaveBoardValidator,
   wrapRequestHandler(leaveBoardController)
+)
+
+boardsRouter.delete(
+  '/:board_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  boardIdValidator,
+  requireBoardMembership,
+  requireBoardPermission(BoardPermission.DeleteBoard),
+  wrapRequestHandler(deleteBoardController)
 )
 
 export default boardsRouter

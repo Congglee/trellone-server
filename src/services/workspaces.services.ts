@@ -56,12 +56,13 @@ class WorkspacesService {
               foreignField: 'workspace_id',
               as: 'boards',
               pipeline: [
-                { $match: { _destroy: false, 'members.user_id': new ObjectId(user_id) } },
+                { $match: { 'members.user_id': new ObjectId(user_id) } },
                 {
                   $project: {
                     title: 1,
                     description: 1,
-                    cover_photo: 1
+                    cover_photo: 1,
+                    _destroy: 1
                   }
                 }
               ]
@@ -249,7 +250,7 @@ class WorkspacesService {
   }
 
   async removeGuestFromWorkspace(workspace_id: string, user_id: string) {
-    const affectedBoardIds = await databaseService.boards
+    const affected_board_ids = await databaseService.boards
       .find(
         {
           workspace_id: new ObjectId(workspace_id),
@@ -283,7 +284,7 @@ class WorkspacesService {
       { returnDocument: 'after' }
     )
 
-    return { workspace, affectedBoardIds }
+    return { workspace, affected_board_ids }
   }
 
   async removeGuestFromBoard(workspace_id: string, board_id: string, user_id: string) {

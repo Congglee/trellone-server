@@ -22,7 +22,14 @@ export const getBoardsController = async (req: Request<ParamsDictionary, any, an
   const limit = Number(req.query.limit)
   const page = Number(req.query.page)
 
-  const result = await boardsService.getBoards({ user_id, limit, page, keyword: req.query.keyword })
+  const result = await boardsService.getBoards({
+    user_id,
+    limit,
+    page,
+    keyword: req.query.keyword,
+    state: req.query.state,
+    workspace: req.query.workspace
+  })
 
   return res.json({
     message: BOARDS_MESSAGES.GET_BOARDS_SUCCESS,
@@ -75,4 +82,10 @@ export const leaveBoardController = async (req: Request<BoardParams>, res: Respo
   const result = await boardsService.leaveBoard(board_id, user_id)
 
   return res.json({ message: BOARDS_MESSAGES.LEAVE_BOARD_SUCCESS, result })
+}
+
+export const deleteBoardController = async (req: Request<BoardParams>, res: Response) => {
+  const { board_id } = req.params
+  await boardsService.deleteBoard(board_id)
+  return res.json({ message: BOARDS_MESSAGES.DELETE_BOARD_SUCCESS })
 }
