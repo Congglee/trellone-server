@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import {
   createBoardController,
+  deleteBoardController,
   getBoardController,
   getBoardsController,
   getJoinedWorkspaceBoardsController,
@@ -89,6 +90,16 @@ boardsRouter.post(
   requireBoardMembership,
   leaveBoardValidator,
   wrapRequestHandler(leaveBoardController)
+)
+
+boardsRouter.delete(
+  '/:board_id',
+  accessTokenValidator,
+  verifiedUserValidator,
+  boardIdValidator,
+  requireBoardMembership,
+  requireBoardPermission(BoardPermission.DeleteBoard),
+  wrapRequestHandler(deleteBoardController)
 )
 
 export default boardsRouter

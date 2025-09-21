@@ -83,3 +83,9 @@ export const leaveBoardController = async (req: Request<BoardParams>, res: Respo
 
   return res.json({ message: BOARDS_MESSAGES.LEAVE_BOARD_SUCCESS, result })
 }
+
+export const deleteBoardController = async (req: Request<BoardParams>, res: Response) => {
+  const { board_id } = req.params
+  await boardsService.deleteBoard(board_id)
+  return res.json({ message: BOARDS_MESSAGES.DELETE_BOARD_SUCCESS })
+}

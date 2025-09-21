@@ -27,3 +27,9 @@ export const acceptBoardInvitationSocket = (socket: Socket) => {
     socket.broadcast.to(`board-${boardId}`).emit('SERVER_USER_ACCEPTED_BOARD_INVITATION', invitee)
   })
 }
+
+export const deleteBoardSocket = (socket: Socket) => {
+  socket.on('CLIENT_USER_DELETED_BOARD', (boardId) => {
+    socket.broadcast.to(`board-${boardId}`).emit('SERVER_USER_DELETED_BOARD', boardId)
+  })
+}
