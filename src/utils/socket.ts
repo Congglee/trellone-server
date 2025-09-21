@@ -4,7 +4,12 @@ import { corsOptions } from '~/config/cors'
 import logger from '~/config/logger'
 import { TokenPayload } from '~/models/requests/User.requests'
 import { inviteUserToBoardSocket, inviteUserToWorkspaceSocket } from '~/sockets/invitations.sockets'
-import { manageBoardSocketEvents, updateBoardSocket, acceptBoardInvitationSocket } from '~/sockets/boards.sockets'
+import {
+  manageBoardSocketEvents,
+  updateBoardSocket,
+  acceptBoardInvitationSocket,
+  deleteBoardSocket
+} from '~/sockets/boards.sockets'
 import { updateCardSocket } from '~/sockets/cards.sockets'
 import { verifyAccessToken } from '~/utils/jwt'
 import {
@@ -93,6 +98,7 @@ const initSocket = (httpServer: ServerHttp) => {
     createWorkspaceBoardSocket(socket)
     updateBoardSocket(socket)
     acceptBoardInvitationSocket(socket)
+    deleteBoardSocket(socket)
     updateCardSocket(socket)
 
     socket.on('disconnect', () => {

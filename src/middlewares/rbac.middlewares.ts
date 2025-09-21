@@ -73,16 +73,26 @@ export const requireBoardPermission = (permission: BoardPermission) => {
     const workspace = (board as { workspace?: Workspace }).workspace || null
 
     if (permission !== BoardPermission.ViewBoard) {
-      const body = (req.body || {}) as Record<string, unknown>
+      if (permission === BoardPermission.DeleteBoard) {
+        // Only allow deleting a board if it is already closed
+        if (!board._destroy) {
+          throw new ErrorWithStatus({
+            status: HTTP_STATUS.FORBIDDEN,
+            message: BOARDS_MESSAGES.BOARD_MUST_BE_CLOSED_BEFORE_DELETION
+          })
+        }
+      } else {
+        const body = (req.body || {}) as Record<string, unknown>
 
-      const isReopenAttempt =
-        typeof req.params.board_id === 'string' &&
-        Object.prototype.hasOwnProperty.call(body, '_destroy') &&
-        body._destroy === false &&
-        Object.keys(body).every((key) => key === '_destroy')
+        const isReopenAttempt =
+          typeof req.params.board_id === 'string' &&
+          Object.prototype.hasOwnProperty.call(body, '_destroy') &&
+          body._destroy === false &&
+          Object.keys(body).every((key) => key === '_destroy')
 
-      if (!isReopenAttempt) {
-        assertBoardIsOpen(board)
+        if (!isReopenAttempt) {
+          assertBoardIsOpen(board)
+        }
       }
     }
 
