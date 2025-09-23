@@ -29,7 +29,7 @@ Trellone is a Kanban-style project management platform inspired by Trello. This 
 
 ### Frontend Repository 🔗
 
-- Trellone App (React + MUI): `https://github.com/Congglee/trellone-app`
+- Trellone App (React + MUI): https://github.com/Congglee/trellone-app
 
 ## Getting Started 🏁
 
