@@ -1,257 +1,235 @@
-# TrellOne API - Tech Stack
+# TrellOne API — Tech
+
+## Runtime and framework
+
+- Node.js with TypeScript 5.8.x
+- Express 4.21.x HTTP server
+- Socket.IO 4.8.x for realtime
+- MongoDB driver 6.14.x
 
-## Core Technology Stack
+Sources
 
-### Runtime & Framework
+- [package.json](package.json)
+- [src/index.ts](src/index.ts)
+- [src/app.ts](src/app.ts)
 
-- **Node.js** with **TypeScript 5.8.2** - Latest stable TypeScript with modern ES features
-- **Express.js 4.21.2** - Mature, stable web framework for Node.js
-- **MongoDB 6.14.2** - Latest MongoDB driver with improved performance and security.
+## Dependencies and versions
 
-### Real-time Communication
+- express ^4.21.2
+- socket.io ^4.8.1
+- mongodb ^6.14.2
+- express-validator ^7.2.1
+- jsonwebtoken ^9.0.2
+- compression ^1.8.0
+- cors ^2.8.5
+- cookie-parser ^1.4.7
+- dotenv ^16.4.7
+- axios ^1.8.4
+- lodash ^4.17.21
+- mime ^4.0.6
+- ms ^2.1.3
+- formidable ^3.5.2
+- sharp ^0.33.5
+- resend ^4.2.0
+- uploadthing ^7.6.0
+- unsplash-js ^7.0.19
 
-- **Socket.IO 4.8.1** - WebSocket library for real-time bidirectional communication
+Dev dependencies
 
-## Version alignment and sources
+- typescript ^5.8.2
+- tsx ^4.19.3
+- tsc-alias ^1.8.11
+- nodemon ^3.1.9
+- rimraf ^6.0.1
+- eslint ^9.22.0
+- prettier ^3.5.3
+- typescript-eslint ^8.26.1
+- @types/node ^22.13.10 and other @types
 
-- Versions in this document reflect the currently installed dependencies in [package.json](package.json:1) at project version 1.0.0.
-- Invitations stack present and verified:
-  - Service: [invitations.services.ts](src/services/invitations.services.ts:1)
-  - Templates: [board-invitation.html](src/templates/board-invitation.html:1), [workspace-invitation.html](src/templates/workspace-invitation.html:1)
-  - Socket handler: [invitations.sockets.ts](src/sockets/invitations.sockets.ts:1)
+Source
 
-## Key Dependencies
+- [package.json](package.json)
 
-### Server & Database
+## NPM scripts
 
-- **Express 4.21.2** - Web framework
-- **MongoDB 6.14.2** - Database driver
-- **CORS 2.8.5** - Cross-origin resource sharing
-- **Cookie-parser 1.4.7** - Cookie parsing middleware
-- **Compression 1.8.0** - Response compression
+- dev: cross env development with nodemon
+- dev:prod, dev:stag: run nodemon with respective NODE_ENV
+- build: rimraf dist, tsc compile, tsc-alias for path maps
+- start:dev, start:prod, start:stag: run compiled JS
+- lint, lint:fix: ESLint across repo
+- prettier, prettier:fix
 
-### Authentication & Security
+Source
 
-- **jsonwebtoken 9.0.2** - JWT token implementation
-- **express-validator 7.2.1** - Input validation middleware
-- **crypto** (Node.js built-in) - Password hashing with salt
+- [package.json](package.json)
+- [nodemon.json](nodemon.json)
 
-### File Processing & Media
+## TypeScript configuration
 
-- **formidable 3.5.2** - File upload parsing
-- **sharp 0.33.5** - High-performance image processing
-- **uploadthing 7.6.0** - Modern file upload service
-- **mime 4.0.6** - MIME type detection
+- Module NodeNext, target ES2023
+- BaseUrl .
+- Paths alias "~/_" to "src/_"
+- OutDir dist
+- files includes [src/type.d.ts](src/type.d.ts)
 
-### External Services
+Source
 
-- **resend 4.2.0** - Modern email service
-- **unsplash-js 7.0.19** - Unsplash API integration
-- **axios 1.8.4** - HTTP client for external APIs
-
-### Utilities
-
-- **lodash 4.17.21** - Utility functions
-- **ms 2.1.3** - Time parsing utility
-- **dotenv 16.4.7** - Environment variable loading
-- **chalk 4.1.2** - Terminal string styling for logging
-
-## Development Tools
-
-### TypeScript & Build
-
-- **TypeScript 5.8.2** - Type-safe JavaScript
-- **tsx 4.19.3** - Fast TypeScript execution
-- **tsc-alias 1.8.11** - Path alias resolution
-- **rimraf 6.0.1** - Cross-platform rm -rf
-
-### Code Quality
+- [tsconfig.json](tsconfig.json)
 
-- **ESLint 9.22.0** - Code linting with flat config
-- **Prettier 3.5.3** - Code formatting
-- **eslint-config-prettier 10.1.1** - ESLint-Prettier integration
-- **eslint-plugin-prettier 5.2.3** - Prettier as ESLint plugin
-- **typescript-eslint 8.26.1** - TypeScript-specific ESLint rules
-- **globals 16.0.0** - Global variables for ESLint
+## Linting and formatting
 
-### Development Server
-
-- **nodemon 3.1.9** - Development server with hot reload
-- **cross-env 7.0.3** - Cross-platform environment variables
+- ESLint Flat config with @eslint/js, typescript-eslint
+- Prettier plugin enforced via prettier/prettier rule
+- Ignores node_modules and dist
+- Code style: single quotes, no semicolons, width 120, arrowParens always
 
-## Development Setup
+Source
 
-### Environment Variables
+- [eslint.config.mjs](eslint.config.mjs)
+- [.prettierrc](.prettierrc)
 
-```bash
-# Server Configuration
-NODE_ENV=development
-PORT=4000
-HOST=http://localhost
+## Environment variables
 
-# Database Configuration
-DB_NAME=trellone
-DB_USERNAME=your-username
-DB_PASSWORD=your-password
-DB_WORKSPACES_COLLECTION=workspaces
-DB_BOARDS_COLLECTION=boards
-DB_COLUMNS_COLLECTION=columns
-DB_CARDS_COLLECTION=cards
-DB_USERS_COLLECTION=users
-DB_REFRESH_TOKENS_COLLECTION=refresh_tokens
-DB_INVITATIONS_COLLECTION=invitations
-
-# Security Configuration
-PASSWORD_SECRET=your-salt
-
-# JWT Token Configuration
-JWT_SECRET_ACCESS_TOKEN=your-secret
-JWT_SECRET_REFRESH_TOKEN=your-secret
-JWT_SECRET_EMAIL_VERIFY_TOKEN=your-secret
-JWT_SECRET_FORGOT_PASSWORD_TOKEN=your-secret
-JWT_SECRET_INVITE_TOKEN=your-secret
-
-# Token Expiration
-ACCESS_TOKEN_EXPIRES_IN=15m
-REFRESH_TOKEN_EXPIRES_IN=7d
-EMAIL_VERIFY_TOKEN_EXPIRES_IN=7d
-FORGOT_PASSWORD_TOKEN_EXPIRES_IN=7d
-INVITE_TOKEN_EXPIRES_IN=7d
-
-# OAuth Configuration
-GOOGLE_CLIENT_ID=your-client-id
-GOOGLE_CLIENT_SECRET=your-client-secret
-GOOGLE_REDIRECT_URI=your-redirect-uri
-CLIENT_REDIRECT_CALLBACK=your-callback-url
-
-# Client Configuration
-CLIENT_URL=http://localhost:3000
+Required keys are documented in example env:
 
-# External Services
-RESEND_API_KEY=your-key
-RESEND_EMAIL_FROM_ADDRESS=your-email
-UPLOADTHING_TOKEN=your-token
-UNSPLASH_ACCESS_KEY=your-key
-UNSPLASH_SECRET_KEY=your-secret
-UNSPLASH_APPLICATION_ID=your-app-id
-```
-
-### Development Scripts
+- Server: PORT, HOST
+- MongoDB: DB_NAME, DB_USERNAME, DB_PASSWORD, collection names
+- Security: PASSWORD_SECRET
+- JWT secrets and expirations for Access, Refresh, EmailVerify, ForgotPassword, Invite
+- Client URLs: CLIENT_URL, CLIENT_REDIRECT_CALLBACK
+- Google OAuth: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI
+- Resend: RESEND_API_KEY, RESEND_EMAIL_FROM_ADDRESS
+- UploadThing: UPLOADTHING_TOKEN
+- Unsplash: UNSPLASH_ACCESS_KEY, UNSPLASH_SECRET_KEY, UNSPLASH_APPLICATION_ID
 
-```json
-{
-  "dev": "cross-env NODE_ENV=development npx nodemon",
-  "dev:prod": "cross-env NODE_ENV=production npx nodemon",
-  "dev:stag": "cross-env NODE_ENV=staging npx nodemon",
-  "build": "rimraf ./dist && tsc && tsc-alias",
-  "start:dev": "cross-env NODE_ENV=development node dist/index.js",
-  "start:prod": "cross-env NODE_ENV=production node dist/index.js",
-  "start:stag": "cross-env NODE_ENV=staging node dist/index.js",
-  "lint": "eslint .",
-  "lint:fix": "eslint . --fix",
-  "prettier": "prettier --check .",
-  "prettier:fix": "prettier --write ."
-}
-```
+Source
 
-## Architecture Implementation
+- [.env.example](.env.example)
+- [src/config/environment.ts](src/config/environment.ts)
 
-### Database Connection
+## CORS and domains
 
-- **MongoDB Atlas**: Cloud-hosted MongoDB with connection string authentication
-- **Environment-based Configuration**: Separate database configurations per environment
-- **Connection Pooling**: Automatic connection management via MongoDB driver
-- **Collection Management**: Centralized collection access through DatabaseService
+- Whitelist domains derive from env clientUrl and google redirect uri
+- Centralized CORS policy in config
 
-### Authentication Architecture
+Sources
 
-- **Multi-token Strategy**: Separate JWT secrets for different token types
-- **Cookie + Header Authentication**: Priority-based token extraction
-- **Socket Authentication**: Cookie-based authentication for real-time connections
-- **Role-based Access Control**: Workspace and board-level permissions
+- [src/config/cors.ts](src/config/cors.ts)
+- [src/constants/domains.ts](src/constants/domains.ts)
 
-### Real-time Communication
+## HTTP and validation
 
-- **Socket.IO Integration**: WebSocket communication with authentication middleware
-- **Room-based Communication**: Board-specific event broadcasting
-- **Event Handlers**: Feature-specific socket event management
-- **Connection Management**: User session tracking and cleanup
+- Centralized HTTP status constants and messages
+- express-validator for schema based validation
 
-## Performance Optimizations
+Sources
 
-### Database Operations
+- [src/constants/httpStatus.ts](src/constants/httpStatus.ts)
+- [src/constants/messages.ts](src/constants/messages.ts)
+- [src/middlewares/common.middlewares.ts](src/middlewares/common.middlewares.ts)
 
-- **Aggregation Pipelines**: Complex queries with MongoDB aggregation
-- **Parallel Operations**: Promise.all for independent database operations
-- **Efficient Queries**: Optimized workspace and board relationship queries
-- **Proper Indexing**: Strategic database indexing for performance
+## Auth and security
 
-### File Processing
+- JWT with multiple token types and expirations
+- Access and refresh token flows
+- Verified user middleware for gated routes
 
-- **Sharp Integration**: High-performance image processing and optimization
-- **Temporary File Management**: Automatic cleanup of processed files
-- **External Storage**: UploadThing integration for scalable file storage
-- **MIME Validation**: Security-focused file type validation
+Sources
 
-### Real-time Performance
+- [src/middlewares/auth.middlewares.ts](src/middlewares/auth.middlewares.ts)
+- [src/utils/jwt.ts](src/utils/jwt.ts)
+- [src/constants/enums.ts](src/constants/enums.ts)
 
-- **Event Optimization**: Efficient socket event handling and broadcasting
-- **Room Management**: Targeted message delivery to specific board rooms
-- **Connection Cleanup**: Proper session management and resource cleanup
+## RBAC
 
-## Security Implementation
+- Role enums for workspace and board
+- Permission constants mapped by role
 
-### Input Validation
+Sources
 
-- **express-validator**: Comprehensive input validation for all endpoints
-- **Custom Validators**: Business logic validation in middleware layer
-- **File Upload Security**: MIME type and size validation
-- **SQL Injection Prevention**: Parameterized queries and ObjectId validation
+- [src/constants/enums.ts](src/constants/enums.ts)
+- [src/constants/permissions.ts](src/constants/permissions.ts)
+- [src/middlewares/rbac.middlewares.ts](src/middlewares/rbac.middlewares.ts)
 
-### Authentication Security
+## Realtime
 
-- **JWT Implementation**: Secure token generation with separate secrets
-- **Password Security**: Salt-based hashing with crypto module
-- **Token Rotation**: Refresh token mechanism for enhanced security
-- **CORS Configuration**: Environment-based origin control
+- Socket.IO server with room scoped broadcasting for boards/workspaces
+- Socket handlers per feature in sockets directory
 
-### Authorization
+Sources
 
-- **Role-based Access**: Workspace Admin/Normal and Board Admin/Member/Observer roles
-- **Resource Authorization**: Middleware-based permission validation
-- **Hierarchical Permissions**: Workspace membership determines board access
+- [src/utils/socket.ts](src/utils/socket.ts)
+- [src/sockets/boards.sockets.ts](src/sockets/boards.sockets.ts)
+- [src/sockets/workspaces.sockets.ts](src/sockets/workspaces.sockets.ts)
+- [src/sockets/cards.sockets.ts](src/sockets/cards.sockets.ts)
+- [src/sockets/invitations.sockets.ts](src/sockets/invitations.sockets.ts)
 
-## Production Considerations
+## File processing and media
 
-### Deployment Configuration
+- Formidable for multipart parsing, Sharp for image processing
+- UploadThing provider integration
+- Unsplash for cover photos
 
-- **Docker Support**: Containerization with Dockerfile
-- **PM2 Configuration**: Process management with ecosystem.config.js
-- **Environment Separation**: Development, staging, and production configurations
-- **Health Monitoring**: Built-in logging and error tracking
+Sources
 
-### Scalability Patterns
+- [src/utils/file.ts](src/utils/file.ts)
+- [src/providers/uploadthing.ts](src/providers/uploadthing.ts)
+- [src/providers/unsplash.ts](src/providers/unsplash.ts)
+- [src/controllers/medias.controllers.ts](src/controllers/medias.controllers.ts)
 
-- **Layered Architecture**: Clean separation of concerns for maintainability
-- **Service Layer Pattern**: Business logic encapsulation
-- **Repository Pattern**: Centralized database access
-- **Microservice Ready**: Architecture supports future service decomposition
+## Email provider
 
-## Current Technical Constraints
+- Resend for verification, reset password, invitations via HTML templates
 
-### Infrastructure Limitations
+Sources
 
-- **Single MongoDB Instance**: No sharding or replica sets currently configured
-- **In-memory Socket Sessions**: No external session store (Redis) integration
-- **File Upload Limits**: 3MB per file restriction
-- **No Caching Layer**: Direct database queries without caching
+- [src/providers/resend.ts](src/providers/resend.ts)
+- [src/templates/verify-email.html](src/templates/verify-email.html)
+- [src/templates/forgot-password.html](src/templates/forgot-password.html)
+- [src/templates/board-invitation.html](src/templates/board-invitation.html)
+- [src/templates/workspace-invitation.html](src/templates/workspace-invitation.html)
 
-### Future Enhancement Opportunities
+## Database
 
-- **Redis Integration**: Session storage and caching layer
-- **Database Clustering**: Replica sets for high availability
-- **CDN Integration**: Enhanced file delivery performance
-- **Monitoring Stack**: Advanced application performance monitoring
-- **Rate Limiting**: API request throttling and abuse prevention
+- Centralized connection and typed collection access via database service
 
-This technology stack provides a robust, production-ready foundation for the TrellOne API with modern development practices, comprehensive security measures, and scalable architecture patterns.
+Sources
+
+- [src/services/database.services.ts](src/services/database.services.ts)
+- [src/models/schemas/User.schema.ts](src/models/schemas/User.schema.ts)
+- [src/models/schemas/Board.schema.ts](src/models/schemas/Board.schema.ts)
+- [src/models/schemas/Column.schema.ts](src/models/schemas/Column.schema.ts)
+- [src/models/schemas/Card.schema.ts](src/models/schemas/Card.schema.ts)
+- [src/models/schemas/Workspace.schema.ts](src/models/schemas/Workspace.schema.ts)
+- [src/models/schemas/Invitation.schema.ts](src/models/schemas/Invitation.schema.ts)
+- [src/models/schemas/RefreshToken.schema.ts](src/models/schemas/RefreshToken.schema.ts)
+
+## Build and deploy
+
+- Multi-stage Docker build produces minimal runtime image
+- Run with PM2 in container using ecosystem config
+- Render deployment reference docs provided
+
+Sources
+
+- [Dockerfile](Dockerfile)
+- [ecosystem.config.js](ecosystem.config.js)
+- [src/docs/DEPLOY_RENDER.md](src/docs/DEPLOY_RENDER.md)
+
+## Local development workflow
+
+- Install: npm ci
+- Configure environment: copy [.env.example](.env.example) to .env and fill values
+- Run dev server: npm run dev
+- Build: npm run build
+- Start compiled: npm run start:dev
+- Lint: npm run lint and npm run lint:fix
+- Format: npm run prettier and npm run prettier:fix
+
+## Observability and logging
+
+- Centralized logger utility
+
+Sources
+
+- [src/config/logger.ts](src/config/logger.ts)

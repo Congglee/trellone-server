@@ -1,444 +1,151 @@
-# TrellOne API - Architecture
+# TrellOne API — Architecture
 
-## System Architecture
+## System overview
 
-### Layered Architecture Pattern
+A layered, TypeScript Express backend with MongoDB Atlas and Socket.IO for real‑time collaboration. The core flow:
 
-TrellOne follows a strict layered architecture with clear separation of concerns:
+- HTTP client sends requests
+- Express routes dispatch to middleware chains
+- Validators authenticate, authorize, and validate inputs
+- Controllers extract data and call services
+- Services encapsulate business logic and database access
+- Database service manages MongoDB connections and collections
+- Socket.IO broadcasts real‑time events to rooms
 
-```
-Routes → Middlewares → Controllers → Services → Database
-```
-
-Each layer has specific responsibilities and dependencies flow downward only.
-
-## Source Code Paths
-
-### Directory Structure
-
-```
-src/
-├── config/          # Application configuration
-├── constants/       # Application constants and enums
-├── controllers/     # Request handlers
-├── middlewares/     # Request processing middleware
-├── models/          # Data models and types
-│   ├── schemas/     # Database schemas
-│   └── requests/    # API request types
-├── providers/       # External service integrations
-├── routes/          # API route definitions
-├── services/        # Business logic layer
-├── sockets/         # Socket.IO event handlers
-├── templates/       # Email templates
-└── utils/           # Utility functions
-```
-
-### Layer Responsibilities
-
-#### 1. Routes Layer (`src/routes/`)
-
-- **Files**: `*.routes.ts` (e.g., `workspaces.routes.ts`, `boards.routes.ts`, `users.routes.ts`)
-- **Purpose**: Define API endpoints and middleware chains
-- **Pattern**: HTTP method routing with middleware orchestration
-
-#### 2. Middlewares Layer (`src/middlewares/`)
-
-- **Files**: `*.middlewares.ts` (e.g., `auth.middlewares.ts`, `workspaces.middlewares.ts`, `boards.middlewares.ts`)
-- **Purpose**: Request preprocessing, validation, and authentication
-- **Pattern**: Validation chains using express-validator
-
-#### 3. Controllers Layer (`src/controllers/`)
-
-- **Files**: `*.controllers.ts` (e.g., `workspaces.controllers.ts`, `boards.controllers.ts`, `users.controllers.ts`)
-- **Purpose**: Request handling and business logic coordination
-- **Pattern**: Extract → Service Call → Response formatting
-
-#### 4. Services Layer (`src/services/`)
-
-- **Files**: `*.services.ts` (e.g., `workspaces.services.ts`, `boards.services.ts`, `auth.services.ts`)
-- **Purpose**: Business logic implementation and data access
-- **Pattern**: Class-based services with singleton instances
-
-#### 5. Database Layer (`src/services/database.services.ts`)
-
-- **Purpose**: Database connection and collection management
-- **Pattern**: Centralized database access with collection getters
-
-## Key Technical Decisions
-
-### 1. Database Schema Pattern
-
-- **Dual Interface + Class Pattern**: Every schema has both TypeScript interface and class
-- **Default Value Management**: Classes handle default values consistently
-- **Soft Deletes**: `_destroy` flag instead of hard deletes
-
-### 2. Authentication Strategy
-
-- **JWT Tokens**: Access (15m) + Refresh (7d) tokens
-- **Cookie + Header**: Priority-based token extraction
-- **Socket Authentication**: Cookie-based for real-time connections
-
-### 3. Real-time Architecture
-
-- **Socket.IO**: Room-based communication for board isolation
-- **Event Handlers**: Feature-specific socket handlers
-- **Authentication Middleware**: Token verification for all socket events
-- **Invitation Events**: Client emits `CLIENT_USER_INVITED_TO_BOARD`, server broadcasts `SERVER_USER_INVITED_TO_BOARD` to others (see sockets)
-
-### 4. Hierarchical Organization
-
-- **Workspace Management**: Enterprise-grade organizational structure
-- **Role-based Access**: Admin/Normal roles across workspaces and boards
-- **Data Hierarchy**: Workspaces → Boards → Columns → Cards
-
-### 5. Role-Based Access Control (RBAC)
-
-- **Granular Permissions**: Fine-grained permissions for workspaces and boards
-- **Permission Inheritance**: Board roles can inherit from workspace roles
-- **Explicit Overrides**: Board-level roles can override workspace-level roles
-- **Middleware Integration**: RBAC checks integrated into route middleware chains
-- **Implementation Details**:
-  - RBAC middlewares implement permission guards for workspace, board, column, and card resources in [`requireWorkspacePermission()`](src/middlewares/rbac.middlewares.ts:22), [`requireBoardPermission()`](src/middlewares/rbac.middlewares.ts:57), [`requireColumnPermission()`](src/middlewares/rbac.middlewares.ts:143), [`requireCardPermission()`](src/middlewares/rbac.middlewares.ts:171) and body-based variants.
-  - Permission catalogs and role mappings are defined in [`WorkspacePermission`](src/constants/permissions.ts:3), [`BoardPermission`](src/constants/permissions.ts:13), [`WORKSPACE_ROLE_PERMISSIONS`](src/constants/permissions.ts:27), [`BOARD_ROLE_PERMISSIONS`](src/constants/permissions.ts:44).
-  - Effective role resolution and permission checks are centralized in [`resolveEffectiveBoardRole()`](src/utils/rbac.ts:33), [`hasWorkspacePermission()`](src/utils/rbac.ts:64), and [`hasBoardPermission()`](src/utils/rbac.ts:76).
-  - Inheritance and overrides:
-    - If a user has an explicit board role, it is respected when `RESPECT_BOARD_EXPLICIT_OVERRIDES = true` (default).
-    - If no explicit board role, workspace role is mapped to a board role (Admin → Admin, Normal → Member).
-    - Guests or non-members have no permissions unless explicitly granted at board level.
-
-## Design Patterns
-
-### 1. Service Layer Pattern
-
-```typescript
-class ServiceName {
-  private signAccessToken() {} // Private utilities
-  async createResource() {} // Public business logic
-}
-const serviceName = new ServiceName()
-export default serviceName
-```
-
-### 2. Repository Pattern (via Database Service)
-
-```typescript
-class DatabaseService {
-  get users(): Collection<User> {}
-  get workspaces(): Collection<Workspace> {}
-  get boards(): Collection<Board> {}
-}
-```
-
-### 3. Factory Pattern (Schema Creation)
-
-```typescript
-interface UserSchema {
-  email: string
-  password: string
-}
-export default class User {
-  constructor(user: UserSchema) {
-    this.email = user.email
-    this.created_at = new Date()
-  }
-}
-```
-
-### 4. Middleware Chain Pattern
-
-```typescript
-router.put(
-  '/:id',
-  accessTokenValidator, // Authentication
-  resourceIdValidator, // Resource validation
-  updateValidator, // Input validation
-  filterMiddleware(['field1']), // Body filtering
-  wrapRequestHandler(controller) // Controller
-)
-```
-
-### 5. RBAC Middleware Pattern
-
-```typescript
-router.put(
-  '/:workspace_id',
-  accessTokenValidator,
-  verifiedUserValidator,
-  workspaceIdValidator,
-  updateWorkspaceValidator,
-  filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo']),
-  requireWorkspacePermission(WorkspacePermission.ManageWorkspace), // RBAC check
-  wrapRequestHandler(updateWorkspaceController)
-)
-```
-
-## Component Relationships
-
-### 1. Authentication Flow
-
-```
-Request → Extract Token → Verify JWT → Attach User → Proceed
-```
-
-### 2. Database Operations
-
-```
-Controller → Service → Database Service → MongoDB Collection
-```
-
-### 3. Real-time Communication
-
-```
-Client Event → Socket Handler → Service → Database → Broadcast
-```
-
-### 4. File Upload Pipeline
-
-```
-Upload → Temp Storage → Sharp Processing → UploadThing → Cleanup
-```
-
-### 5. Hierarchical Data Flow
-
-```
-Workspace Operation → Board Impact → Column Impact → Card Impact
-```
-
-### 6. RBAC Permission Flow
-
-```
-Request → Authentication → Resource Validation → RBAC Check → Controller
-```
-
-## Critical Implementation Paths
-
-### 1. User Registration Flow
-
-```
-POST /auth/register → registerValidator → registerController →
-authService.register() → User.schema → database.users.insertOne() →
-sendVerifyEmail() → JWT generation → Cookie setting →
-Auto-create workspace
-```
-
-### 2. Workspace Creation Flow
-
-```
-POST /workspaces → accessTokenValidator → verifiedUserValidator →
-createWorkspaceValidator → createWorkspaceController →
-workspacesService.createWorkspace() → Workspace.schema →
-database.workspaces.insertOne() → Response
-```
-
-### 3. Board Creation Flow
-
-```
-POST /boards → accessTokenValidator → verifiedUserValidator →
-createBoardValidator → createBoardController →
-boardsService.createBoard() → Board.schema →
-database.boards.insertOne() → Update workspace → Response
-```
-
-### 4. Card Management Flow
-
-```
-POST /cards → accessTokenValidator → verifiedUserValidator →
-cardIdValidator → createCardValidator → createCardController →
-cardsService.createCard() → Card.schema →
-database.cards.insertOne() → Update column → Socket broadcast
-```
-
-### 5. Card Deletion Flow
-
-```
-DELETE /cards/:card_id → accessTokenValidator → verifiedUserValidator →
-cardIdValidator → deleteCardController →
-cardsService.deleteCard() → Remove from database →
-Update column card_order_ids → Socket broadcast
-```
-
-### 6. Board Collaboration Flow
-
-```
-Socket Connection → Authentication → Room Join →
-Board Update Event → boardsService.updateBoard() →
-Database Update → Broadcast to Room
-```
-
-### 7. Card Movement Flow
-
-```
-PUT /cards/supports/moving-card → Authentication → Validation →
-cardsService.moveCardToDifferentColumn() → Multi-collection Updates →
-Socket Broadcast → Real-time UI Updates
-```
-
-### 8. File Upload Flow
-
-```
-POST /medias/upload-image → Authentication → File Validation →
-Temporary Storage → Sharp Processing → UploadThing Upload →
-Database Storage → Cleanup → Response
-```
-
-### 9. Workspace Member Management Flow
-
-```
-Workspace Access → workspaceIdValidator → MongoDB Aggregation →
-Member lookup → User details join → Permission validation →
-Attach to request → Controller access
-```
-
-### 10. Comment Reaction Flow
-
-```
-PUT /cards/:card_id → Authentication → Validation →
-cardsService.reactCardComment() → MongoDB positional update →
-Reaction management → Socket broadcast → Real-time updates
-```
-
-### 11. RBAC Permission Check Flow
-
-```
-Route Access → Authentication → Resource Validation →
-RBAC Middleware → Permission Check → Controller
-```
-
-### 12. Invitation Flows
-
-```
-// Workspace Invitation Creation
-POST /invitations/workspace → Authentication → verifiedUserValidator →
-createNewWorkspaceInvitationValidator → verifyInviteeMembershipValidator →
-invitationsService.createNewWorkspaceInvitation() → Email send (workspace-invitation) → Response
-```
-
-```
-// Board Invitation Creation
-POST /invitations/board → Authentication → verifiedUserValidator →
-createNewBoardInvitationValidator → verifyInviteeMembershipValidator →
-invitationsService.createNewBoardInvitation() → Email send (board-invitation) → Response
-```
-
-```
-// Invitation Verification
-POST /invitations/verify-invitation → Authentication → verifiedUserValidator →
-verifyInviteTokenValidator → verifyInvitationController → Response
-```
-
-```
-// Invitation Status Update
-PUT /invitations/workspace/:invitation_id → Authentication → invitationIdValidator →
-updateWorkspaceInvitationValidator → workspaceInvitationUpdateGuard →
-invitationsService.updateWorkspaceInvitation() → Response
-```
-
-```
-// Invitation Status Update
-PUT /invitations/board/:invitation_id → Authentication → invitationIdValidator →
-updateBoardInvitationValidator → boardInvitationUpdateGuard →
-invitationsService.updateBoardInvitation() → Response
-```
-
-## Error Handling Architecture
-
-### 1. Centralized Error Handler
-
-```typescript
-export const defaultErrorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
-  if (err instanceof ErrorWithStatus) {
-    return res.status(err.status).json(omit(err, ['status']))
-  }
-  // Handle other errors...
-}
-```
-
-### 2. Custom Error Classes
-
-```typescript
-export class ErrorWithStatus extends Error {
-  status: number
-  constructor({ message, status }: { message: string; status: number }) {
-    super(message)
-    this.status = status
-  }
-}
-```
-
-## Performance Optimization
-
-### 1. Database Patterns
-
-- **Aggregation Pipelines**: Complex queries with MongoDB aggregation
-- **Parallel Operations**: Promise.all for independent operations
-- **Connection Pooling**: Single connection instance with driver pooling
-
-### 2. Real-time Optimization
-
-- **Room-based Communication**: Targeted message broadcasting
-- **Event Batching**: Efficient socket event handling
-- **Connection Management**: Proper cleanup and session tracking
-
-## Security Architecture
-
-### 1. Input Validation
-
-- **express-validator**: Schema-based validation for all endpoints
-- **Custom Validators**: Business logic validation in middleware
-- **File Upload Security**: MIME type and size validation
-
-### 2. Authentication Security
-
-- **JWT Signing**: Separate secrets for different token types
-- **Password Hashing**: Salt + SHA256 for password security
-- **CORS Configuration**: Environment-based origin control
-
-### 3. Role-based Access Control
-
-- **Workspace Roles**: Admin/Normal permissions within workspaces
-- **Board Access**: Workspace membership determines board access
-- **Resource Authorization**: Middleware validates user permissions
-- **Granular Permissions**: Fine-grained control over actions
-
-### 4. RBAC Security
-
-- **Permission-based Access**: Actions require specific permissions
-- **Inheritance Model**: Roles inherit permissions from parent roles
-- **Explicit Overrides**: Fine-grained control at resource level
-
-## External Service Integration
-
-### 1. Provider Pattern
-
-- **Resend**: Email service integration
-- **UploadThing**: File upload service
-- **Unsplash**: Image service for cover photos
-
-### 2. Service Abstraction
-
-```typescript
-export const sendVerifyRegisterEmail = async (email: string, token: string) => {
-  // Abstract external service complexity
-}
-```
-
-## Diagrams
+Mermaid overview
 
 ```mermaid
 flowchart TD
-  A[Routes] --> B[Middlewares]
-  B --> C[Controllers]
-  C --> D[Services]
-  D --> E[Database]
-
+  A[Client HTTP] --> B[Express Routes]
+  B --> C[Middlewares]
+  C --> D[Controllers]
+  D --> E[Services]
+  E --> F[Database Service]
+  E --> G[External Providers]
+  D --> H[Socket IO]
+  subgraph Storage
+    F --> I[MongoDB Atlas]
+  end
 ```
 
-```mermaid
-flowchart TD
-  S[Request] --> A[Extract user_id]
-  A --> B[Get explicit board role]
-  B --> C[Workspace role if no explicit]
-  C --> D[Resolve effective role]
-  D --> E[Check role permissions]
-  E --> F{Allow or Deny}
-```
+## Source code paths
+
+- App and server
+  - [src/app.ts](src/app.ts)
+  - [src/index.ts](src/index.ts)
+- Configuration
+  - [src/config/environment.ts](src/config/environment.ts)
+  - [src/config/cors.ts](src/config/cors.ts)
+  - [src/config/logger.ts](src/config/logger.ts)
+- Constants
+  - [src/constants/domains.ts](src/constants/domains.ts)
+  - [src/constants/enums.ts](src/constants/enums.ts)
+  - [src/constants/httpStatus.ts](src/constants/httpStatus.ts)
+  - [src/constants/messages.ts](src/constants/messages.ts)
+  - [src/constants/permissions.ts](src/constants/permissions.ts)
+- Routes
+  - [src/routes/auth.routes.ts](src/routes/auth.routes.ts)
+  - [src/routes/users.routes.ts](src/routes/users.routes.ts)
+  - [src/routes/workspaces.routes.ts](src/routes/workspaces.routes.ts)
+  - [src/routes/boards.routes.ts](src/routes/boards.routes.ts)
+  - [src/routes/columns.routes.ts](src/routes/columns.routes.ts)
+  - [src/routes/cards.routes.ts](src/routes/cards.routes.ts)
+  - [src/routes/medias.routes.ts](src/routes/medias.routes.ts)
+  - [src/routes/invitations.routes.ts](src/routes/invitations.routes.ts)
+- Middlewares
+  - [src/middlewares/auth.middlewares.ts](src/middlewares/auth.middlewares.ts)
+  - [src/middlewares/error.middlewares.ts](src/middlewares/error.middlewares.ts)
+  - [src/middlewares/common.middlewares.ts](src/middlewares/common.middlewares.ts)
+  - [src/middlewares/users.middlewares.ts](src/middlewares/users.middlewares.ts)
+  - [src/middlewares/workspaces.middlewares.ts](src/middlewares/workspaces.middlewares.ts)
+  - [src/middlewares/boards.middlewares.ts](src/middlewares/boards.middlewares.ts)
+  - [src/middlewares/columns.middlewares.ts](src/middlewares/columns.middlewares.ts)
+  - [src/middlewares/cards.middlewares.ts](src/middlewares/cards.middlewares.ts)
+  - [src/middlewares/medias.middlewares.ts](src/middlewares/medias.middlewares.ts)
+  - [src/middlewares/invitations.middlewares.ts](src/middlewares/invitations.middlewares.ts)
+  - [src/middlewares/rbac.middlewares.ts](src/middlewares/rbac.middlewares.ts)
+- Controllers
+  - [src/controllers/auth.controllers.ts](src/controllers/auth.controllers.ts)
+  - [src/controllers/users.controllers.ts](src/controllers/users.controllers.ts)
+  - [src/controllers/workspaces.controllers.ts](src/controllers/workspaces.controllers.ts)
+  - [src/controllers/boards.controllers.ts](src/controllers/boards.controllers.ts)
+  - [src/controllers/columns.controllers.ts](src/controllers/columns.controllers.ts)
+  - [src/controllers/cards.controllers.ts](src/controllers/cards.controllers.ts)
+  - [src/controllers/invitations.controllers.ts](src/controllers/invitations.controllers.ts)
+  - [src/controllers/medias.controllers.ts](src/controllers/medias.controllers.ts)
+- Services
+  - [src/services/database.services.ts](src/services/database.services.ts)
+  - [src/services/auth.services.ts](src/services/auth.services.ts)
+  - [src/services/users.services.ts](src/services/users.services.ts)
+  - [src/services/workspaces.services.ts](src/services/workspaces.services.ts)
+  - [src/services/boards.services.ts](src/services/boards.services.ts)
+  - [src/services/columns.services.ts](src/services/columns.services.ts)
+  - [src/services/cards.services.ts](src/services/cards.services.ts)
+  - [src/services/invitations.services.ts](src/services/invitations.services.ts)
+  - [src/services/medias.services.ts](src/services/medias.services.ts)
+- Models
+  - Schemas: [src/models/schemas](src/models/schemas)
+  - Requests: [src/models/requests](src/models/requests)
+  - Errors and extensions: [src/models/Errors.ts](src/models/Errors.ts), [src/models/Extensions.ts](src/models/Extensions.ts)
+- Sockets
+  - [src/sockets/workspaces.sockets.ts](src/sockets/workspaces.sockets.ts)
+  - [src/sockets/boards.sockets.ts](src/sockets/boards.sockets.ts)
+  - [src/sockets/cards.sockets.ts](src/sockets/cards.sockets.ts)
+  - [src/sockets/invitations.sockets.ts](src/sockets/invitations.sockets.ts)
+- Providers and templates
+  - Providers: [src/providers/resend.ts](src/providers/resend.ts), [src/providers/uploadthing.ts](src/providers/uploadthing.ts), [src/providers/unsplash.ts](src/providers/unsplash.ts)
+  - Templates: [src/templates](src/templates)
+- Utilities
+  - [src/utils/commons.ts](src/utils/commons.ts)
+  - [src/utils/crypto.ts](src/utils/crypto.ts)
+  - [src/utils/file.ts](src/utils/file.ts)
+  - [src/utils/guards.ts](src/utils/guards.ts)
+  - [src/utils/handlers.ts](src/utils/handlers.ts)
+  - [src/utils/jwt.ts](src/utils/jwt.ts)
+  - [src/utils/rbac.ts](src/utils/rbac.ts)
+  - [src/utils/socket.ts](src/utils/socket.ts)
+  - [src/utils/validation.ts](src/utils/validation.ts)
+
+## Key technical decisions
+
+- Layered architecture with strict downward dependency flow: routes → middlewares → controllers → services → database
+- MongoDB Atlas with a centralized database service for connection and typed collections
+- Soft delete pattern via `_destroy` across domain entities
+- Role based permissions mapped to enum driven permission sets
+- Socket.IO used for room scoped events per board and workspace
+- Centralized request validation via express‑validator schemas and custom validators
+- Centralized error handling through default error middleware and handler wrappers
+- Environment specific configuration via `.env.NODE_ENV` files with early validation and process exit on misconfig
+- CORS policy using whitelist plus permissive development mode
+
+## Design patterns in use
+
+- Singleton services exported as default instances
+- Interface plus class schema pattern for MongoDB documents
+- Middleware chain composition: authentication → resource validation → input validation → body filtering → controller
+- Request body filter whitelist using generic filter middleware
+- Constants driven messages and enums for type safety and consistency
+- Token types and expirations configured via environment with ms based durations
+
+## Component relationships
+
+- Controllers depend on services only for business logic
+- Services encapsulate all database access via [src/services/database.services.ts](src/services/database.services.ts)
+- Middlewares attach validated resources and decoded tokens onto request for downstream access
+- Socket utilities initialize and expose server wide Socket.IO instance from [src/utils/socket.ts](src/utils/socket.ts)
+- Providers encapsulate third party interactions for email, files, and images
+
+## Critical implementation paths
+
+- Server startup: [src/index.ts](src/index.ts) → databaseService.connect() → app.listen(port) → socket initialization in [src/app.ts](src/app.ts)
+- Auth flow: routes/auth → validators → controllers/auth.controllers.ts → services/auth.services.ts → jwt utils and cookie management
+- Workspace and board access control: rbac middlewares, permissions from [src/constants/permissions.ts](src/constants/permissions.ts), membership checks in feature middlewares
+- Moving cards and ordering: validators check column and board relationships, services manage atomic updates
+- File uploads: media routes with validators → controllers → medias service → [src/utils/file.ts](src/utils/file.ts) and provider upload logic
+- Real time events: sockets handlers in [src/sockets](src/sockets) publish updates to rooms keyed by board or workspace id
+
+## Environments and deployment
+
+- Node environment selection dictates `.env.NODE_ENV` file loaded by [src/config/environment.ts](src/config/environment.ts)
+- Docker multi stage build produces production image and runs with PM2 using [ecosystem.config.js](ecosystem.config.js)
+- Render deployment reference: [src/docs/DEPLOY_RENDER.md](src/docs/DEPLOY_RENDER.md)
