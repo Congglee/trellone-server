@@ -139,7 +139,7 @@ UNSPLASH_APPLICATION_ID=''
 - API base URLs
 
   - Development: `http://localhost:8000`
-  - Staging: `https://api.yourdomain.onrender.com`
+  - Staging: `https://yourdomain-api.onrender.com`
   - Production: `https://api.yourdomain.com`
 
 - Client URLs
