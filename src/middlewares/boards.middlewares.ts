@@ -419,7 +419,7 @@ export const rejectIfBoardClosed = wrapRequestHandler(async (req: Request, res: 
   const hasOnlyReopenFlag =
     Object.prototype.hasOwnProperty.call(body, '_destroy') &&
     body._destroy === false &&
-    Object.keys(body).every((key) => key === '_destroy')
+    Object.keys(body).every((key) => key === '_destroy' || key === 'workspace_id')
 
   // If the request is not for reopening the board (hasOnlyReopenFlag = false)
   // then check if the board is closed, if closed then throw error
