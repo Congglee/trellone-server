@@ -52,7 +52,12 @@ class BoardsService {
     ]
 
     if (workspace) {
-      queryConditions.push({ workspace_id: new ObjectId(workspace) })
+      // Handle filtering for boards without workspace (deleted workspaces)
+      if (workspace === 'null') {
+        queryConditions.push({ workspace_id: null })
+      } else {
+        queryConditions.push({ workspace_id: new ObjectId(workspace) })
+      }
     }
 
     if (keyword) {
@@ -142,7 +147,9 @@ class BoardsService {
       payload.column_order_ids = body.column_order_ids.map((id) => new ObjectId(id))
     }
 
-    const board = await databaseService.boards.findOneAndUpdate(
+    const currentBoard = await databaseService.boards.findOne({ _id: new ObjectId(board_id) })
+
+    const updatedBoard = await databaseService.boards.findOneAndUpdate(
       { _id: new ObjectId(board_id) },
       {
         $set: payload,
@@ -151,7 +158,50 @@ class BoardsService {
       { returnDocument: 'after' }
     )
 
-    return board
+    // Handle reopen with workspace reassignment scenario
+    const isReopenWithReassign = this.isReopenWithWorkspaceReassignment(currentBoard, body)
+
+    if (isReopenWithReassign && updatedBoard && body.workspace_id) {
+      await this.addBoardMembersAsWorkspaceGuests(updatedBoard, new ObjectId(body.workspace_id))
+    }
+
+    return updatedBoard
+  }
+
+  private isReopenWithWorkspaceReassignment(currentBoard: Board | null, updateBody: UpdateBoardReqBody) {
+    if (!currentBoard || !updateBody.workspace_id) {
+      return false
+    }
+
+    const isReopening = currentBoard._destroy === true && updateBody._destroy === false
+    const isWorkspaceChanged = updateBody.workspace_id !== currentBoard.workspace_id?.toString()
+
+    return isReopening && isWorkspaceChanged
+  }
+
+  private async addBoardMembersAsWorkspaceGuests(board: Board, workspaceId: ObjectId) {
+    const workspace = await databaseService.workspaces.findOne({ _id: workspaceId })
+
+    if (!workspace) {
+      return
+    }
+
+    const boardMemberIds = board.members.map((member) => member.user_id)
+    const workspaceMemberIds = workspace.members.map((member) => member.user_id)
+
+    const guestsToAdd = boardMemberIds.filter(
+      (userId) => !workspaceMemberIds.some((memberId) => memberId.equals(userId))
+    )
+
+    if (guestsToAdd.length > 0) {
+      await databaseService.workspaces.updateOne(
+        { _id: workspaceId },
+        {
+          $addToSet: { guests: { $each: guestsToAdd } },
+          $currentDate: { updated_at: true }
+        }
+      )
+    }
   }
 
   async leaveBoard(board_id: string, user_id: string) {

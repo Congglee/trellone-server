@@ -84,11 +84,12 @@ export const requireBoardPermission = (permission: BoardPermission) => {
       } else {
         const body = (req.body || {}) as Record<string, unknown>
 
+        // Allow reopen with optional workspace reassignment
         const isReopenAttempt =
           typeof req.params.board_id === 'string' &&
           Object.prototype.hasOwnProperty.call(body, '_destroy') &&
           body._destroy === false &&
-          Object.keys(body).every((key) => key === '_destroy')
+          Object.keys(body).every((key) => key === '_destroy' || key === 'workspace_id')
 
         if (!isReopenAttempt) {
           assertBoardIsOpen(board)
