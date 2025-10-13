@@ -22,6 +22,7 @@ import { corsOptions } from '~/config/cors'
 // Config import
 import { initFolder } from '~/utils/file'
 import initSocket from '~/utils/socket'
+import { limiter } from '~/config/rate-limit'
 
 const app = express()
 
@@ -34,6 +35,7 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(compression())
 app.use(cors(corsOptions))
+app.use(limiter)
 
 // Initialize folders for file uploads
 initFolder()
