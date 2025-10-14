@@ -1,6 +1,6 @@
 import { validate } from '~/utils/validation'
 import { checkSchema, ParamSchema } from 'express-validator'
-import { BOARDS_MESSAGES } from '~/constants/messages'
+import { BOARDS_MESSAGES, USERS_MESSAGES, WORKSPACES_MESSAGES } from '~/constants/messages'
 import { stringEnumToArray } from '~/utils/commons'
 import { BoardRole, BoardType } from '~/constants/enums'
 import { ObjectId } from 'mongodb'
@@ -16,6 +16,7 @@ import { wrapRequestHandler } from '~/utils/handlers'
 import { assertBoardIsOpen } from '~/utils/guards'
 
 const boardTypes = stringEnumToArray(BoardType)
+const roleTypes = stringEnumToArray(BoardRole)
 
 const boardTitleSchema: ParamSchema = {
   notEmpty: { errorMessage: BOARDS_MESSAGES.BOARD_TITLE_IS_REQUIRED },
@@ -431,3 +432,84 @@ export const rejectIfBoardClosed = wrapRequestHandler(async (req: Request, res: 
 
   return next()
 })
+
+export const boardMemberIdValidator = validate(
+  checkSchema(
+    {
+      user_id: {
+        custom: {
+          options: async (value, { req }) => {
+            if (!ObjectId.isValid(value)) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: WORKSPACES_MESSAGES.INVALID_USER_ID
+              })
+            }
+
+            const user = await databaseService.users.findOne({ _id: new ObjectId(value) })
+
+            if (!user) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: USERS_MESSAGES.USER_NOT_FOUND
+              })
+            }
+
+            const board = (req as Request).board as Board
+            const isMemberExists = board?.members?.some((member) => member.user_id.equals(new ObjectId(value)))
+
+            if (!isMemberExists) {
+              throw new ErrorWithStatus({
+                status: HTTP_STATUS.NOT_FOUND,
+                message: BOARDS_MESSAGES.USER_NOT_MEMBER_OF_BOARD
+              })
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['params']
+  )
+)
+
+export const editBoardMemberRoleValidator = validate(
+  checkSchema(
+    {
+      role: {
+        isIn: {
+          options: [roleTypes],
+          errorMessage: BOARDS_MESSAGES.BOARD_ROLE_MUST_BE_ADMIN_MEMBER_OR_OBSERVER
+        },
+        custom: {
+          options: async (value, { req }) => {
+            // Ensure at least one admin remains in board
+            const board = (req as Request).board as Board
+            const { user_id } = (req as Request).params as { user_id: string }
+
+            // Get current board admins
+            const currentAdmins = board?.members?.filter((member) => member.role === BoardRole.Admin) || []
+
+            // Check if the user being modified is currently an admin
+            const targetMember = board?.members?.find((member) => member.user_id.equals(new ObjectId(user_id)))
+            const isTargetCurrentlyAdmin = targetMember?.role === BoardRole.Admin
+
+            // If there's only one admin and we're trying to modify that admin
+            if (currentAdmins.length === 1 && isTargetCurrentlyAdmin) {
+              if (value !== BoardRole.Admin) {
+                throw new ErrorWithStatus({
+                  status: HTTP_STATUS.BAD_REQUEST,
+                  message: BOARDS_MESSAGES.CANNOT_REMOVE_LAST_BOARD_ADMIN
+                })
+              }
+            }
+
+            return true
+          }
+        }
+      }
+    },
+    ['body']
+  )
+)

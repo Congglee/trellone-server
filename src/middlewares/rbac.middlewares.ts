@@ -21,7 +21,7 @@ import { hasBoardPermission, hasWorkspacePermission } from '~/utils/rbac'
 import { assertBoardIsOpen } from '~/utils/guards'
 import { BoardRole } from '~/constants/enums'
 
-export const requireWorkspacePermission = (permission: WorkspacePermission) => {
+export const requireWorkspacePermission = (permission: WorkspacePermission | WorkspacePermission[]) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const workspace = req.workspace as Workspace | undefined
 
@@ -43,7 +43,9 @@ export const requireWorkspacePermission = (permission: WorkspacePermission) => {
       })
     }
 
-    const allowed = hasWorkspacePermission(new ObjectId(user_id), workspace, permission)
+    const allowed = (Array.isArray(permission) ? permission : [permission]).some((perm) =>
+      hasWorkspacePermission(new ObjectId(user_id), workspace, perm)
+    )
 
     if (!allowed) {
       throw new ErrorWithStatus({
@@ -56,7 +58,7 @@ export const requireWorkspacePermission = (permission: WorkspacePermission) => {
   })
 }
 
-export const requireBoardPermission = (permission: BoardPermission) => {
+export const requireBoardPermission = (permission: BoardPermission | BoardPermission[]) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const board = req.board as Board | undefined
 
@@ -72,8 +74,12 @@ export const requireBoardPermission = (permission: BoardPermission) => {
     // Workspace is optionally attached by validators/aggregations
     const workspace = (board as { workspace?: Workspace }).workspace || null
 
-    if (permission !== BoardPermission.ViewBoard) {
-      if (permission === BoardPermission.DeleteBoard) {
+    const requested = Array.isArray(permission) ? permission : [permission]
+    const includesView = requested.includes(BoardPermission.ViewBoard)
+    const includesDelete = requested.includes(BoardPermission.DeleteBoard)
+
+    if (!includesView) {
+      if (includesDelete) {
         // Only allow deleting a board if it is already closed
         if (!board._destroy) {
           throw new ErrorWithStatus({
@@ -98,7 +104,7 @@ export const requireBoardPermission = (permission: BoardPermission) => {
     }
 
     // If board is closed, only Board Admins can view its details
-    if (permission === BoardPermission.ViewBoard && board._destroy) {
+    if (includesView && board._destroy) {
       const isAdmin = (board.members || []).some(
         (member) => member.user_id.equals(new ObjectId(user_id)) && member.role === BoardRole.Admin
       )
@@ -111,7 +117,9 @@ export const requireBoardPermission = (permission: BoardPermission) => {
       }
     }
 
-    const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
+    const allowed = (Array.isArray(permission) ? permission : [permission]).some((perm) =>
+      hasBoardPermission(new ObjectId(user_id), board, perm, workspace)
+    )
 
     if (!allowed) {
       throw new ErrorWithStatus({
@@ -157,7 +165,10 @@ export const requireBoardPermissionFromBody = (permission: BoardPermission, fiel
 
     const { board, workspace } = await getBoardContext(new ObjectId(boardId))
 
-    if (permission !== BoardPermission.ViewBoard) {
+    const requested = Array.isArray(permission) ? permission : [permission]
+    const includesView = requested.includes(BoardPermission.ViewBoard)
+
+    if (!includesView) {
       assertBoardIsOpen(board)
     }
 
@@ -172,7 +183,9 @@ export const requireBoardPermissionFromBody = (permission: BoardPermission, fiel
       })
     }
 
-    const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
+    const allowed = (Array.isArray(permission) ? permission : [permission]).some((perm) =>
+      hasBoardPermission(new ObjectId(user_id), board, perm, workspace)
+    )
 
     if (!allowed) {
       throw new ErrorWithStatus({
@@ -185,7 +198,7 @@ export const requireBoardPermissionFromBody = (permission: BoardPermission, fiel
   })
 }
 
-export const requireColumnPermission = (permission: BoardPermission) => {
+export const requireColumnPermission = (permission: BoardPermission | BoardPermission[]) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const column = req.column as Column | undefined
 
@@ -198,13 +211,18 @@ export const requireColumnPermission = (permission: BoardPermission) => {
 
     const { board, workspace } = await getBoardContext(column.board_id)
 
-    if (permission !== BoardPermission.ViewBoard) {
+    const requested = Array.isArray(permission) ? permission : [permission]
+    const includesView = requested.includes(BoardPermission.ViewBoard)
+
+    if (!includesView) {
       assertBoardIsOpen(board)
     }
 
     const { user_id } = req.decoded_authorization as TokenPayload
 
-    const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
+    const allowed = (Array.isArray(permission) ? permission : [permission]).some((perm) =>
+      hasBoardPermission(new ObjectId(user_id), board, perm, workspace)
+    )
 
     if (!allowed) {
       throw new ErrorWithStatus({
@@ -217,7 +235,7 @@ export const requireColumnPermission = (permission: BoardPermission) => {
   })
 }
 
-export const requireCardPermission = (permission: BoardPermission) => {
+export const requireCardPermission = (permission: BoardPermission | BoardPermission[]) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const card = req.card as Card | undefined
 
@@ -230,13 +248,18 @@ export const requireCardPermission = (permission: BoardPermission) => {
 
     const { board, workspace } = await getBoardContext(card.board_id)
 
-    if (permission !== BoardPermission.ViewBoard) {
+    const requested = Array.isArray(permission) ? permission : [permission]
+    const includesView = requested.includes(BoardPermission.ViewBoard)
+
+    if (!includesView) {
       assertBoardIsOpen(board)
     }
 
     const { user_id } = req.decoded_authorization as TokenPayload
 
-    const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
+    const allowed = (Array.isArray(permission) ? permission : [permission]).some((perm) =>
+      hasBoardPermission(new ObjectId(user_id), board, perm, workspace)
+    )
 
     if (!allowed) {
       throw new ErrorWithStatus({
@@ -249,7 +272,10 @@ export const requireCardPermission = (permission: BoardPermission) => {
   })
 }
 
-export const requireCardPermissionFromBody = (permission: BoardPermission, fieldName = 'current_card_id') => {
+export const requireCardPermissionFromBody = (
+  permission: BoardPermission | BoardPermission[],
+  fieldName = 'current_card_id'
+) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const cardId = (req.body as Record<string, string | undefined>)[fieldName]
 
@@ -271,13 +297,17 @@ export const requireCardPermissionFromBody = (permission: BoardPermission, field
 
     const { board, workspace } = await getBoardContext(card.board_id)
 
-    if (permission !== BoardPermission.ViewBoard) {
+    const requested = Array.isArray(permission) ? permission : [permission]
+    const includesView = requested.includes(BoardPermission.ViewBoard)
+    if (!includesView) {
       assertBoardIsOpen(board)
     }
 
     const { user_id } = req.decoded_authorization as TokenPayload
 
-    const allowed = hasBoardPermission(new ObjectId(user_id), board, permission, workspace)
+    const allowed = (Array.isArray(permission) ? permission : [permission]).some((perm) =>
+      hasBoardPermission(new ObjectId(user_id), board, perm, workspace)
+    )
 
     if (!allowed) {
       throw new ErrorWithStatus({

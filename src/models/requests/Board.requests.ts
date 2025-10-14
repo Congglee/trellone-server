@@ -1,5 +1,5 @@
 import { ParamsDictionary, Query } from 'express-serve-static-core'
-import { BoardType } from '~/constants/enums'
+import { BoardRole, BoardType } from '~/constants/enums'
 import { Pagination } from '~/models/requests/Common.requests'
 
 export interface CreateBoardReqBody {
@@ -27,4 +27,12 @@ export interface UpdateBoardReqBody extends CreateBoardReqBody {
   column_order_ids: string[]
   cover_photo?: string
   _destroy?: boolean
+}
+
+export interface EditBoardMemberRoleReqBody {
+  role: BoardRole
+}
+
+export interface BoardMemberParams extends BoardParams {
+  user_id: string
 }
