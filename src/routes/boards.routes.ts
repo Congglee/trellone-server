@@ -2,6 +2,7 @@ import { Router } from 'express'
 import {
   createBoardController,
   deleteBoardController,
+  editBoardMemberRoleController,
   getBoardController,
   getBoardsController,
   getJoinedWorkspaceBoardsController,
@@ -11,8 +12,10 @@ import {
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import {
   boardIdValidator,
+  boardMemberIdValidator,
   boardWorkspaceIdValidator,
   createBoardValidator,
+  editBoardMemberRoleValidator,
   getBoardsValidator,
   leaveBoardValidator,
   rejectIfBoardClosed,
@@ -78,7 +81,12 @@ boardsRouter.put(
     'cover_photo',
     '_destroy'
   ]),
-  requireBoardPermission(BoardPermission.ManageBoard),
+  requireBoardPermission([
+    BoardPermission.ManageBoard,
+    BoardPermission.EditBoardInfo,
+    BoardPermission.ChangeCoverPhoto,
+    BoardPermission.ReorderColumn
+  ]),
   wrapRequestHandler(updateBoardController)
 )
 
@@ -100,6 +108,17 @@ boardsRouter.delete(
   requireBoardMembership,
   requireBoardPermission(BoardPermission.DeleteBoard),
   wrapRequestHandler(deleteBoardController)
+)
+
+boardsRouter.put(
+  '/:board_id/members/:user_id/role',
+  accessTokenValidator,
+  verifiedUserValidator,
+  boardIdValidator,
+  boardMemberIdValidator,
+  editBoardMemberRoleValidator,
+  requireBoardPermission(BoardPermission.ManageMembers),
+  wrapRequestHandler(editBoardMemberRoleController)
 )
 
 export default boardsRouter

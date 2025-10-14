@@ -31,7 +31,7 @@ columnsRouter.put(
   columnIdValidator,
   updateColumnValidator,
   filterMiddleware<UpdateColumnReqBody>(['title', 'card_order_ids']),
-  requireColumnPermission(BoardPermission.EditColumn),
+  requireColumnPermission([BoardPermission.EditColumn, BoardPermission.ReorderCardInTheSameColumn]),
   wrapRequestHandler(updateColumnController)
 )
 
