@@ -16,12 +16,17 @@ export enum BoardPermission {
   ManageMembers = 'BOARD__MANAGE_MEMBERS',
   CreateColumn = 'BOARD__CREATE_COLUMN',
   EditColumn = 'BOARD__EDIT_COLUMN',
+  ReorderColumn = 'BOARD__REORDER_COLUMN',
+  ReorderCardInTheSameColumn = 'BOARD__REORDER_CARD_IN_THE_SAME_COLUMN',
+  MoveCardToDifferentColumn = 'BOARD__MOVE_CARD_TO_DIFFERENT_COLUMN',
   DeleteColumn = 'BOARD__DELETE_COLUMN',
   CreateCard = 'BOARD__CREATE_CARD',
   EditCard = 'BOARD__EDIT_CARD',
   DeleteCard = 'BOARD__DELETE_CARD',
   Comment = 'BOARD__COMMENT',
   Attach = 'BOARD__ATTACH',
+  EditBoardInfo = 'BOARD__EDIT_INFO',
+  ChangeCoverPhoto = 'BOARD__CHANGE_COVER',
   DeleteBoard = 'BOARD__DELETE'
 }
 
@@ -47,6 +52,9 @@ export const BOARD_ROLE_PERMISSIONS: Record<BoardRole, BoardPermission[]> = {
     BoardPermission.ViewBoard,
     BoardPermission.ManageBoard,
     BoardPermission.ManageMembers,
+    BoardPermission.ReorderColumn,
+    BoardPermission.ReorderCardInTheSameColumn,
+    BoardPermission.MoveCardToDifferentColumn,
     BoardPermission.CreateColumn,
     BoardPermission.EditColumn,
     BoardPermission.DeleteColumn,
@@ -55,16 +63,23 @@ export const BOARD_ROLE_PERMISSIONS: Record<BoardRole, BoardPermission[]> = {
     BoardPermission.DeleteCard,
     BoardPermission.Comment,
     BoardPermission.Attach,
+    BoardPermission.EditBoardInfo,
+    BoardPermission.ChangeCoverPhoto,
     BoardPermission.DeleteBoard
   ],
   [BoardRole.Member]: [
     BoardPermission.ViewBoard,
     BoardPermission.CreateColumn,
     BoardPermission.EditColumn,
+    BoardPermission.ReorderColumn,
+    BoardPermission.ReorderCardInTheSameColumn,
+    BoardPermission.MoveCardToDifferentColumn,
     BoardPermission.CreateCard,
     BoardPermission.EditCard,
     BoardPermission.Comment,
-    BoardPermission.Attach
+    BoardPermission.Attach,
+    BoardPermission.EditBoardInfo,
+    BoardPermission.ChangeCoverPhoto
   ],
   [BoardRole.Observer]: [BoardPermission.ViewBoard]
 }

@@ -2,9 +2,11 @@ import { Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { BOARDS_MESSAGES } from '~/constants/messages'
 import {
+  BoardMemberParams,
   BoardParams,
   BoardQuery,
   CreateBoardReqBody,
+  EditBoardMemberRoleReqBody,
   JoinedWorkspaceBoardQuery,
   UpdateBoardReqBody
 } from '~/models/requests/Board.requests'
@@ -88,4 +90,15 @@ export const deleteBoardController = async (req: Request<BoardParams>, res: Resp
   const { board_id } = req.params
   await boardsService.deleteBoard(board_id)
   return res.json({ message: BOARDS_MESSAGES.DELETE_BOARD_SUCCESS })
+}
+
+export const editBoardMemberRoleController = async (
+  req: Request<BoardMemberParams, any, EditBoardMemberRoleReqBody>,
+  res: Response
+) => {
+  const { board_id, user_id } = req.params
+
+  const result = await boardsService.editBoardMemberRole(board_id, user_id, req.body)
+
+  return res.json({ message: BOARDS_MESSAGES.EDIT_BOARD_MEMBER_ROLE_SUCCESS, result })
 }

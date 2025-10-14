@@ -4,6 +4,7 @@ import { CreateBoardReqBody, UpdateBoardReqBody } from '~/models/requests/Board.
 import Board from '~/models/schemas/Board.schema'
 import databaseService from '~/services/database.services'
 import { envConfig } from '~/config/environment'
+import { EditBoardMemberRoleReqBody } from '~/models/requests/Board.requests'
 
 class BoardsService {
   async createBoard(user_id: string, body: CreateBoardReqBody) {
@@ -277,6 +278,22 @@ class BoardsService {
         }
       }
     }
+  }
+
+  async editBoardMemberRole(board_id: string, user_id: string, body: EditBoardMemberRoleReqBody) {
+    const board = await databaseService.boards.findOneAndUpdate(
+      {
+        _id: new ObjectId(board_id),
+        'members.user_id': new ObjectId(user_id)
+      },
+      {
+        $set: { 'members.$.role': body.role },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return board
   }
 }
 

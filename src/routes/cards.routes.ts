@@ -178,7 +178,7 @@ cardsRouter.put(
     'next_column_id',
     'next_card_order_ids'
   ]),
-  requireCardPermissionFromBody(BoardPermission.EditCard, 'current_card_id'),
+  requireCardPermissionFromBody(BoardPermission.MoveCardToDifferentColumn, 'current_card_id'),
   wrapRequestHandler(moveCardToDifferentColumnController)
 )
 

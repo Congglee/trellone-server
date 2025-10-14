@@ -363,7 +363,7 @@ class InvitationsService {
           $push: {
             members: {
               user_id: new ObjectId(invitee_id),
-              role: BoardRole.Member,
+              role: body.role,
               joined_at: new Date(),
               invited_by: new ObjectId(invitation?.inviter_id)
             }
