@@ -8,6 +8,7 @@ interface BoardSchema {
   description?: string
   type: BoardType
   cover_photo?: string
+  background_color?: string
   workspace_id: ObjectId | null
   column_order_ids?: ObjectId[]
   members?: BoardMember[]
@@ -22,6 +23,7 @@ export default class Board {
   description: string
   type: BoardType
   cover_photo: string
+  background_color: string
   workspace_id: ObjectId | null
   column_order_ids: ObjectId[]
   members: BoardMember[]
@@ -37,6 +39,7 @@ export default class Board {
     this.description = board.description || ''
     this.type = board.type || BoardType.Public
     this.cover_photo = board.cover_photo || ''
+    this.background_color = board.background_color || ''
     this.workspace_id = board.workspace_id || null
     this.column_order_ids = board.column_order_ids || []
     this.members = board.members || []

@@ -125,7 +125,8 @@ export const BOARDS_MESSAGES = {
   BOARD_MUST_BE_CLOSED_BEFORE_DELETION: 'Board must be closed before it can be deleted',
   DELETE_BOARD_SUCCESS: 'Board deleted successfully',
   EDIT_BOARD_MEMBER_ROLE_SUCCESS: 'Edit board member role successfully',
-  BOARD_ROLE_MUST_BE_ADMIN_MEMBER_OR_OBSERVER: 'Board role must be "Admin", "Member" or "Observer"'
+  BOARD_ROLE_MUST_BE_ADMIN_MEMBER_OR_OBSERVER: 'Board role must be "Admin", "Member" or "Observer"',
+  BACKGROUND_COLOR_MUST_BE_STRING: 'Background color must be a string'
 }
 
 export const COLUMNS_MESSAGES = {

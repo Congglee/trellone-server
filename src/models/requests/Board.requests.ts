@@ -6,6 +6,7 @@ export interface CreateBoardReqBody {
   title: string
   description?: string
   type: BoardType
+  cover_photo?: string
   workspace_id: string
 }
 
@@ -26,6 +27,7 @@ export interface JoinedWorkspaceBoardQuery extends Pagination, Query {
 export interface UpdateBoardReqBody extends CreateBoardReqBody {
   column_order_ids: string[]
   cover_photo?: string
+  background_color?: string
   _destroy?: boolean
 }
 

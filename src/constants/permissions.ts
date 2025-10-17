@@ -26,7 +26,7 @@ export enum BoardPermission {
   Comment = 'BOARD__COMMENT',
   Attach = 'BOARD__ATTACH',
   EditBoardInfo = 'BOARD__EDIT_INFO',
-  ChangeCoverPhoto = 'BOARD__CHANGE_COVER',
+  ChangeBoardBackground = 'BOARD__CHANGE_BACKGROUND',
   DeleteBoard = 'BOARD__DELETE'
 }
 
@@ -64,7 +64,7 @@ export const BOARD_ROLE_PERMISSIONS: Record<BoardRole, BoardPermission[]> = {
     BoardPermission.Comment,
     BoardPermission.Attach,
     BoardPermission.EditBoardInfo,
-    BoardPermission.ChangeCoverPhoto,
+    BoardPermission.ChangeBoardBackground,
     BoardPermission.DeleteBoard
   ],
   [BoardRole.Member]: [
@@ -79,7 +79,7 @@ export const BOARD_ROLE_PERMISSIONS: Record<BoardRole, BoardPermission[]> = {
     BoardPermission.Comment,
     BoardPermission.Attach,
     BoardPermission.EditBoardInfo,
-    BoardPermission.ChangeCoverPhoto
+    BoardPermission.ChangeBoardBackground
   ],
   [BoardRole.Observer]: [BoardPermission.ViewBoard]
 }

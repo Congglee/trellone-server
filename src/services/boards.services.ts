@@ -12,6 +12,7 @@ class BoardsService {
       title: body.title,
       description: body.description,
       type: body.type,
+      cover_photo: body.cover_photo,
       members: [
         {
           user_id: new ObjectId(user_id),
