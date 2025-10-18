@@ -2,7 +2,6 @@ import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
 import {
   BoardInvitationStatus,
-  BoardRole,
   InvitationType,
   TokenType,
   WorkspaceInvitationStatus,
@@ -284,14 +283,65 @@ class InvitationsService {
             }
           },
           { $unwind: { path: '$workspace', preserveNullAndEmptyArrays: true } },
+          // Keep only invitations that still reference existing entities
+          {
+            $match: {
+              $or: [
+                {
+                  $and: [{ board_invitation: { $exists: true } }, { board: { $ne: null } }]
+                },
+                {
+                  $and: [{ workspace_invitation: { $exists: true } }, { workspace: { $ne: null } }]
+                }
+              ]
+            }
+          },
           { $sort: { created_at: -1 } },
           { $skip: limit * (page - 1) },
           { $limit: limit }
         ])
         .toArray(),
-      await databaseService.invitations.countDocuments({
-        $and: queryConditions
-      })
+      // Count only the valid invitations according to the same filtering logic above
+      (async () => {
+        const counts = await databaseService.invitations
+          .aggregate([
+            { $match: { $and: queryConditions } },
+            {
+              $lookup: {
+                from: envConfig.dbBoardsCollection,
+                localField: 'board_invitation.board_id',
+                foreignField: '_id',
+                as: 'board'
+              }
+            },
+            { $unwind: { path: '$board', preserveNullAndEmptyArrays: true } },
+            {
+              $lookup: {
+                from: envConfig.dbWorkspacesCollection,
+                localField: 'workspace_invitation.workspace_id',
+                foreignField: '_id',
+                as: 'workspace'
+              }
+            },
+            { $unwind: { path: '$workspace', preserveNullAndEmptyArrays: true } },
+            {
+              $match: {
+                $or: [
+                  {
+                    $and: [{ board_invitation: { $exists: true } }, { board: { $ne: null } }]
+                  },
+                  {
+                    $and: [{ workspace_invitation: { $exists: true } }, { workspace: { $ne: null } }]
+                  }
+                ]
+              }
+            },
+            { $count: 'total' }
+          ])
+          .toArray()
+
+        return counts[0]?.total || 0
+      })()
     ])
 
     return { invitations, total }

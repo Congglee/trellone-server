@@ -76,7 +76,6 @@ export const handleUploadDocument = async (req: Request) => {
       const isValid = name === 'document' && Boolean(mimetype && allowedMimeTypes.includes(mimetype))
 
       if (!isValid) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         form.emit('error' as any, new Error('File type is not valid for documents or images') as any)
       }
 

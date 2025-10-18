@@ -79,12 +79,13 @@ boardsRouter.put(
     'workspace_id',
     'column_order_ids',
     'cover_photo',
+    'background_color',
     '_destroy'
   ]),
   requireBoardPermission([
     BoardPermission.ManageBoard,
     BoardPermission.EditBoardInfo,
-    BoardPermission.ChangeCoverPhoto,
+    BoardPermission.ChangeBoardBackground,
     BoardPermission.ReorderColumn
   ]),
   wrapRequestHandler(updateBoardController)

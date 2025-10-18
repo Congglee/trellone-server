@@ -51,6 +51,10 @@ export const createBoardValidator = validate(
       title: boardTitleSchema,
       description: boardDescriptionSchema,
       type: boardTypeSchema,
+      cover_photo: {
+        optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING }
+      },
       workspace_id: {
         notEmpty: { errorMessage: BOARDS_MESSAGES.WORKSPACE_ID_IS_REQUIRED },
         isString: { errorMessage: BOARDS_MESSAGES.WORKSPACE_ID_MUST_BE_STRING },
@@ -325,6 +329,10 @@ export const updateBoardValidator = validate(
       cover_photo: {
         optional: true,
         isString: { errorMessage: BOARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING }
+      },
+      background_color: {
+        optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.BACKGROUND_COLOR_MUST_BE_STRING }
       },
       _destroy: {
         optional: true,

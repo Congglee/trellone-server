@@ -62,6 +62,7 @@ class WorkspacesService {
                     title: 1,
                     description: 1,
                     cover_photo: 1,
+                    background_color: 1,
                     _destroy: 1
                   }
                 }
