@@ -33,8 +33,7 @@ export const envConfig = {
   host: (process.env.HOST as string) || 'http://localhost',
 
   dbName: process.env.DB_NAME as string,
-  dbUsername: process.env.DB_USERNAME as string,
-  dbPassword: process.env.DB_PASSWORD as string,
+  dbUri: process.env.DB_URI as string,
 
   dbWorkspacesCollection: process.env.DB_WORKSPACES_COLLECTION as string,
   dbBoardsCollection: process.env.DB_BOARDS_COLLECTION as string,

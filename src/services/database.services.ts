@@ -9,14 +9,12 @@ import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
 import Workspace from '~/models/schemas/Workspace.schema'
 
-const URI = `mongodb+srv://${envConfig.dbUsername}:${envConfig.dbPassword}@trellone-cluster0.nnecc.mongodb.net/?retryWrites=true&w=majority&appName=${envConfig.dbName}`
-
 class DatabaseService {
   private client: MongoClient
   private db: Db
 
   constructor() {
-    this.client = new MongoClient(URI)
+    this.client = new MongoClient(envConfig.dbUri)
     this.db = this.client.db(envConfig.dbName)
   }
 
