@@ -23,7 +23,7 @@ npm install; npm run build
 - Start Command (staging):
 
 ```bash
-npm run start:stag
+npm run start:stage
 ```
 
 Render will set the working directory to the repo root. The server expects `.env.staging` at runtime.
