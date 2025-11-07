@@ -147,7 +147,7 @@ export interface CreateBoardReqBody {
   title: string
   description?: string
   workspace_id: string
-  type: BoardType
+  visibility: BoardVisibility
 }
 
 export interface UpdateBoardReqBody {

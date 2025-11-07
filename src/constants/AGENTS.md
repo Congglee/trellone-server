@@ -82,9 +82,9 @@ export const BOARDS_MESSAGES = {
 ✅ **DO**: Use const objects for enums
 ```typescript
 // constants/enums.ts
-export const BoardType = {
-  Public: 'public',
-  Private: 'private'
+export const BoardVisibility = {
+  Public: 'Public',
+  Private: 'Private'
 } as const
 
 export const BoardRole = {
@@ -120,7 +120,7 @@ export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
 
 - **HTTP Status**: `src/constants/httpStatus.ts` - HTTP status code constants
 - **Messages**: `src/constants/messages.ts` - User-facing messages organized by feature
-- **Enums**: `src/constants/enums.ts` - BoardType, BoardRole, UserType, etc.
+- **Enums**: `src/constants/enums.ts` - BoardVisibility, BoardRole, UserType, etc.
 - **Permissions**: `src/constants/permissions.ts` - Permission constants for RBAC
 - **Regex**: `src/constants/regex.ts` - Validation regex patterns
 - **Domains**: `src/constants/domains.ts` - Domain URLs and external service URLs
@@ -132,7 +132,7 @@ export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
 rg -n "export const.*=" src/constants
 
 # Find enum usage
-rg -n "BoardRole\.|BoardType\." src
+rg -n "BoardRole\.|BoardVisibility\." src
 
 # Find message usage
 rg -n "BOARDS_MESSAGES\.|AUTH_MESSAGES\." src

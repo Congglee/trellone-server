@@ -1,12 +1,12 @@
 import { ObjectId } from 'mongodb'
-import { WorkspaceType } from '~/constants/enums'
+import { WorkspaceVisibility } from '~/constants/enums'
 import { WorkspaceMember } from '~/models/Extensions'
 
 interface WorkspaceSchema {
   _id?: ObjectId
   title: string
   description?: string
-  type: WorkspaceType
+  visibility: WorkspaceVisibility
   logo?: string
   members?: WorkspaceMember[]
   guests?: ObjectId[]
@@ -19,7 +19,7 @@ export default class Workspace {
   _id?: ObjectId
   title: string
   description: string
-  type: WorkspaceType
+  visibility: WorkspaceVisibility
   logo: string
   members: WorkspaceMember[]
   guests: ObjectId[]
@@ -33,7 +33,7 @@ export default class Workspace {
     this._id = workspace._id
     this.title = workspace.title
     this.description = workspace.description || ''
-    this.type = workspace.type || WorkspaceType.Public
+    this.visibility = workspace.visibility || WorkspaceVisibility.Public
     this.logo = workspace.logo || ''
     this.members = workspace.members || []
     this.guests = workspace.guests || []

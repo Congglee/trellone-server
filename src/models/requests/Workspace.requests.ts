@@ -1,5 +1,5 @@
 import { ParamsDictionary } from 'express-serve-static-core'
-import { WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { WorkspaceRole, WorkspaceVisibility } from '~/constants/enums'
 
 export interface CreateWorkspaceReqBody {
   title: string
@@ -11,7 +11,7 @@ export interface WorkspaceParams extends ParamsDictionary {
 }
 
 export interface UpdateWorkspaceReqBody extends CreateWorkspaceReqBody {
-  type?: WorkspaceType
+  visibility?: WorkspaceVisibility
   logo?: string
 }
 

@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { BoardRole, WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { BoardRole, WorkspaceRole, WorkspaceVisibility } from '~/constants/enums'
 import {
   CreateWorkspaceReqBody,
   EditWorkspaceMemberRoleReqBody,
@@ -13,7 +13,7 @@ class WorkspacesService {
     const newWorkspace = new Workspace({
       title: body.title,
       description: body.description,
-      type: WorkspaceType.Public,
+      visibility: WorkspaceVisibility.Public,
       members: [
         {
           user_id: new ObjectId(user_id),

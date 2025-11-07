@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
-import { BoardRole, WorkspaceRole, WorkspaceType } from '~/constants/enums'
+import { BoardRole, WorkspaceRole, WorkspaceVisibility } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { WORKSPACES_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
@@ -14,7 +14,7 @@ import { stringEnumToArray } from '~/utils/commons'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { validate } from '~/utils/validation'
 
-const workspaceTypes = stringEnumToArray(WorkspaceType)
+const workspaceVisibilities = stringEnumToArray(WorkspaceVisibility)
 const roleTypes = stringEnumToArray(WorkspaceRole)
 
 const workspaceTitleSchema: ParamSchema = {
@@ -37,10 +37,10 @@ const workspaceDescriptionSchema: ParamSchema = {
   }
 }
 
-const workspaceTypeSchema: ParamSchema = {
+const workspaceVisibilitySchema: ParamSchema = {
   isIn: {
-    options: [workspaceTypes],
-    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_TYPE_MUST_BE_PUBLIC_OR_PRIVATE
+    options: [workspaceVisibilities],
+    errorMessage: WORKSPACES_MESSAGES.WORKSPACE_VISIBILITY_MUST_BE_PUBLIC_OR_PRIVATE
   }
 }
 
@@ -181,7 +181,7 @@ export const updateWorkspaceValidator = validate(
     {
       title: { ...workspaceTitleSchema, optional: true, notEmpty: undefined },
       description: workspaceDescriptionSchema,
-      type: { ...workspaceTypeSchema, optional: true },
+      visibility: { ...workspaceVisibilitySchema, optional: true },
       logo: {
         optional: true,
         isString: { errorMessage: WORKSPACES_MESSAGES.WORKSPACE_LOGO_MUST_BE_STRING }
