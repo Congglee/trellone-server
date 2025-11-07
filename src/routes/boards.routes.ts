@@ -75,7 +75,7 @@ boardsRouter.put(
   filterMiddleware<UpdateBoardReqBody>([
     'title',
     'description',
-    'type',
+    'visibility',
     'workspace_id',
     'column_order_ids',
     'cover_photo',

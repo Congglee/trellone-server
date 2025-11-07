@@ -1,9 +1,9 @@
-export enum BoardType {
+export enum BoardVisibility {
   Public = 'Public',
   Private = 'Private'
 }
 
-export enum WorkspaceType {
+export enum WorkspaceVisibility {
   Public = 'Public',
   Private = 'Private'
 }

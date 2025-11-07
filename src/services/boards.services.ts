@@ -11,7 +11,7 @@ class BoardsService {
     const newBoard = new Board({
       title: body.title,
       description: body.description,
-      type: body.type,
+      visibility: body.visibility,
       cover_photo: body.cover_photo,
       members: [
         {

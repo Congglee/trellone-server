@@ -2,7 +2,7 @@ import { validate } from '~/utils/validation'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { BOARDS_MESSAGES, USERS_MESSAGES, WORKSPACES_MESSAGES } from '~/constants/messages'
 import { stringEnumToArray } from '~/utils/commons'
-import { BoardRole, BoardType } from '~/constants/enums'
+import { BoardRole, BoardVisibility } from '~/constants/enums'
 import { ObjectId } from 'mongodb'
 import { ErrorWithStatus } from '~/models/Errors'
 import HTTP_STATUS from '~/constants/httpStatus'
@@ -15,7 +15,7 @@ import { TokenPayload } from '~/models/requests/User.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { assertBoardIsOpen } from '~/utils/guards'
 
-const boardTypes = stringEnumToArray(BoardType)
+const boardVisibilities = stringEnumToArray(BoardVisibility)
 const roleTypes = stringEnumToArray(BoardRole)
 
 const boardTitleSchema: ParamSchema = {
@@ -38,10 +38,10 @@ const boardDescriptionSchema: ParamSchema = {
   }
 }
 
-const boardTypeSchema: ParamSchema = {
+const boardVisibilitySchema: ParamSchema = {
   isIn: {
-    options: [boardTypes],
-    errorMessage: BOARDS_MESSAGES.BOARD_TYPE_MUST_BE_PUBLIC_OR_PRIVATE
+    options: [boardVisibilities],
+    errorMessage: BOARDS_MESSAGES.BOARD_VISIBILITY_MUST_BE_PUBLIC_OR_PRIVATE
   }
 }
 
@@ -50,7 +50,7 @@ export const createBoardValidator = validate(
     {
       title: boardTitleSchema,
       description: boardDescriptionSchema,
-      type: boardTypeSchema,
+      visibility: boardVisibilitySchema,
       cover_photo: {
         optional: true,
         isString: { errorMessage: BOARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING }
@@ -280,7 +280,7 @@ export const updateBoardValidator = validate(
     {
       title: { ...boardTitleSchema, optional: true, notEmpty: undefined },
       description: boardDescriptionSchema,
-      type: { ...boardTypeSchema, optional: true },
+      visibility: { ...boardVisibilitySchema, optional: true },
       column_order_ids: {
         optional: true,
         isArray: { errorMessage: BOARDS_MESSAGES.COLUMN_ORDER_IDS_MUST_BE_AN_ARRAY },
