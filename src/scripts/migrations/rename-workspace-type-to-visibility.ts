@@ -1,12 +1,12 @@
 /**
- * Migration Script: Rename Board field from 'type' to 'visibility'
+ * Migration Script: Rename Workspace field from 'type' to 'visibility'
  *
- * This script renames the 'type' field to 'visibility' in the boards collection.
+ * This script renames the 'type' field to 'visibility' in the workspaces collection.
  *
  * Usage:
- *   - For local MongoDB: npx tsx scripts/migrations/rename-board-type-to-visibility.ts
+ *   - For local MongoDB: npx tsx src/scripts/migrations/rename-workspace-type-to-visibility.ts
  *   - For MongoDB Atlas: Update the connection string in the script and run
- *   - Or use npm script: npm run migrate:board-visibility
+ *   - Or use npm script: npm run migrate:workspace-visibility
  *
  * IMPORTANT:
  *   - Backup your database before running this migration
@@ -14,31 +14,29 @@
  *   - Run this script AFTER deploying the code changes that use 'visibility'
  *
  * Prerequisites:
- *   - MongoDB connection string configured
- *   - Database name and collection name from environment variables
+ *   - NODE_ENV environment variable set (development, staging, or production)
+ *   - .env.{NODE_ENV} file exists with DB_URI, DB_NAME, and DB_WORKSPACES_COLLECTION configured
+ *   - Environment variables are loaded via centralized config (src/config/environment.ts)
  */
 
 import { MongoClient, Collection } from 'mongodb'
-import { config } from 'dotenv'
-import path from 'path'
+import { envConfig } from '~/config/environment'
 
-// Load environment variables based on NODE_ENV
-const env = process.env.NODE_ENV || 'development'
-const envFilename = `.env.${env}`
-config({ path: path.resolve(envFilename) })
-
-const DB_URI = process.env.DB_URI
-const DB_NAME = process.env.DB_NAME || 'trellone'
-const DB_BOARDS_COLLECTION = process.env.DB_BOARDS_COLLECTION || 'boards'
+// Use environment configuration from centralized config
+const DB_URI = envConfig.dbUri
+const DB_NAME = envConfig.dbName
+const DB_WORKSPACES_COLLECTION = envConfig.dbWorkspacesCollection
 
 interface MigrationResult {
   matchedCount: number
   modifiedCount: number
 }
 
-async function migrateBoardTypeToVisibility(): Promise<void> {
-  if (!DB_URI) {
-    throw new Error('DB_URI environment variable is not set')
+async function migrateWorkspaceTypeToVisibility(): Promise<void> {
+  if (!DB_URI || !DB_NAME || !DB_WORKSPACES_COLLECTION) {
+    throw new Error(
+      'Required environment variables are not set. Please check DB_URI, DB_NAME, and DB_WORKSPACES_COLLECTION.'
+    )
   }
 
   const client = new MongoClient(DB_URI)
@@ -49,10 +47,10 @@ async function migrateBoardTypeToVisibility(): Promise<void> {
     console.log('Connected successfully')
 
     const db = client.db(DB_NAME)
-    const boardsCollection: Collection = db.collection(DB_BOARDS_COLLECTION)
+    const workspacesCollection: Collection = db.collection(DB_WORKSPACES_COLLECTION)
 
     // Check if any documents have the 'type' field
-    const documentsWithType = await boardsCollection.countDocuments({ type: { $exists: true } })
+    const documentsWithType = await workspacesCollection.countDocuments({ type: { $exists: true } })
     console.log(`Found ${documentsWithType} documents with 'type' field`)
 
     if (documentsWithType === 0) {
@@ -62,7 +60,7 @@ async function migrateBoardTypeToVisibility(): Promise<void> {
 
     // Rename the field from 'type' to 'visibility'
     console.log('Starting migration...')
-    const result: MigrationResult = await boardsCollection.updateMany(
+    const result: MigrationResult = await workspacesCollection.updateMany(
       { type: { $exists: true } },
       { $rename: { type: 'visibility' } }
     )
@@ -72,8 +70,8 @@ async function migrateBoardTypeToVisibility(): Promise<void> {
     console.log(`- Modified documents: ${result.modifiedCount}`)
 
     // Verify migration
-    const documentsWithVisibility = await boardsCollection.countDocuments({ visibility: { $exists: true } })
-    const documentsWithTypeAfter = await boardsCollection.countDocuments({ type: { $exists: true } })
+    const documentsWithVisibility = await workspacesCollection.countDocuments({ visibility: { $exists: true } })
+    const documentsWithTypeAfter = await workspacesCollection.countDocuments({ type: { $exists: true } })
 
     console.log('\nVerification:')
     console.log(`- Documents with 'visibility' field: ${documentsWithVisibility}`)
@@ -95,7 +93,7 @@ async function migrateBoardTypeToVisibility(): Promise<void> {
 
 // Run migration
 if (require.main === module) {
-  migrateBoardTypeToVisibility()
+  migrateWorkspaceTypeToVisibility()
     .then(() => {
       console.log('\nMigration script completed')
       process.exit(0)
@@ -106,4 +104,4 @@ if (require.main === module) {
     })
 }
 
-export { migrateBoardTypeToVisibility }
+export { migrateWorkspaceTypeToVisibility }
