@@ -1,4 +1,4 @@
-import { Request } from 'express'
+import { NextFunction, Request, Response } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import { AttachmentType, CardCommentReactionAction } from '~/constants/enums'
@@ -7,8 +7,11 @@ import { CARDS_MESSAGES } from '~/constants/messages'
 import { ISO8601_REGEX } from '~/constants/regex'
 import { ErrorWithStatus } from '~/models/Errors'
 import { TokenPayload } from '~/models/requests/User.requests'
+import Card from '~/models/schemas/Card.schema'
 import databaseService from '~/services/database.services'
 import { stringEnumToArray } from '~/utils/commons'
+import { assertCardIsOpen } from '~/utils/guards'
+import { wrapRequestHandler } from '~/utils/handlers'
 import { validate } from '~/utils/validation'
 
 const attachmentTypes = stringEnumToArray(AttachmentType)
@@ -174,19 +177,6 @@ export const updateCardValidator = validate(
       cover_photo: {
         optional: true,
         isString: { errorMessage: CARDS_MESSAGES.COVER_PHOTO_MUST_BE_STRING }
-      },
-      _destroy: {
-        optional: true,
-        custom: {
-          options: (value) => {
-            if (typeof value !== 'boolean' && typeof value !== 'undefined') {
-              throw new Error(CARDS_MESSAGES.CARD_ARCHIVE_STATUS_MUST_BE_BOOLEAN)
-            }
-
-            return true
-          }
-        },
-        toBoolean: true
       }
     },
     ['body']
@@ -614,3 +604,24 @@ export const moveCardToDifferentColumnValidator = validate(
     ['body']
   )
 )
+
+export const ensureCardOpen = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const card = (req as Request).card as Card
+
+  assertCardIsOpen(card)
+
+  next()
+})
+
+export const ensureCardClosed = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const card = (req as Request).card as Card
+
+  if (!card || !card._destroy) {
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.BAD_REQUEST,
+      message: CARDS_MESSAGES.CARD_IS_NOT_ARCHIVED
+    })
+  }
+
+  next()
+})

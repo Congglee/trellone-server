@@ -4,6 +4,8 @@ import {
   addCardMemberController,
   addCardCommentController,
   createCardController,
+  archiveCardController,
+  reopenCardController,
   removeCardCommentController,
   deleteCardController,
   moveCardToDifferentColumnController,
@@ -28,7 +30,9 @@ import {
   reactionToCardCommentValidator,
   updateCardAttachmentValidator,
   updateCardCommentValidator,
-  updateCardValidator
+  updateCardValidator,
+  ensureCardOpen,
+  ensureCardClosed
 } from '~/middlewares/cards.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
@@ -57,10 +61,31 @@ cardsRouter.put(
   accessTokenValidator,
   verifiedUserValidator,
   cardIdValidator,
+  ensureCardOpen,
   updateCardValidator,
-  filterMiddleware<UpdateCardReqBody>(['title', 'due_date', 'is_completed', 'description', 'cover_photo', '_destroy']),
+  filterMiddleware<UpdateCardReqBody>(['title', 'due_date', 'is_completed', 'description', 'cover_photo']),
   requireCardPermission(BoardPermission.EditCard),
   wrapRequestHandler(updateCardController)
+)
+
+cardsRouter.patch(
+  '/:card_id/archive',
+  accessTokenValidator,
+  verifiedUserValidator,
+  cardIdValidator,
+  ensureCardOpen,
+  requireCardPermission(BoardPermission.EditCard),
+  wrapRequestHandler(archiveCardController)
+)
+
+cardsRouter.patch(
+  '/:card_id/reopen',
+  accessTokenValidator,
+  verifiedUserValidator,
+  cardIdValidator,
+  ensureCardClosed,
+  requireCardPermission(BoardPermission.EditCard, { allowClosed: true }),
+  wrapRequestHandler(reopenCardController)
 )
 
 cardsRouter.post(
@@ -162,6 +187,7 @@ cardsRouter.delete(
   accessTokenValidator,
   verifiedUserValidator,
   cardIdValidator,
+  ensureCardClosed,
   requireCardPermission(BoardPermission.DeleteCard),
   wrapRequestHandler(deleteCardController)
 )

@@ -34,6 +34,22 @@ export const updateCardController = async (req: Request<CardParams, any, UpdateC
   return res.json({ message: CARDS_MESSAGES.UPDATE_CARD_SUCCESS, result })
 }
 
+export const archiveCardController = async (req: Request<CardParams>, res: Response) => {
+  const { card_id } = req.params
+
+  const result = await cardsService.archiveCard(card_id)
+
+  return res.json({ message: CARDS_MESSAGES.ARCHIVE_CARD_SUCCESS, result })
+}
+
+export const reopenCardController = async (req: Request<CardParams>, res: Response) => {
+  const { card_id } = req.params
+
+  const result = await cardsService.reopenCard(card_id)
+
+  return res.json({ message: CARDS_MESSAGES.REOPEN_CARD_SUCCESS, result })
+}
+
 export const addCardCommentController = async (req: Request<CardParams, any, AddCardCommentReqBody>, res: Response) => {
   const { card_id } = req.params
   const { user_id } = req.decoded_authorization as TokenPayload

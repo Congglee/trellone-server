@@ -333,19 +333,36 @@ export const updateBoardValidator = validate(
       background_color: {
         optional: true,
         isString: { errorMessage: BOARDS_MESSAGES.BACKGROUND_COLOR_MUST_BE_STRING }
-      },
-      _destroy: {
+      }
+    },
+    ['body']
+  )
+)
+
+export const reopenBoardValidator = validate(
+  checkSchema(
+    {
+      workspace_id: {
         optional: true,
+        isString: { errorMessage: BOARDS_MESSAGES.WORKSPACE_ID_MUST_BE_STRING },
+        trim: true,
         custom: {
-          options: (value) => {
-            if (typeof value !== 'boolean' && typeof value !== 'undefined') {
-              throw new Error(BOARDS_MESSAGES.BOARD_ARCHIVE_STATUS_MUST_BE_BOOLEAN)
+          options: async (value) => {
+            if (!ObjectId.isValid(value)) {
+              throw new Error(BOARDS_MESSAGES.INVALID_WORKSPACE_ID)
+            }
+
+            const workspace = await databaseService.workspaces.findOne({
+              _id: new ObjectId(value)
+            })
+
+            if (!workspace) {
+              throw new Error(BOARDS_MESSAGES.WORKSPACE_NOT_FOUND)
             }
 
             return true
           }
-        },
-        toBoolean: true
+        }
       }
     },
     ['body']
@@ -410,35 +427,25 @@ export const boardWorkspaceIdValidator = validate(
   )
 )
 
-export const rejectIfBoardClosed = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+export const ensureBoardOpen = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
+  const board = (req as Request).board as Board
+
+  assertBoardIsOpen(board)
+
+  next()
+})
+
+export const ensureBoardClosed = wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
   const board = (req as Request).board as Board
 
   if (!board || !board._destroy) {
-    return next()
+    throw new ErrorWithStatus({
+      status: HTTP_STATUS.BAD_REQUEST,
+      message: BOARDS_MESSAGES.BOARD_IS_NOT_CLOSED
+    })
   }
 
-  // Get body from request, if not exists then assign empty object
-  const body = (req.body || {}) as Record<string, unknown>
-
-  // Check if the request is only for reopening the board
-  // hasOnlyReopenFlag will be true if:
-  // 1. Body contains '_destroy' property
-  // 2. Value of '_destroy' is false (meaning want to reopen the board)
-  // 3. Body contains only '_destroy' property (no other properties)
-  const hasOnlyReopenFlag =
-    Object.prototype.hasOwnProperty.call(body, '_destroy') &&
-    body._destroy === false &&
-    Object.keys(body).every((key) => key === '_destroy' || key === 'workspace_id')
-
-  // If the request is not for reopening the board (hasOnlyReopenFlag = false)
-  // then check if the board is closed, if closed then throw error
-  // This means: only allow reopening operation when board is closed,
-  // other operations will be rejected
-  if (!hasOnlyReopenFlag) {
-    assertBoardIsOpen(board)
-  }
-
-  return next()
+  next()
 })
 
 export const boardMemberIdValidator = validate(

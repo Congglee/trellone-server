@@ -8,6 +8,7 @@ import {
   CreateBoardReqBody,
   EditBoardMemberRoleReqBody,
   JoinedWorkspaceBoardQuery,
+  ReopenBoardReqBody,
   UpdateBoardReqBody
 } from '~/models/requests/Board.requests'
 import { TokenPayload } from '~/models/requests/User.requests'
@@ -75,6 +76,18 @@ export const updateBoardController = async (req: Request<BoardParams, any, Updat
   const { board_id } = req.params
   const result = await boardsService.updateBoard(board_id, req.body)
   return res.json({ message: BOARDS_MESSAGES.UPDATE_BOARD_SUCCESS, result })
+}
+
+export const archiveBoardController = async (req: Request<BoardParams>, res: Response) => {
+  const { board_id } = req.params
+  const result = await boardsService.archiveBoard(board_id)
+  return res.json({ message: BOARDS_MESSAGES.ARCHIVE_BOARD_SUCCESS, result })
+}
+
+export const reopenBoardController = async (req: Request<BoardParams, any, ReopenBoardReqBody>, res: Response) => {
+  const { board_id } = req.params
+  const result = await boardsService.reopenBoard(board_id, req.body)
+  return res.json({ message: BOARDS_MESSAGES.REOPEN_BOARD_SUCCESS, result })
 }
 
 export const leaveBoardController = async (req: Request<BoardParams>, res: Response) => {
