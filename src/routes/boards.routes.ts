@@ -7,7 +7,9 @@ import {
   getBoardsController,
   getJoinedWorkspaceBoardsController,
   leaveBoardController,
-  updateBoardController
+  updateBoardController,
+  archiveBoardController,
+  reopenBoardController
 } from '~/controllers/boards.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import {
@@ -18,13 +20,15 @@ import {
   editBoardMemberRoleValidator,
   getBoardsValidator,
   leaveBoardValidator,
-  rejectIfBoardClosed,
+  ensureBoardOpen,
+  ensureBoardClosed,
   requireBoardMembership,
-  updateBoardValidator
+  updateBoardValidator,
+  reopenBoardValidator
 } from '~/middlewares/boards.middlewares'
 import { filterMiddleware, paginationValidator } from '~/middlewares/common.middlewares'
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'
-import { UpdateBoardReqBody } from '~/models/requests/Board.requests'
+import { ReopenBoardReqBody, UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { requireBoardPermission } from '~/middlewares/rbac.middlewares'
 import { BoardPermission } from '~/constants/permissions'
@@ -69,18 +73,17 @@ boardsRouter.put(
   accessTokenValidator,
   verifiedUserValidator,
   boardIdValidator,
-  rejectIfBoardClosed,
+  ensureBoardOpen,
   requireBoardMembership,
   updateBoardValidator,
   filterMiddleware<UpdateBoardReqBody>([
     'title',
     'description',
-    'type',
+    'visibility',
     'workspace_id',
     'column_order_ids',
     'cover_photo',
-    'background_color',
-    '_destroy'
+    'background_color'
   ]),
   requireBoardPermission([
     BoardPermission.ManageBoard,
@@ -89,6 +92,30 @@ boardsRouter.put(
     BoardPermission.ReorderColumn
   ]),
   wrapRequestHandler(updateBoardController)
+)
+
+boardsRouter.patch(
+  '/:board_id/archive',
+  accessTokenValidator,
+  verifiedUserValidator,
+  boardIdValidator,
+  requireBoardMembership,
+  ensureBoardOpen,
+  requireBoardPermission(BoardPermission.ManageBoard),
+  wrapRequestHandler(archiveBoardController)
+)
+
+boardsRouter.patch(
+  '/:board_id/reopen',
+  accessTokenValidator,
+  verifiedUserValidator,
+  boardIdValidator,
+  requireBoardMembership,
+  ensureBoardClosed,
+  reopenBoardValidator,
+  filterMiddleware<ReopenBoardReqBody>(['workspace_id']),
+  requireBoardPermission(BoardPermission.ManageBoard, { allowClosed: true }),
+  wrapRequestHandler(reopenBoardController)
 )
 
 boardsRouter.post(
@@ -107,6 +134,7 @@ boardsRouter.delete(
   verifiedUserValidator,
   boardIdValidator,
   requireBoardMembership,
+  ensureBoardClosed,
   requireBoardPermission(BoardPermission.DeleteBoard),
   wrapRequestHandler(deleteBoardController)
 )

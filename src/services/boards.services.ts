@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb'
 import { BoardRole } from '~/constants/enums'
-import { CreateBoardReqBody, UpdateBoardReqBody } from '~/models/requests/Board.requests'
+import { CreateBoardReqBody, ReopenBoardReqBody, UpdateBoardReqBody } from '~/models/requests/Board.requests'
 import Board from '~/models/schemas/Board.schema'
 import databaseService from '~/services/database.services'
 import { envConfig } from '~/config/environment'
@@ -11,7 +11,7 @@ class BoardsService {
     const newBoard = new Board({
       title: body.title,
       description: body.description,
-      type: body.type,
+      visibility: body.visibility,
       cover_photo: body.cover_photo,
       members: [
         {
@@ -149,7 +149,41 @@ class BoardsService {
       payload.column_order_ids = body.column_order_ids.map((id) => new ObjectId(id))
     }
 
+    const updatedBoard = await databaseService.boards.findOneAndUpdate(
+      { _id: new ObjectId(board_id) },
+      {
+        $set: payload,
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return updatedBoard
+  }
+
+  async archiveBoard(board_id: string) {
+    const updatedBoard = await databaseService.boards.findOneAndUpdate(
+      { _id: new ObjectId(board_id) },
+      {
+        $set: { _destroy: true },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return updatedBoard
+  }
+
+  async reopenBoard(board_id: string, body: ReopenBoardReqBody) {
     const currentBoard = await databaseService.boards.findOne({ _id: new ObjectId(board_id) })
+
+    const payload: Record<string, ObjectId | boolean> = {
+      _destroy: false
+    }
+
+    if (body.workspace_id) {
+      payload.workspace_id = new ObjectId(body.workspace_id)
+    }
 
     const updatedBoard = await databaseService.boards.findOneAndUpdate(
       { _id: new ObjectId(board_id) },
@@ -160,25 +194,13 @@ class BoardsService {
       { returnDocument: 'after' }
     )
 
-    // Handle reopen with workspace reassignment scenario
-    const isReopenWithReassign = this.isReopenWithWorkspaceReassignment(currentBoard, body)
+    const workspaceChanged = Boolean(body.workspace_id) && body.workspace_id !== currentBoard?.workspace_id?.toString()
 
-    if (isReopenWithReassign && updatedBoard && body.workspace_id) {
+    if (workspaceChanged && updatedBoard && body.workspace_id) {
       await this.addBoardMembersAsWorkspaceGuests(updatedBoard, new ObjectId(body.workspace_id))
     }
 
     return updatedBoard
-  }
-
-  private isReopenWithWorkspaceReassignment(currentBoard: Board | null, updateBody: UpdateBoardReqBody) {
-    if (!currentBoard || !updateBody.workspace_id) {
-      return false
-    }
-
-    const isReopening = currentBoard._destroy === true && updateBody._destroy === false
-    const isWorkspaceChanged = updateBody.workspace_id !== currentBoard.workspace_id?.toString()
-
-    return isReopening && isWorkspaceChanged
   }
 
   private async addBoardMembersAsWorkspaceGuests(board: Board, workspaceId: ObjectId) {

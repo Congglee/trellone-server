@@ -69,7 +69,7 @@ npm run build
 
 # Start compiled app for a given environment
 npm run start:dev   # NODE_ENV=development
-npm run start:stag  # NODE_ENV=staging
+npm run start:stage  # NODE_ENV=staging
 npm run start:prod  # NODE_ENV=production
 ```
 
@@ -87,14 +87,22 @@ npm run prettier:fix
 Copy the following into your `.env.{environment}` file and fill in values as appropriate.
 
 ```env
+# Server Configuration
+# The port number on which the API server will listen
 PORT=8000
 
+# The host URL for the API server
 HOST='http://localhost'
 
+# MongoDB Database Configuration
+# MongoDB Atlas database credentials - obtain from: https://www.mongodb.com/products/platform/atlas-database
+# The name of your MongoDB database
 DB_NAME=''
-DB_USERNAME=''
-DB_PASSWORD=''
+# MongoDB database uri
+DB_URI=''
 
+# MongoDB Collection Names
+# Collection names for different data entities in the database
 DB_WORKSPACES_COLLECTION="workspaces"
 DB_BOARDS_COLLECTION='boards'
 DB_COLUMNS_COLLECTION='columns'
@@ -103,32 +111,59 @@ DB_USERS_COLLECTION='users'
 DB_REFRESH_TOKENS_COLLECTION='refresh_tokens'
 DB_INVITATIONS_COLLECTION='invitations'
 
+# Security Configuration
+# Secret key used for hashing passwords and other sensitive data
+# Generate a strong, random string for production use
 PASSWORD_SECRET=''
 
+# JWT (JSON Web Token) Secret Keys
+# Unique secret keys for signing different types of JWT tokens
+# Generate strong, unique random strings for each token type
 JWT_SECRET_ACCESS_TOKEN=''
 JWT_SECRET_REFRESH_TOKEN=''
 JWT_SECRET_EMAIL_VERIFY_TOKEN=''
 JWT_SECRET_FORGOT_PASSWORD_TOKEN=''
 JWT_SECRET_INVITE_TOKEN=''
 
+# JWT Token Expiration Times
+# Define how long each type of JWT token remains valid
+# Use formats like '15m' (15 minutes), '7d' (7 days), '1h' (1 hour)
 ACCESS_TOKEN_EXPIRES_IN=''
 REFRESH_TOKEN_EXPIRES_IN=''
 EMAIL_VERIFY_TOKEN_EXPIRES_IN=''
 FORGOT_PASSWORD_TOKEN_EXPIRES_IN=''
 INVITE_TOKEN_EXPIRES_IN=''
 
+# Client Application URL
+# The base URL of the frontend client application
 CLIENT_URL='http://localhost:3000'
 
+# Google OAuth Configuration
+# Google OAuth 2.0 credentials for authentication
+# Obtain from Google Cloud Console: https://console.cloud.google.com/apis/credentials
+# Create OAuth 2.0 credentials for a Web Application and enable Google+ API
 GOOGLE_CLIENT_ID=''
 GOOGLE_CLIENT_SECRET=''
+# OAuth redirect URI - must match the one configured in Google Cloud Console
 GOOGLE_REDIRECT_URI=''
+# Client-side callback URL after successful OAuth authentication
 CLIENT_REDIRECT_CALLBACK=''
 
+# Resend Email Service Configuration
+# Email service for sending transactional emails
+# Get your API key from: https://resend.com/api-keys
 RESEND_API_KEY=''
+# Verified sender email address in your Resend account
 RESEND_EMAIL_FROM_ADDRESS=''
 
+# UploadThing File Upload Service Configuration
+# File upload and storage service
+# Get your token from: https://uploadthing.com/
 UPLOADTHING_TOKEN=''
 
+# Unsplash Image Service Configuration
+# Image API for cover photos and other image features
+# Register your application at: https://unsplash.com/developers
 UNSPLASH_ACCESS_KEY=''
 UNSPLASH_SECRET_KEY=''
 UNSPLASH_APPLICATION_ID=''
@@ -173,18 +208,28 @@ Note: API documentation will be added in the future.
 
 ## Deploy 🚢
 
-### Render (Staging)
+### Render
 
-- Staging API is deployed on Render. Ensure MongoDB Atlas Network Access includes Render outbound IPs.
+- You can deploy this API to Render for any environment (development, staging, or production). The free tier is supported for quick, no‑cost deployments.
+- Ensure MongoDB Atlas Network Access includes Render outbound IPs.
 - Build Command:
   ```bash
   npm install; npm run build
   ```
-- Start Command (staging):
+- Start Command (choose per environment):
+
   ```bash
-  npm run start:stag
+  # Development
+  npm run start:dev
+
+  # Staging
+  npm run start:stage
+
+  # Production
+  npm run start:prod
   ```
-- Configure environment variables in Render dashboard.
+
+- Configure environment variables in the Render dashboard. The server reads `.env.{NODE_ENV}` at runtime (e.g., `.env.development`, `.env.staging`, `.env.production`).
 
 ### Docker
 

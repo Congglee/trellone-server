@@ -1,12 +1,12 @@
 import { ObjectId } from 'mongodb'
-import { BoardType } from '~/constants/enums'
+import { BoardVisibility } from '~/constants/enums'
 import { BoardMember } from '~/models/Extensions'
 
 interface BoardSchema {
   _id?: ObjectId
   title: string
   description?: string
-  type: BoardType
+  visibility: BoardVisibility
   cover_photo?: string
   background_color?: string
   workspace_id: ObjectId | null
@@ -21,7 +21,7 @@ export default class Board {
   _id?: ObjectId
   title: string
   description: string
-  type: BoardType
+  visibility: BoardVisibility
   cover_photo: string
   background_color: string
   workspace_id: ObjectId | null
@@ -37,7 +37,7 @@ export default class Board {
     this._id = board._id
     this.title = board.title
     this.description = board.description || ''
-    this.type = board.type || BoardType.Public
+    this.visibility = board.visibility || BoardVisibility.Public
     this.cover_photo = board.cover_photo || ''
     this.background_color = board.background_color || ''
     this.workspace_id = board.workspace_id || null

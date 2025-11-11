@@ -13,7 +13,6 @@ export interface UpdateCardReqBody {
   is_completed?: boolean | null
   description?: string
   cover_photo?: string
-  _destroy?: boolean
 }
 
 export interface CardParams extends ParamsDictionary {

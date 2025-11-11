@@ -63,7 +63,7 @@ workspacesRouter.put(
   verifiedUserValidator,
   workspaceIdValidator,
   updateWorkspaceValidator,
-  filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'type', 'logo']),
+  filterMiddleware<UpdateWorkspaceReqBody>(['title', 'description', 'visibility', 'logo']),
   requireWorkspacePermission(WorkspacePermission.ManageWorkspace),
   wrapRequestHandler(updateWorkspaceController)
 )

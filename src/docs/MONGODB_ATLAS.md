@@ -1,6 +1,6 @@
 # 📖 Set Up MongoDB Atlas for Trellone API
 
-Trellone API connects to MongoDB Atlas using credentials from environment variables. The connection URI is constructed in code from `DB_USERNAME`, `DB_PASSWORD` and a fixed cluster host.
+Trellone API connects to MongoDB Atlas using credentials from environment variables. Provide a full MongoDB connection string via `DB_URI` and set your database name via `DB_NAME`.
 
 ## 1) Create a Cluster and Database User
 
@@ -24,8 +24,7 @@ In `.env.{environment}` set:
 
 ```env
 DB_NAME=trellone
-DB_USERNAME=your-db-username
-DB_PASSWORD=your-db-password
+DB_URI=mongodb+srv://<username>:<password>@<your-cluster-host>/?retryWrites=true&w=majority&appName=<your-app-name>
 
 DB_WORKSPACES_COLLECTION=workspaces
 DB_BOARDS_COLLECTION=boards
@@ -36,13 +35,7 @@ DB_REFRESH_TOKENS_COLLECTION=refresh_tokens
 DB_INVITATIONS_COLLECTION=invitations
 ```
 
-The code constructs the connection string like:
-
-```
-mongodb+srv://<DB_USERNAME>:<DB_PASSWORD>@trellone-cluster0.nnecc.mongodb.net/?retryWrites=true&w=majority&appName=<DB_NAME>
-```
-
-This means the Atlas cluster host is assumed to be `trellone-cluster0.nnecc.mongodb.net`. If your host differs, update the code or align your cluster host accordingly.
+Use a standard MongoDB Atlas connection string for `DB_URI`. You can copy the URI from Atlas (Connect → Drivers) and paste it into `DB_URI`.
 
 ## 4) Verify Connection
 

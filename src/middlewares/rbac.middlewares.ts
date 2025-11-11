@@ -18,7 +18,7 @@ import Workspace from '~/models/schemas/Workspace.schema'
 import databaseService from '~/services/database.services'
 import { wrapRequestHandler } from '~/utils/handlers'
 import { hasBoardPermission, hasWorkspacePermission } from '~/utils/rbac'
-import { assertBoardIsOpen } from '~/utils/guards'
+import { assertBoardIsOpen, assertCardIsOpen } from '~/utils/guards'
 import { BoardRole } from '~/constants/enums'
 
 export const requireWorkspacePermission = (permission: WorkspacePermission | WorkspacePermission[]) => {
@@ -58,7 +58,10 @@ export const requireWorkspacePermission = (permission: WorkspacePermission | Wor
   })
 }
 
-export const requireBoardPermission = (permission: BoardPermission | BoardPermission[]) => {
+export const requireBoardPermission = (
+  permission: BoardPermission | BoardPermission[],
+  options?: { allowClosed?: boolean }
+) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const board = req.board as Board | undefined
 
@@ -71,36 +74,22 @@ export const requireBoardPermission = (permission: BoardPermission | BoardPermis
 
     const { user_id } = req.decoded_authorization as TokenPayload
 
-    // Workspace is optionally attached by validators/aggregations
     const workspace = (board as { workspace?: Workspace }).workspace || null
 
     const requested = Array.isArray(permission) ? permission : [permission]
     const includesView = requested.includes(BoardPermission.ViewBoard)
     const includesDelete = requested.includes(BoardPermission.DeleteBoard)
+    const allowClosed = options?.allowClosed ?? false
 
-    if (!includesView) {
-      if (includesDelete) {
-        // Only allow deleting a board if it is already closed
-        if (!board._destroy) {
-          throw new ErrorWithStatus({
-            status: HTTP_STATUS.FORBIDDEN,
-            message: BOARDS_MESSAGES.BOARD_MUST_BE_CLOSED_BEFORE_DELETION
-          })
-        }
-      } else {
-        const body = (req.body || {}) as Record<string, unknown>
+    if (includesDelete && !board._destroy) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.FORBIDDEN,
+        message: BOARDS_MESSAGES.BOARD_MUST_BE_CLOSED_BEFORE_DELETION
+      })
+    }
 
-        // Allow reopen with optional workspace reassignment
-        const isReopenAttempt =
-          typeof req.params.board_id === 'string' &&
-          Object.prototype.hasOwnProperty.call(body, '_destroy') &&
-          body._destroy === false &&
-          Object.keys(body).every((key) => key === '_destroy' || key === 'workspace_id')
-
-        if (!isReopenAttempt) {
-          assertBoardIsOpen(board)
-        }
-      }
+    if (!allowClosed && !includesView && !includesDelete) {
+      assertBoardIsOpen(board)
     }
 
     // If board is closed, only Board Admins can view its details
@@ -235,7 +224,10 @@ export const requireColumnPermission = (permission: BoardPermission | BoardPermi
   })
 }
 
-export const requireCardPermission = (permission: BoardPermission | BoardPermission[]) => {
+export const requireCardPermission = (
+  permission: BoardPermission | BoardPermission[],
+  options?: { allowClosed?: boolean }
+) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const card = req.card as Card | undefined
 
@@ -250,9 +242,22 @@ export const requireCardPermission = (permission: BoardPermission | BoardPermiss
 
     const requested = Array.isArray(permission) ? permission : [permission]
     const includesView = requested.includes(BoardPermission.ViewBoard)
+    const includesDelete = requested.includes(BoardPermission.DeleteCard)
+    const allowClosed = options?.allowClosed ?? false
 
     if (!includesView) {
       assertBoardIsOpen(board)
+    }
+
+    if (includesDelete && !card._destroy) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.FORBIDDEN,
+        message: CARDS_MESSAGES.CARD_MUST_BE_ARCHIVED_BEFORE_DELETION
+      })
+    }
+
+    if (!allowClosed && !includesView && !includesDelete) {
+      assertCardIsOpen(card as Card)
     }
 
     const { user_id } = req.decoded_authorization as TokenPayload
@@ -274,7 +279,8 @@ export const requireCardPermission = (permission: BoardPermission | BoardPermiss
 
 export const requireCardPermissionFromBody = (
   permission: BoardPermission | BoardPermission[],
-  fieldName = 'current_card_id'
+  fieldName = 'current_card_id',
+  options?: { allowClosed?: boolean }
 ) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
     const cardId = (req.body as Record<string, string | undefined>)[fieldName]
@@ -299,8 +305,22 @@ export const requireCardPermissionFromBody = (
 
     const requested = Array.isArray(permission) ? permission : [permission]
     const includesView = requested.includes(BoardPermission.ViewBoard)
+    const includesDelete = requested.includes(BoardPermission.DeleteCard)
+    const allowClosed = options?.allowClosed ?? false
+
     if (!includesView) {
       assertBoardIsOpen(board)
+    }
+
+    if (includesDelete && !card._destroy) {
+      throw new ErrorWithStatus({
+        status: HTTP_STATUS.FORBIDDEN,
+        message: CARDS_MESSAGES.CARD_MUST_BE_ARCHIVED_BEFORE_DELETION
+      })
+    }
+
+    if (!allowClosed && !includesView && !includesDelete) {
+      assertCardIsOpen(card as Card)
     }
 
     const { user_id } = req.decoded_authorization as TokenPayload

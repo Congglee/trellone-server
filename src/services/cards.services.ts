@@ -48,6 +48,32 @@ class CardsService {
     return card
   }
 
+  async archiveCard(card_id: string) {
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      {
+        $set: { _destroy: true },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return card
+  }
+
+  async reopenCard(card_id: string) {
+    const card = await databaseService.cards.findOneAndUpdate(
+      { _id: new ObjectId(card_id) },
+      {
+        $set: { _destroy: false },
+        $currentDate: { updated_at: true }
+      },
+      { returnDocument: 'after' }
+    )
+
+    return card
+  }
+
   async addCardComment({ card_id, user_id, body }: { card_id: string; user_id: string; body: AddCardCommentReqBody }) {
     const user = await databaseService.users.findOne(
       { _id: new ObjectId(user_id) },
