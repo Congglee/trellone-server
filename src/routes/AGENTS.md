@@ -23,6 +23,7 @@ app.use('/boards', boardsRouter)
 - **Exports**: Export default router instance
 
 ✅ **DO**: Follow `src/routes/boards.routes.ts` pattern
+
 - Import Router from express
 - Import controllers and middlewares
 - Define routes with middleware chains
@@ -31,6 +32,7 @@ app.use('/boards', boardsRouter)
 ### Route Structure
 
 ✅ **DO**: Use Express Router instances
+
 ```typescript
 import { Router } from 'express'
 const boardsRouter = Router()
@@ -50,6 +52,7 @@ export default boardsRouter
 ### Middleware Chaining Order
 
 ✅ **DO**: Follow consistent middleware order
+
 1. **Authentication**: `accessTokenValidator` (for protected routes)
 2. **User Verification**: `verifiedUserValidator` (if email verification required)
 3. **Resource Validation**: Feature-specific ID validators (e.g., `boardIdValidator`)
@@ -57,17 +60,43 @@ export default boardsRouter
 5. **Body Filtering**: `filterMiddleware<Type>([...fields])`
 6. **Controller**: Wrapped with `wrapRequestHandler`
 
-✅ **DO**: Apply authentication first for protected routes
+### Authentication Routes
+
+✅ **DO**: Define authentication routes without access token validator
+
 ```typescript
-boardsRouter.get(
-  '/:board_id',
-  accessTokenValidator,
-  boardIdValidator,
-  wrapRequestHandler(getBoardController)
-)
+// Public routes (no authentication required)
+authRouter.post('/register', registerValidator, wrapRequestHandler(registerController))
+authRouter.post('/login', loginValidator, wrapRequestHandler(loginController))
+authRouter.post('/logout', wrapRequestHandler(logoutController))
+authRouter.post('/refresh-token', refreshTokenValidator, wrapRequestHandler(refreshTokenController))
+authRouter.get('/oauth/google', OAuthValidator, wrapRequestHandler(OAuthController))
+```
+
+✅ **DO**: Use appropriate validators for each auth endpoint
+
+```typescript
+// Register: validate email uniqueness and password strength
+authRouter.post('/register', registerValidator, wrapRequestHandler(registerController))
+
+// Login: validate credentials and check password login enabled
+authRouter.post('/login', loginValidator, wrapRequestHandler(loginController))
+
+// Refresh token: validate refresh token from cookies
+authRouter.post('/refresh-token', refreshTokenValidator, wrapRequestHandler(refreshTokenController))
+
+// OAuth: validate Google OAuth code
+authRouter.get('/oauth/google', OAuthValidator, wrapRequestHandler(OAuthController))
+```
+
+✅ **DO**: Apply authentication first for protected routes
+
+```typescript
+boardsRouter.get('/:board_id', accessTokenValidator, boardIdValidator, wrapRequestHandler(getBoardController))
 ```
 
 ✅ **DO**: Use `wrapRequestHandler` for all controllers
+
 ```typescript
 wrapRequestHandler(createBoardController)
 ```
@@ -75,6 +104,7 @@ wrapRequestHandler(createBoardController)
 ### Route Mounting
 
 ✅ **DO**: Mount routes in `app.ts` with clear prefixes
+
 ```typescript
 // In app.ts
 import boardsRouter from '~/routes/boards.routes'
@@ -82,6 +112,7 @@ app.use('/boards', boardsRouter)
 ```
 
 ✅ **DO**: Follow domain hierarchy
+
 - `/workspaces` → `/boards` → `/columns` → `/cards`
 - `/auth` for authentication
 - `/medias` for file uploads
@@ -90,6 +121,7 @@ app.use('/boards', boardsRouter)
 ### HTTP Method Conventions
 
 ✅ **DO**: Use appropriate HTTP methods
+
 - **POST**: Create new resources (`POST /boards`)
 - **GET**: Retrieve resources (`GET /boards/:board_id`)
 - **PUT**: Update entire resources (`PUT /boards/:board_id`)
@@ -99,6 +131,7 @@ app.use('/boards', boardsRouter)
 ### Body Filtering
 
 ✅ **DO**: Use `filterMiddleware` to whitelist allowed fields
+
 ```typescript
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import { CREATE_BOARD_ALLOWED_FIELDS } from '~/models/requests/Board.requests'
@@ -109,6 +142,7 @@ filterMiddleware<CreateBoardReqBody>(CREATE_BOARD_ALLOWED_FIELDS)
 ### Import Order
 
 ✅ **DO**: Follow consistent import order
+
 1. Express Router
 2. Controllers
 3. Middlewares (auth → feature-specific → common)
@@ -163,4 +197,3 @@ npm run lint
 # Verify routes are mounted in app.ts
 rg -n "app\.use\(" src/app.ts
 ```
-

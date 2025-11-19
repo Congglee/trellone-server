@@ -12,10 +12,12 @@ type ErrorsType = Record<
 export class ErrorWithStatus {
   message: string
   status: number
+  error_code?: string
 
-  constructor({ message, status }: { message: string; status: number }) {
+  constructor({ message, status, error_code }: { message: string; status: number; error_code?: string }) {
     this.message = message
     this.status = status
+    this.error_code = error_code
   }
 }
 

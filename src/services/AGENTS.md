@@ -191,7 +191,7 @@ return {
 ## Touch Points / Key Files
 
 - **Database Service**: `src/services/database.services.ts` - MongoDB connection and collections
-- **Auth Service**: `src/services/auth.services.ts` - Authentication and token management
+- **Auth Service**: `src/services/auth.services.ts` - Authentication and token management (login, register, OAuth, password reset)
 - **Boards Service**: `src/services/boards.services.ts` - Board business logic
 - **Cards Service**: `src/services/cards.services.ts` - Card operations
 - **Columns Service**: `src/services/columns.services.ts` - Column management
@@ -199,6 +199,125 @@ return {
 - **Users Service**: `src/services/users.services.ts` - User management
 - **Medias Service**: `src/services/medias.services.ts` - File processing
 - **Invitations Service**: `src/services/invitations.services.ts` - Invitation handling
+
+## Authentication Service Patterns
+
+### Token Management
+
+✅ **DO**: Use private methods for token signing
+```typescript
+class AuthService {
+  private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    return signToken({
+      payload: { user_id, token_type: TokenType.AccessToken, verify },
+      privateKey: envConfig.jwtSecretAccessToken as string,
+      options: { expiresIn: envConfig.accessTokenExpiresIn }
+    })
+  }
+
+  private signRefreshToken({ user_id, verify, exp }: { user_id: string; verify: UserVerifyStatus; exp?: number }) {
+    if (exp) {
+      return signToken({
+        payload: { user_id, token_type: TokenType.RefreshToken, verify, exp },
+        privateKey: envConfig.jwtSecretRefreshToken as string
+      })
+    }
+    return signToken({
+      payload: { user_id, token_type: TokenType.RefreshToken, verify },
+      privateKey: envConfig.jwtSecretRefreshToken as string,
+      options: { expiresIn: envConfig.refreshTokenExpiresIn }
+    })
+  }
+}
+```
+
+✅ **DO**: Store refresh tokens in database
+```typescript
+async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+    user_id: user_id.toString(),
+    verify
+  })
+
+  const { iat, exp } = await this.decodeRefreshToken(refresh_token)
+
+  await databaseService.refreshTokens.insertOne(
+    new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token, iat, exp })
+  )
+
+  return { access_token, refresh_token }
+}
+```
+
+✅ **DO**: Rotate refresh tokens on refresh
+```typescript
+async refreshToken({ user_id, verify, refresh_token }: { user_id: string; verify: UserVerifyStatus; refresh_token: string }) {
+  const [new_access_token, new_refresh_token] = await Promise.all([
+    this.signAccessToken({ user_id, verify }),
+    this.signRefreshToken({ user_id, verify }),
+    databaseService.refreshTokens.deleteOne({ token: refresh_token }) // Delete old token
+  ])
+  
+  const decoded_refresh_token = await this.decodeRefreshToken(new_refresh_token)
+
+  await databaseService.refreshTokens.insertOne(
+    new RefreshToken({
+      user_id: new ObjectId(user_id),
+      token: new_refresh_token,
+      iat: decoded_refresh_token.iat,
+      exp: decoded_refresh_token.exp
+    })
+  )
+
+  return { access_token: new_access_token, refresh_token: new_refresh_token }
+}
+```
+
+✅ **DO**: Handle OAuth user creation and linking
+```typescript
+async oauth(userInfo: GoogleUserInfo) {
+  // Check for existing user by google_id or email
+  let user = await databaseService.users.findOne({ google_id: userInfo.id })
+  if (!user) {
+    user = await databaseService.users.findOne({ email: userInfo.email })
+  }
+
+  if (user) {
+    // Link Google account if not already linked
+    if (!user.auth_providers.includes('google')) {
+      await databaseService.users.updateOne(
+        { _id: user._id },
+        { $set: { auth_providers: [...user.auth_providers, 'google'] } }
+      )
+    }
+    // Generate tokens for existing user
+    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+      user_id: user._id.toString(),
+      verify: UserVerifyStatus.Verified
+    })
+    return { access_token, refresh_token, newUser: 0, verify: UserVerifyStatus.Verified }
+  } else {
+    // Create new user
+    const user_id = new ObjectId()
+    await databaseService.users.insertOne(
+      new User({
+        _id: user_id,
+        email: userInfo.email,
+        auth_providers: ['google'],
+        google_id: userInfo.id,
+        verify: UserVerifyStatus.Verified
+      })
+    )
+    // Generate tokens and create workspace
+    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+      user_id: user_id.toString(),
+      verify: UserVerifyStatus.Verified
+    })
+    await workspacesService.createWorkspace(user_id.toString(), { /* workspace data */ })
+    return { access_token, refresh_token, newUser: 1, verify: UserVerifyStatus.Verified }
+  }
+}
+```
 
 ## JIT Index Hints
 

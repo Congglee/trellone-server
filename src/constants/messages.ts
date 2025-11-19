@@ -35,8 +35,17 @@ export const AUTH_MESSAGES = {
   VERIFY_FORGOT_PASSWORD_SUCCESS: 'Verify forgot password successfully',
   RESET_PASSWORD_SUCCESS: 'Reset password successfully',
   GMAIL_NOT_VERIFIED: 'Gmail not verified',
+  PASSWORD_LOGIN_NOT_ENABLED:
+    'This account currently uses Google login. Please continue with Google or set a password to enable email login.',
+  PASSWORD_LOGIN_NOT_ENABLED_FORGOT_PASSWORD:
+    'This account currently uses Google login. Please continue with Google or set a password from your account settings to enable email login.',
+  ENABLE_PASSWORD_LOGIN_SUCCESS: 'Password login enabled successfully',
   INSUFFICIENT_WORKSPACE_PERMISSIONS: 'Insufficient workspace permissions',
-  INSUFFICIENT_BOARD_PERMISSIONS: 'Insufficient board permissions'
+  INSUFFICIENT_BOARD_PERMISSIONS: 'Insufficient board permissions',
+  OAUTH_CODE_IS_REQUIRED: 'OAuth code is required',
+  OAUTH_CODE_MUST_BE_STRING: 'OAuth code must be a string',
+  INVALID_OAUTH_CODE: 'Invalid OAuth code',
+  GOOGLE_USER_INFO_MISSING_ID_OR_EMAIL: 'Google user info is missing id or email'
 }
 
 export const USERS_MESSAGES = {

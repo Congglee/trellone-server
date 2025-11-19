@@ -1,8 +1,9 @@
 import { Request } from 'express'
-import { JsonWebTokenError, SignOptions } from 'jsonwebtoken'
+import { JsonWebTokenError, SignOptions, TokenExpiredError } from 'jsonwebtoken'
 import jwt from 'jsonwebtoken'
 import { capitalize } from 'lodash'
 import { envConfig } from '~/config/environment'
+import { AUTH_ERROR_CODES } from '~/constants/error-codes'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { AUTH_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
@@ -65,6 +66,14 @@ export const verifyAccessToken = async (access_token: string, req?: Request) => 
 
     return decoded_authorization
   } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      throw new ErrorWithStatus({
+        message: capitalize(error.message),
+        status: HTTP_STATUS.UNAUTHORIZED,
+        error_code: AUTH_ERROR_CODES.TOKEN_EXPIRED
+      })
+    }
+
     throw new ErrorWithStatus({
       message: capitalize((error as JsonWebTokenError).message),
       status: HTTP_STATUS.UNAUTHORIZED

@@ -72,3 +72,16 @@ export interface Attachment {
   }
   added_at: Date
 }
+
+export interface GoogleUserInfo {
+  id: string
+  email: string
+  verified_email: boolean
+  name: string
+  picture: string
+}
+
+export interface GoogleTokens {
+  id_token: string
+  access_token: string
+}

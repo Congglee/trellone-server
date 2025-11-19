@@ -1,3 +1,4 @@
+import { GoogleTokens, GoogleUserInfo } from '~/models/Extensions'
 import { InviteTokenPayload } from '~/models/requests/Invitation.requests'
 import { TokenPayload } from '~/models/requests/User.requests'
 import Board from '~/models/schemas/Board.schema'
@@ -22,5 +23,8 @@ declare module 'express' {
     invitee?: User
     invitation?: Invitation
     workspace?: Workspace
+
+    google_user_info?: GoogleUserInfo
+    google_tokens?: GoogleTokens
   }
 }

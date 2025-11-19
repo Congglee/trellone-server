@@ -98,7 +98,8 @@ export const workspaceIdValidator = validate(
                         $project: {
                           password: 0,
                           email_verify_token: 0,
-                          forgot_password_token: 0
+                          forgot_password_token: 0,
+                          google_id: 0
                         }
                       }
                     ]
@@ -115,7 +116,8 @@ export const workspaceIdValidator = validate(
                         $project: {
                           password: 0,
                           email_verify_token: 0,
-                          forgot_password_token: 0
+                          forgot_password_token: 0,
+                          google_id: 0
                         }
                       }
                     ]

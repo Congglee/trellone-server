@@ -1,8 +1,19 @@
 import { Router } from 'express'
-import { changePasswordController, getMeController, updateMeController } from '~/controllers/users.controllers'
+import {
+  changePasswordController,
+  enablePasswordLoginController,
+  getMeController,
+  updateMeController
+} from '~/controllers/users.controllers'
 import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
-import { changePasswordValidator, updateMeValidator, verifiedUserValidator } from '~/middlewares/users.middlewares'
+import {
+  changePasswordValidator,
+  enablePasswordLoginUserValidator,
+  enablePasswordLoginValidator,
+  updateMeValidator,
+  verifiedUserValidator
+} from '~/middlewares/users.middlewares'
 import { UpdateMeReqBody } from '~/models/requests/User.requests'
 import { wrapRequestHandler } from '~/utils/handlers'
 
@@ -25,6 +36,15 @@ usersRouter.put(
   verifiedUserValidator,
   changePasswordValidator,
   wrapRequestHandler(changePasswordController)
+)
+
+usersRouter.post(
+  '/enable-password-login',
+  accessTokenValidator,
+  verifiedUserValidator,
+  enablePasswordLoginValidator,
+  enablePasswordLoginUserValidator,
+  wrapRequestHandler(enablePasswordLoginController)
 )
 
 export default usersRouter
