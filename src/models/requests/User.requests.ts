@@ -24,6 +24,10 @@ export interface VerifyEmailReqBody {
   email_verify_token: string
 }
 
+export interface ResendVerifyEmailReqBody {
+  email: string
+}
+
 export interface ForgotPasswordReqBody {
   email: string
 }
@@ -45,4 +49,9 @@ export interface UpdateMeReqBody {
 
 export interface ChangePasswordReqBody {
   password: string
+}
+
+export interface EnablePasswordLoginReqBody {
+  password: string
+  confirm_password: string
 }

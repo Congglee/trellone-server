@@ -77,7 +77,8 @@ class InvitationsService {
                 $project: {
                   password: 0,
                   email_verify_token: 0,
-                  forgot_password_token: 0
+                  forgot_password_token: 0,
+                  google_id: 0
                 }
               }
             ]
@@ -95,7 +96,8 @@ class InvitationsService {
                 $project: {
                   password: 0,
                   email_verify_token: 0,
-                  forgot_password_token: 0
+                  forgot_password_token: 0,
+                  google_id: 0
                 }
               }
             ]
@@ -174,7 +176,8 @@ class InvitationsService {
                 $project: {
                   password: 0,
                   email_verify_token: 0,
-                  forgot_password_token: 0
+                  forgot_password_token: 0,
+                  google_id: 0
                 }
               }
             ]
@@ -192,7 +195,8 @@ class InvitationsService {
                 $project: {
                   password: 0,
                   email_verify_token: 0,
-                  forgot_password_token: 0
+                  forgot_password_token: 0,
+                  google_id: 0
                 }
               }
             ]
@@ -384,7 +388,7 @@ class InvitationsService {
 
       invitee = await databaseService.users.findOne(
         { _id: new ObjectId(invitee_id) },
-        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0, google_id: 0 } }
       )
     }
 
@@ -447,7 +451,7 @@ class InvitationsService {
 
       invitee = await databaseService.users.findOne(
         { _id: new ObjectId(invitee_id) },
-        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+        { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0, google_id: 0 } }
       )
     }
 

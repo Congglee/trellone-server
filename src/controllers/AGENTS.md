@@ -133,7 +133,54 @@ if (!board) {
 
 ✅ **DO**: Set cookies with consistent security settings
 ```typescript
-res.cookie('access_token', token, {
+res.cookie('access_token', result.access_token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: ms('7 days')
+})
+
+res.cookie('refresh_token', result.refresh_token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: ms('7 days')
+})
+```
+
+✅ **DO**: Set cookies on login and OAuth
+```typescript
+// In loginController
+const result = await authService.login({ user_id: user_id.toString(), verify: user.verify })
+
+res.cookie('access_token', result.access_token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: ms('7 days')
+})
+
+res.cookie('refresh_token', result.refresh_token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: ms('7 days')
+})
+```
+
+✅ **DO**: Update cookies on token refresh
+```typescript
+// In refreshTokenController
+const result = await authService.refreshToken({ user_id, verify, refresh_token, exp })
+
+res.cookie('access_token', result.access_token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: ms('7 days')
+})
+
+res.cookie('refresh_token', result.refresh_token, {
   httpOnly: true,
   secure: true,
   sameSite: 'none',
@@ -143,8 +190,38 @@ res.cookie('access_token', token, {
 
 ✅ **DO**: Clear cookies on logout
 ```typescript
+// In logoutController
+const result = await authService.logout(refresh_token)
+
 res.clearCookie('access_token')
 res.clearCookie('refresh_token')
+
+return res.json(result)
+```
+
+✅ **DO**: Handle OAuth redirect with tokens
+```typescript
+// In OAuthController
+const result = await authService.oauth(googleUserInfo)
+
+const urlRedirect = `${envConfig.clientRedirectCallback}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}&verify=${result.verify}`
+
+// Set cookies for subsequent requests
+res.cookie('access_token', result.access_token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: ms('7 days')
+})
+
+res.cookie('refresh_token', result.refresh_token, {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'none',
+  maxAge: ms('7 days')
+})
+
+return res.redirect(urlRedirect)
 ```
 
 ## Touch Points / Key Files

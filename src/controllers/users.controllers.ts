@@ -1,7 +1,12 @@
 import { ParamsDictionary } from 'express-serve-static-core'
 import { Request, Response } from 'express'
 import { USERS_MESSAGES } from '~/constants/messages'
-import { ChangePasswordReqBody, TokenPayload, UpdateMeReqBody } from '~/models/requests/User.requests'
+import {
+  ChangePasswordReqBody,
+  EnablePasswordLoginReqBody,
+  TokenPayload,
+  UpdateMeReqBody
+} from '~/models/requests/User.requests'
 import usersService from '~/services/users.services'
 
 export const getMeController = async (req: Request, res: Response) => {
@@ -25,6 +30,18 @@ export const changePasswordController = async (
   const { password } = req.body
 
   const result = await usersService.changePassword(user_id, password)
+
+  return res.json(result)
+}
+
+export const enablePasswordLoginController = async (
+  req: Request<ParamsDictionary, any, EnablePasswordLoginReqBody>,
+  res: Response
+) => {
+  const { user_id } = req.decoded_authorization as TokenPayload
+  const { password } = req.body
+
+  const result = await usersService.enablePasswordLogin(user_id, password)
 
   return res.json(result)
 }

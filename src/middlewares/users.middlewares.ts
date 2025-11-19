@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import { UserVerifyStatus } from '~/constants/enums'
+import { AUTH_ERROR_CODES } from '~/constants/error-codes'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USERS_MESSAGES } from '~/constants/messages'
 import { confirmPasswordSchema, passwordSchema } from '~/middlewares/auth.middlewares'
@@ -33,7 +34,8 @@ export const verifiedUserValidator = (req: Request, res: Response, next: NextFun
     next(
       new ErrorWithStatus({
         message: USERS_MESSAGES.USER_NOT_VERIFIED,
-        status: HTTP_STATUS.FORBIDDEN
+        status: HTTP_STATUS.FORBIDDEN,
+        error_code: AUTH_ERROR_CODES.USER_NOT_VERIFIED
       })
     )
   }
@@ -81,3 +83,29 @@ export const changePasswordValidator = validate(
     confirm_password: confirmPasswordSchema
   })
 )
+
+export const enablePasswordLoginValidator = validate(
+  checkSchema({
+    password: passwordSchema,
+    confirm_password: confirmPasswordSchema
+  })
+)
+
+export const enablePasswordLoginUserValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { user_id } = (req as Request).decoded_authorization as TokenPayload
+
+  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+
+  if (!user) {
+    return next(
+      new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    )
+  }
+
+  ;(req as Request).user = user
+
+  next()
+}

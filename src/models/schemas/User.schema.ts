@@ -12,6 +12,9 @@ interface UserSchema {
   email_verify_token?: string
   forgot_password_token?: string
   verify?: UserVerifyStatus
+  auth_providers?: string[]
+  is_password_login_enabled?: boolean
+  google_id?: string
   _destroy?: boolean
   created_at?: Date
   updated_at?: Date
@@ -28,6 +31,9 @@ export default class User {
   email_verify_token: string
   forgot_password_token: string
   verify: UserVerifyStatus
+  auth_providers: string[]
+  is_password_login_enabled: boolean
+  google_id: string
   _destroy: boolean
   created_at?: Date
   updated_at?: Date
@@ -45,6 +51,9 @@ export default class User {
     this.email_verify_token = user.email_verify_token || ''
     this.forgot_password_token = user.forgot_password_token || ''
     this.verify = user.verify || UserVerifyStatus.Unverified
+    this.auth_providers = user.auth_providers || ['password']
+    this.is_password_login_enabled = user.is_password_login_enabled ?? true
+    this.google_id = user.google_id || ''
     this._destroy = user._destroy || false
     this.created_at = user.created_at || date
     this.updated_at = user.updated_at || date

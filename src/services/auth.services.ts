@@ -2,9 +2,8 @@ import axios from 'axios'
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
 import { TokenType, UserVerifyStatus } from '~/constants/enums'
-import HTTP_STATUS from '~/constants/httpStatus'
 import { AUTH_MESSAGES } from '~/constants/messages'
-import { ErrorWithStatus } from '~/models/Errors'
+import { GoogleUserInfo } from '~/models/Extensions'
 import { RegisterReqBody } from '~/models/requests/User.requests'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
@@ -118,7 +117,9 @@ class AuthService {
         email_verify_token,
         password: hashPassword(body.password),
         username: nameFromEmail,
-        display_name: nameFromEmail
+        display_name: nameFromEmail,
+        auth_providers: ['password'],
+        is_password_login_enabled: true
       })
     )
 
@@ -156,13 +157,12 @@ class AuthService {
   async refreshToken({
     user_id,
     verify,
-    refresh_token,
-    exp
+    refresh_token
   }: {
     user_id: string
     verify: UserVerifyStatus
     refresh_token: string
-    exp: number
+    exp?: number
   }) {
     const [new_access_token, new_refresh_token] = await Promise.all([
       this.signAccessToken({ user_id, verify }),
@@ -197,10 +197,10 @@ class AuthService {
     return { message: AUTH_MESSAGES.EMAIL_VERIFY_SUCCESS }
   }
 
-  async resendVerifyEmail(user_id: string, email: string) {
+  async resendVerifyEmail(user_id: string, email: string, verify: UserVerifyStatus) {
     const email_verify_token = await this.signEmailVerifyToken({
       user_id,
-      verify: UserVerifyStatus.Unverified
+      verify
     })
 
     await sendVerifyRegisterEmail(email, email_verify_token)
@@ -229,18 +229,28 @@ class AuthService {
   }
 
   async verifyForgotPassword(user_id: string) {
-    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [
-      { $set: { forgot_password_token: '', updated_at: '$$NOW' } }
-    ])
+    await databaseService.users.updateOne({ _id: new ObjectId(user_id) }, [{ $set: { updated_at: '$$NOW' } }])
 
     return { message: AUTH_MESSAGES.VERIFY_FORGOT_PASSWORD_SUCCESS }
   }
 
   async resetPassword(user_id: string, password: string) {
-    databaseService.users.updateOne(
+    const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+
+    const payload: any = {
+      forgot_password_token: '',
+      password: hashPassword(password),
+      is_password_login_enabled: true
+    }
+
+    if (!user!.auth_providers.includes('password')) {
+      payload.auth_providers = [...user!.auth_providers, 'password']
+    }
+
+    await databaseService.users.updateOne(
       { _id: new ObjectId(user_id) },
       {
-        $set: { forgot_password_token: '', password: hashPassword(password) },
+        $set: payload,
         $currentDate: { updated_at: true }
       }
     )
@@ -248,17 +258,38 @@ class AuthService {
     return { message: AUTH_MESSAGES.RESET_PASSWORD_SUCCESS }
   }
 
-  async oauth(code: string) {
-    const { id_token, access_token } = await this.getOauthGoogleToken(code)
-    const userInfo = await this.getGoogleUserInfo(access_token, id_token)
+  async oauth(userInfo: GoogleUserInfo) {
+    let user = await databaseService.users.findOne({ google_id: userInfo.id })
 
-    if (!userInfo.verified_email) {
-      throw new ErrorWithStatus({ message: AUTH_MESSAGES.GMAIL_NOT_VERIFIED, status: HTTP_STATUS.BAD_REQUEST })
+    if (!user) {
+      user = await databaseService.users.findOne({ email: userInfo.email })
     }
 
-    const user = await databaseService.users.findOne({ email: userInfo.email })
-
     if (user) {
+      const payload: Partial<User> = {}
+
+      if (!user.auth_providers.includes('google')) {
+        payload.auth_providers = [...user.auth_providers, 'google']
+      }
+
+      if (!user.google_id) {
+        payload.google_id = userInfo.id
+      }
+
+      if (user.verify !== UserVerifyStatus.Verified) {
+        payload.verify = UserVerifyStatus.Verified
+      }
+
+      if (Object.keys(payload).length > 0) {
+        await databaseService.users.updateOne(
+          { _id: user._id },
+          {
+            $set: payload,
+            $currentDate: { updated_at: true }
+          }
+        )
+      }
+
       const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
         user_id: user._id.toString(),
         verify: UserVerifyStatus.Verified
@@ -268,16 +299,6 @@ class AuthService {
       await databaseService.refreshTokens.insertOne(
         new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token, iat, exp })
       )
-
-      if (user.verify !== UserVerifyStatus.Verified) {
-        await databaseService.users.updateOne(
-          { _id: user._id },
-          {
-            $set: { verify: UserVerifyStatus.Verified },
-            $currentDate: { updated_at: true }
-          }
-        )
-      }
 
       return { access_token, refresh_token, newUser: 0, verify: UserVerifyStatus.Verified }
     } else {
@@ -294,7 +315,10 @@ class AuthService {
           display_name: userInfo.name || nameFromEmail,
           avatar: userInfo.picture || '',
           verify: UserVerifyStatus.Verified,
-          email_verify_token: ''
+          email_verify_token: '',
+          auth_providers: ['google'],
+          is_password_login_enabled: false,
+          google_id: userInfo.id
         })
       )
 
