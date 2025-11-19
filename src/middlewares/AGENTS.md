@@ -65,6 +65,113 @@ import { accessTokenValidator } from '~/middlewares/auth.middlewares'
 // Decoded token stored in req.decoded_authorization
 ```
 
+✅ **DO**: Access token validator checks cookies first, then Authorization header
+```typescript
+// In auth.middlewares.ts
+export const accessTokenValidator = validate(
+  checkSchema({
+    Authorization: {
+      notEmpty: { errorMessage: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED },
+      custom: {
+        options: async (value, { req }) => {
+          // Get token from cookies first
+          const cookie_token = req.headers?.cookie
+          if (cookie_token) {
+            const cookieEntries = cookie_token.split('; ')
+            const accessTokenEntry = cookieEntries.find((entry: string) => entry.startsWith('access_token='))
+            if (accessTokenEntry) {
+              const access_token = accessTokenEntry.split('=')[1]
+              return await verifyAccessToken(access_token, req as Request)
+            }
+          }
+          // Fallback to Authorization header
+          return await verifyAccessToken(value, req as Request)
+        }
+      }
+    }
+  }, ['headers'])
+)
+```
+
+✅ **DO**: Validate refresh token from cookies
+```typescript
+export const refreshTokenValidator = validate(
+  checkSchema({
+    refresh_token: {
+      custom: {
+        options: async (value: string, { req }) => {
+          // Get refresh token from cookies or body
+          const refresh_token = value || req.cookies?.refresh_token
+          
+          if (!refresh_token) {
+            throw new ErrorWithStatus({
+              message: AUTH_MESSAGES.REFRESH_TOKEN_IS_REQUIRED,
+              status: HTTP_STATUS.UNAUTHORIZED
+            })
+          }
+
+          // Verify token and check database
+          const [decoded_refresh_token, refresh_token_doc] = await Promise.all([
+            verifyToken({ token: refresh_token, secretOrPublicKey: envConfig.jwtSecretRefreshToken }),
+            databaseService.refreshTokens.findOne({ token: refresh_token })
+          ])
+
+          if (refresh_token_doc === null) {
+            throw new ErrorWithStatus({
+              message: AUTH_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
+              status: HTTP_STATUS.UNAUTHORIZED
+            })
+          }
+
+          req.decoded_refresh_token = decoded_refresh_token
+          return true
+        }
+      }
+    }
+  }, ['cookies', 'body'])
+)
+```
+
+✅ **DO**: Validate login credentials and check password login enabled
+```typescript
+export const loginValidator = validate(
+  checkSchema({
+    email: {
+      isEmail: { errorMessage: AUTH_MESSAGES.EMAIL_IS_INVALID },
+      trim: true,
+      custom: {
+        options: async (value, { req }) => {
+          const user = await databaseService.users.findOne({ email: value })
+          
+          if (user === null) {
+            throw new Error(AUTH_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT)
+          }
+
+          // Check if password login is enabled
+          if (!user.is_password_login_enabled || !user.auth_providers.includes('password')) {
+            throw new ErrorWithStatus({
+              message: AUTH_MESSAGES.PASSWORD_LOGIN_NOT_ENABLED,
+              status: HTTP_STATUS.BAD_REQUEST,
+              error_code: AUTH_ERROR_CODES.PASSWORD_LOGIN_DISABLED
+            })
+          }
+
+          // Verify password
+          const hashedPassword = hashPassword(req.body.password)
+          if (user.password !== hashedPassword) {
+            throw new Error(AUTH_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT)
+          }
+
+          req.user = user
+          return true
+        }
+      }
+    },
+    password: passwordSchema
+  }, ['body'])
+)
+```
+
 ✅ **DO**: Use `verifiedUserValidator` for email verification
 ```typescript
 import { verifiedUserValidator } from '~/middlewares/users.middlewares'

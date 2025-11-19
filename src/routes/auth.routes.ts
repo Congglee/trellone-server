@@ -12,12 +12,14 @@ import {
   verifyForgotPasswordController
 } from '~/controllers/auth.controllers'
 import {
-  accessTokenValidator,
   emailVerifyTokenValidator,
   forgotPasswordValidator,
   loginValidator,
+  OAuthValidator,
   refreshTokenValidator,
   registerValidator,
+  resendVerifyEmailValidator,
+  resetPasswordUserValidator,
   resetPasswordValidator,
   verifyForgotPasswordTokenValidator
 } from '~/middlewares/auth.middlewares'
@@ -35,7 +37,7 @@ authRouter.post('/refresh-token', refreshTokenValidator, wrapRequestHandler(refr
 
 authRouter.post('/verify-email', emailVerifyTokenValidator, wrapRequestHandler(verifyEmailController))
 
-authRouter.post('/resend-verify-email', accessTokenValidator, wrapRequestHandler(resendVerifyEmailController))
+authRouter.post('/resend-verify-email', resendVerifyEmailValidator, wrapRequestHandler(resendVerifyEmailController))
 
 authRouter.post('/forgot-password', forgotPasswordValidator, wrapRequestHandler(forgotPasswordController))
 
@@ -45,8 +47,13 @@ authRouter.post(
   wrapRequestHandler(verifyForgotPasswordController)
 )
 
-authRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordController))
+authRouter.post(
+  '/reset-password',
+  resetPasswordValidator,
+  resetPasswordUserValidator,
+  wrapRequestHandler(resetPasswordController)
+)
 
-authRouter.get('/oauth/google', wrapRequestHandler(OAuthController))
+authRouter.get('/oauth/google', OAuthValidator, wrapRequestHandler(OAuthController))
 
 export default authRouter

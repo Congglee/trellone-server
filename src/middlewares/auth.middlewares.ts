@@ -1,17 +1,21 @@
-import { Request } from 'express'
+import { NextFunction, Request, Response } from 'express'
+import axios from 'axios'
 import { checkSchema, ParamSchema } from 'express-validator'
-import { JsonWebTokenError } from 'jsonwebtoken'
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
 import { capitalize } from 'lodash'
 import { ObjectId } from 'mongodb'
 import { envConfig } from '~/config/environment'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { AUTH_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
+import { AUTH_ERROR_CODES } from '~/constants/error-codes'
+import { TokenPayload } from '~/models/requests/User.requests'
 import authService from '~/services/auth.services'
 import databaseService from '~/services/database.services'
 import { hashPassword } from '~/utils/crypto'
 import { verifyAccessToken, verifyToken } from '~/utils/jwt'
 import { validate } from '~/utils/validation'
+import { GoogleTokens } from '~/models/Extensions'
 
 export const passwordSchema: ParamSchema = {
   notEmpty: { errorMessage: AUTH_MESSAGES.PASSWORD_IS_REQUIRED },
@@ -131,12 +135,22 @@ export const loginValidator = validate(
         trim: true,
         custom: {
           options: async (value, { req }) => {
-            const user = await databaseService.users.findOne({
-              email: value,
-              password: hashPassword(req.body.password)
-            })
+            const user = await databaseService.users.findOne({ email: value })
 
             if (user === null) {
+              throw new Error(AUTH_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT)
+            }
+
+            if (!user.is_password_login_enabled || !user.auth_providers.includes('password')) {
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.PASSWORD_LOGIN_NOT_ENABLED,
+                status: HTTP_STATUS.BAD_REQUEST,
+                error_code: AUTH_ERROR_CODES.PASSWORD_LOGIN_DISABLED
+              })
+            }
+
+            const hashedPassword = hashPassword(req.body.password)
+            if (user.password !== hashedPassword) {
               throw new Error(AUTH_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT)
             }
 
@@ -214,6 +228,13 @@ export const refreshTokenValidator = validate(
 
               ;(req as Request).decoded_refresh_token = decoded_refresh_token
             } catch (error) {
+              if (error instanceof TokenExpiredError) {
+                throw new ErrorWithStatus({
+                  message: capitalize(error.message),
+                  status: HTTP_STATUS.UNAUTHORIZED,
+                  error_code: AUTH_ERROR_CODES.TOKEN_EXPIRED
+                })
+              }
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
                   message: capitalize(error.message),
@@ -283,6 +304,14 @@ export const forgotPasswordValidator = validate(
               throw new Error(AUTH_MESSAGES.USER_NOT_FOUND)
             }
 
+            if (!user.is_password_login_enabled) {
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.PASSWORD_LOGIN_NOT_ENABLED_FORGOT_PASSWORD,
+                status: HTTP_STATUS.BAD_REQUEST,
+                error_code: AUTH_ERROR_CODES.PASSWORD_LOGIN_DISABLED
+              })
+            }
+
             ;(req as Request).user = user
 
             return true
@@ -304,6 +333,119 @@ export const resetPasswordValidator = validate(
       password: passwordSchema,
       confirm_password: confirmPasswordSchema,
       forgot_password_token: forgotPasswordTokenSchema
+    },
+    ['body']
+  )
+)
+
+export const resetPasswordUserValidator = async (req: Request, res: Response, next: NextFunction) => {
+  const { user_id } = req.decoded_forgot_password_token as TokenPayload
+
+  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
+
+  if (!user) {
+    return next(
+      new ErrorWithStatus({
+        message: AUTH_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    )
+  }
+
+  ;(req as Request).user = user
+
+  next()
+}
+
+export const OAuthValidator = validate(
+  checkSchema(
+    {
+      code: {
+        notEmpty: { errorMessage: AUTH_MESSAGES.OAUTH_CODE_IS_REQUIRED },
+        isString: { errorMessage: AUTH_MESSAGES.OAUTH_CODE_MUST_BE_STRING },
+        trim: true,
+        custom: {
+          options: async (value: string, { req }) => {
+            try {
+              const body = {
+                code: value,
+                client_id: envConfig.googleClientId,
+                client_secret: envConfig.googleClientSecret,
+                redirect_uri: envConfig.googleRedirectUri,
+                grant_type: 'authorization_code'
+              }
+
+              const { data } = await axios.post('https://oauth2.googleapis.com/token', body, {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+              })
+
+              const { id_token, access_token } = data as GoogleTokens
+
+              const { data: userInfo } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+                params: { access_token, alt: 'json' },
+                headers: { Authorization: `Bearer ${id_token}` }
+              })
+
+              if (!userInfo || !userInfo.id || !userInfo.email) {
+                throw new ErrorWithStatus({
+                  message: AUTH_MESSAGES.GOOGLE_USER_INFO_MISSING_ID_OR_EMAIL,
+                  status: HTTP_STATUS.BAD_REQUEST
+                })
+              }
+
+              if (!userInfo.verified_email) {
+                throw new ErrorWithStatus({
+                  message: AUTH_MESSAGES.GMAIL_NOT_VERIFIED,
+                  status: HTTP_STATUS.BAD_REQUEST
+                })
+              }
+
+              ;(req as Request).google_user_info = userInfo
+              ;(req as Request).google_tokens = { id_token, access_token }
+
+              return true
+            } catch (error) {
+              if (error instanceof ErrorWithStatus) {
+                throw error
+              }
+
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.INVALID_OAUTH_CODE,
+                status: HTTP_STATUS.BAD_REQUEST
+              })
+            }
+          }
+        }
+      }
+    },
+    ['query']
+  )
+)
+
+export const resendVerifyEmailValidator = validate(
+  checkSchema(
+    {
+      email: {
+        isEmail: { errorMessage: AUTH_MESSAGES.EMAIL_IS_INVALID },
+        trim: true,
+        notEmpty: { errorMessage: AUTH_MESSAGES.EMAIL_IS_INVALID },
+        custom: {
+          options: async (value, { req }) => {
+            const user = await databaseService.users.findOne({ email: value })
+
+            if (!user) {
+              throw new ErrorWithStatus({
+                message: AUTH_MESSAGES.USER_NOT_FOUND,
+                status: HTTP_STATUS.NOT_FOUND
+              })
+            }
+
+            ;(req as Request).user = user
+
+            return true
+          }
+        }
+      }
     },
     ['body']
   )

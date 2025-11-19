@@ -47,13 +47,96 @@ npm run prettier:fix
 - **Architecture Flow**: Routes → Middlewares → Controllers → Services → Database
 - **Type Imports**: Use `import type` for type-only imports
 
+## Error Handling Policy
+
+**CRITICAL**: All error handling must be centralized. See [`.cursor/rules/centralized-error-handling.mdc`](.cursor/rules/centralized-error-handling.mdc) for full details.
+
+### Core Rules
+
+1. **No try-catch in Controllers or Services**:
+
+   - ❌ **Strictly Prohibited**: Do NOT use `try-catch` blocks inside Controllers or Services
+   - ❌ **Strictly Prohibited**: Do NOT handle errors or send error responses directly in these layers
+
+2. **Separation of Concerns**:
+
+   - **Middleware Layer**: MUST handle all validation, pre-checks, and throw `ErrorWithStatus` for HTTP errors
+   - **Service Layer**: MUST focus ONLY on business logic (CRUD, calculations)
+     - ❌ **Prohibited**: Do NOT throw `ErrorWithStatus` or perform validation in Services
+     - ✅ **Assume**: Input is valid and pre-checked by Middleware
+   - **Controller Layer**: Acts as a bridge - calls Service and returns response
+
+3. **Error Flow**:
+   - Errors thrown in Middleware/Controller/Services are caught by `wrapRequestHandler`
+   - `wrapRequestHandler` forwards errors to global error handler (`src/middlewares/error.middlewares.ts`)
+   - Global handler formats and sends HTTP response
+
+### Examples
+
+✅ **GOOD - Middleware handles validation**:
+
+```typescript
+// src/middlewares/user.middlewares.ts
+export const registerValidator = validate(
+  checkSchema({
+    email: {
+      custom: {
+        options: async (value) => {
+          const user = await databaseService.users.findOne({ email: value })
+          if (user) {
+            throw new Error('Email already exists') // Caught by validate wrapper
+          }
+          return true
+        }
+      }
+    }
+  })
+)
+```
+
+✅ **GOOD - Service is pure logic**:
+
+```typescript
+// src/services/user.services.ts
+export const register = async (payload: RegisterReqBody) => {
+  // Pure logic: Just execute. Validation guaranteed by Middleware.
+  return await databaseService.users.insertOne(payload)
+}
+```
+
+✅ **GOOD - Controller is a bridge**:
+
+```typescript
+// src/controllers/user.controller.ts
+export const registerController = wrapRequestHandler(async (req, res) => {
+  const result = await userService.register(req.body)
+  return res.json({ message: 'Success', result })
+})
+```
+
+❌ **BAD - Service throwing HTTP errors**:
+
+```typescript
+// ❌ VIOLATION: Service should not throw HTTP errors
+export const register = async (payload: RegisterReqBody) => {
+  const exist = await db.users.findOne({ email: payload.email })
+  if (exist) {
+    throw new ErrorWithStatus({ message: 'Email already exists', status: 422 })
+  }
+  return await db.users.insertOne(payload)
+}
+```
+
 ## Security & Secrets
 
 - Never commit `.env` files or API keys
 - Environment variables loaded via `dotenv` and validated in `src/config/environment.ts`
-- JWT tokens stored in httpOnly cookies
+- JWT tokens stored in httpOnly cookies with secure, sameSite: 'none' settings
+- Access tokens and refresh tokens both set as httpOnly cookies on login/OAuth
+- Refresh tokens stored in database for validation and revocation
 - Never log sensitive data (passwords, tokens) to console
-- Use `ErrorWithStatus` for HTTP-specific errors
+- Use `ErrorWithStatus` for HTTP-specific errors (only in Middleware layer, see Error Handling Policy)
+- Password hashing uses bcrypt with salt rounds
 
 ## JIT Index - Directory Map
 
@@ -92,7 +175,17 @@ rg -n "export default class.*extends" src/models/schemas
 
 # Find a request type
 rg -n "export interface.*ReqBody|export interface.*ReqParams" src/models/requests
+
+# Find ErrorWithStatus usage (should only be in middlewares/utils)
+rg -n "ErrorWithStatus" src
+
+# Find try-catch blocks (should NOT be in controllers/services)
+rg -n "try\s*\{" src/controllers src/services
 ```
+
+### Project Rules
+
+- **Centralized Error Handling**: [`.cursor/rules/centralized-error-handling.mdc`](.cursor/rules/centralized-error-handling.mdc) - Enforces no try-catch in Controllers/Services
 
 ## Definition of Done
 
@@ -104,6 +197,8 @@ Before creating a PR:
 - [ ] Follows patterns from relevant `src/*/AGENTS.md` file
 - [ ] Uses `~` alias for imports (not relative `../../`)
 - [ ] All routes wrapped with `wrapRequestHandler`
-- [ ] Proper error handling with `ErrorWithStatus`
+- [ ] No try-catch blocks in Controllers or Services (see Error Handling Policy)
+- [ ] Validation and error throwing done in Middleware layer only
+- [ ] Services contain pure business logic only (no validation, no ErrorWithStatus)
 - [ ] Request validation using express-validator
 - [ ] Body filtering applied before controllers

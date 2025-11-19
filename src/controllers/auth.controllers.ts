@@ -6,10 +6,12 @@ import { envConfig } from '~/config/environment'
 import { UserVerifyStatus } from '~/constants/enums'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { AUTH_MESSAGES } from '~/constants/messages'
+import { GoogleUserInfo } from '~/models/Extensions'
 import {
   ForgotPasswordReqBody,
   LoginReqBody,
   RegisterReqBody,
+  ResendVerifyEmailReqBody,
   ResetPasswordReqBody,
   TokenPayload,
   VerifyEmailReqBody,
@@ -101,25 +103,17 @@ export const verifyEmailController = async (req: Request<ParamsDictionary, any, 
   return res.json(result)
 }
 
-export const resendVerifyEmailController = async (req: Request, res: Response) => {
-  const { user_id } = req.decoded_authorization as TokenPayload
-
-  const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
-
-  if (!user) {
-    return res.status(HTTP_STATUS.NOT_FOUND).json({
-      message: AUTH_MESSAGES.USER_NOT_FOUND
-    })
-  }
+export const resendVerifyEmailController = async (
+  req: Request<ParamsDictionary, any, ResendVerifyEmailReqBody>,
+  res: Response
+) => {
+  const user = req.user as User
 
   if (user.verify === UserVerifyStatus.Verified) {
-    return res.json({
-      message: AUTH_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE
-    })
+    return res.json({ message: AUTH_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE })
   }
 
-  const result = await authService.resendVerifyEmail(user_id, user.email)
-
+  const result = await authService.resendVerifyEmail((user._id as ObjectId).toString(), user.email, user.verify)
   return res.json(result)
 }
 
@@ -154,9 +148,9 @@ export const resetPasswordController = async (
 }
 
 export const OAuthController = async (req: Request, res: Response) => {
-  const { code } = req.query
+  const googleUserInfo = req.google_user_info as GoogleUserInfo
 
-  const result = await authService.oauth(code as string)
+  const result = await authService.oauth(googleUserInfo)
 
   const urlRedirect = `${envConfig.clientRedirectCallback}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}&verify=${result.verify}`
 

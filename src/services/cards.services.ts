@@ -77,7 +77,7 @@ class CardsService {
   async addCardComment({ card_id, user_id, body }: { card_id: string; user_id: string; body: AddCardCommentReqBody }) {
     const user = await databaseService.users.findOne(
       { _id: new ObjectId(user_id) },
-      { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+      { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0, google_id: 0 } }
     )
 
     const comment = {
@@ -299,7 +299,7 @@ class CardsService {
 
     const user = await databaseService.users.findOne(
       { _id: new ObjectId(user_id) },
-      { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0 } }
+      { projection: { password: 0, email_verify_token: 0, forgot_password_token: 0, google_id: 0 } }
     )
 
     if (body.action === CardCommentReactionAction.Add) {
