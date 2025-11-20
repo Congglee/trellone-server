@@ -20,6 +20,7 @@ import { wrapRequestHandler } from '~/utils/handlers'
 import { hasBoardPermission, hasWorkspacePermission } from '~/utils/rbac'
 import { assertBoardIsOpen, assertCardIsOpen } from '~/utils/guards'
 import { BoardRole } from '~/constants/enums'
+import { BOARD_ERROR_CODES } from '~/constants/error-codes'
 
 export const requireWorkspacePermission = (permission: WorkspacePermission | WorkspacePermission[]) => {
   return wrapRequestHandler(async (req: Request, res: Response, next: NextFunction) => {
@@ -101,7 +102,8 @@ export const requireBoardPermission = (
       if (!isAdmin) {
         throw new ErrorWithStatus({
           status: HTTP_STATUS.FORBIDDEN,
-          message: `${board.title} has been closed. Please contact the board admin to reopen it.`
+          message: `${board.title} has been closed. Please contact the board admin to reopen it.`,
+          error_code: BOARD_ERROR_CODES.BOARD_ARCHIVED
         })
       }
     }
