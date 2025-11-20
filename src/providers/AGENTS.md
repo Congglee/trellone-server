@@ -23,6 +23,7 @@ import uploadthingProvider from '~/providers/uploadthing'
 - **Exports**: Default export of configured provider instance
 
 ✅ **DO**: Follow `src/providers/resend.ts` pattern
+
 - Configure service client with API keys
 - Export configured instance as default
 - Handle errors appropriately
@@ -30,6 +31,7 @@ import uploadthingProvider from '~/providers/uploadthing'
 ### Provider Structure
 
 ✅ **DO**: Configure and export provider instance
+
 ```typescript
 // providers/resend.ts
 import { Resend } from 'resend'
@@ -41,6 +43,7 @@ export default resend
 ```
 
 ✅ **DO**: Use environment variables for API keys
+
 ```typescript
 import { envConfig } from '~/config/environment'
 
@@ -52,10 +55,11 @@ const unsplash = createApi({
 ### Error Handling
 
 ✅ **DO**: Handle provider errors gracefully
+
 ```typescript
 try {
   const result = await resend.emails.send({
-    from: 'noreply@trellone.com',
+    from: 'noreply@trellone.app',
     to: email,
     subject: 'Welcome',
     html: template
@@ -72,6 +76,7 @@ try {
 ### Service Integration
 
 ✅ **DO**: Use providers in services, not controllers
+
 ```typescript
 // ✅ Good - use in service
 // services/auth.services.ts
@@ -120,4 +125,3 @@ npm run build
 # Verify API keys come from env vars
 rg -n "process\.env\." src/providers
 ```
-

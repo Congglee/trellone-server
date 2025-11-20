@@ -256,22 +256,22 @@ The image runs `pm2-runtime` with the script defined in `ecosystem.config.js`. U
 ```text
 📦trellone-server
  ┣ 📂src
- ┃ ┣ 📜index.ts               # entry: DB connect, start server
- ┃ ┣ 📜app.ts                 # express app, routes, middlewares, sockets
- ┃ ┣ 📂config                 # environment, cors, logger, dir
- ┃ ┣ 📂constants              # constants
- ┃ ┣ 📂routes                 # auth, users, workspaces, boards, columns, cards, medias, invitations
- ┃ ┣ 📂controllers            # route handlers
- ┃ ┣ 📂middlewares            # validators, RBAC, error handler
- ┃ ┣ 📂services               # database, domain services
- ┃ ┣ 📂sockets                # socket event wiring
- ┃ ┣ 📂models                 # schemas and request types
- ┃ ┣ 📂providers              # services for external integrations
- ┃ ┣ 📂templates              # email HTML templates
- ┃ ┣ 📂utils                  # helpers (jwt, file, handlers, etc.)
- ┃ ┣ 📂docs                   # documentation
- ┣ 📜Dockerfile
- ┣ 📜ecosystem.config.js
+ ┃ ┣ 📂config         # Environment config, CORS settings, logger, app directory setup
+ ┃ ┣ 📂constants      # System constants: error codes, HTTP status codes, shared messages, etc.
+ ┃ ┣ 📂controllers    # Request handlers for endpoints — call services and return JSON responses
+ ┃ ┣ 📂docs           # API documentation, OpenAPI/Swagger specs, project usage guides
+ ┃ ┣ 📂middlewares    # Validation, RBAC middleware, centralized error handling
+ ┃ ┣ 📂models         # MongoDB schemas and TypeScript types for requests/responses
+ ┃ ┣ 📂providers      # External service integrations (email, uploading, Unsplash, etc.)
+ ┃ ┣ 📂routes         # Express route definitions per feature/domain (user, board, workspace, ...)
+ ┃ ┣ 📂scripts        # CLI utilities/scripts: DB migration, import/export, maintenance tasks
+ ┃ ┣ 📂services       # Business logic, database queries and updates, no validation here
+ ┃ ┣ 📂sockets        # Socket.IO event handlers and realtime logic
+ ┃ ┣ 📂templates      # HTML templates for emails (verification, invitation, password reset, etc.)
+ ┃ ┣ 📂utils          # Utility helpers: JWT, file handling, general-purpose helpers, error utilities
+ ┃ ┣ 📜index.ts       # Main entry point: connect DB and start server
+ ┃ ┣ 📜app.ts         # Setup Express app, attach routes, middlewares, and socket integration
+ ┃ ┣ 📜type.d.ts      # Global and custom TypeScript type declarations for the server
 ```
 
 ## Troubleshooting 🧯
