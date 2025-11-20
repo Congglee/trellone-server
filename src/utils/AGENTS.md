@@ -155,9 +155,61 @@ export const isErrorWithStatus = (error: unknown): error is ErrorWithStatus => {
 - **JWT**: `src/utils/jwt.ts` - Token signing and verification
 - **File**: `src/utils/file.ts` - File processing and validation
 - **Commons**: `src/utils/commons.ts` - General utilities
-- **Socket**: `src/utils/socket.ts` - Socket.IO helpers
+- **Socket**: `src/utils/socket.ts` - Socket.IO server initialization and authentication middleware
 - **RBAC**: `src/utils/rbac.ts` - Role-based access control utilities
 - **Guards**: `src/utils/guards.ts` - Type guards
+
+### Socket Utilities
+
+✅ **DO**: Initialize Socket.IO server in `src/utils/socket.ts`
+```typescript
+// src/utils/socket.ts
+import { Server as ServerHttp } from 'http'
+import { Server } from 'socket.io'
+
+const initSocket = (httpServer: ServerHttp) => {
+  const io = new Server(httpServer, {
+    cors: corsOptions,
+    pingInterval: 20000,
+    pingTimeout: 25000
+  })
+
+  // Authentication middleware
+  io.use(async (socket, next) => {
+    // Verify JWT token from cookie or auth header
+    const access_token = getTokenFromCookieOrAuth(socket)
+    const decoded = await verifyAccessToken(access_token)
+    socket.data.decoded_authorization = decoded
+    next()
+  })
+
+  // Connection handler
+  io.on('connection', (socket) => {
+    const { user_id } = socket.data.decoded_authorization
+    users[user_id] = { socket_id: socket.id }
+
+    // Register all event handlers
+    manageBoardSocketEvents(socket)
+    manageWorkspaceSocketEvents(io, socket)
+    // ... other handlers
+
+    socket.on('disconnect', () => {
+      delete users[user_id]
+    })
+  })
+}
+```
+
+✅ **DO**: Handle authentication in middleware (not in handlers)
+- Prefer cookie-based token (from httpOnly cookie)
+- Fall back to auth header if cookie not available
+- Store decoded token in `socket.data.decoded_authorization`
+- Track connected users in `users` map for targeted notifications
+
+✅ **DO**: Configure Socket.IO for stability
+- Set `pingInterval` and `pingTimeout` for connection health checks
+- Enable CORS with proper configuration
+- Consider WebSocket-only transport if infrastructure supports it
 
 ## JIT Index Hints
 
@@ -172,7 +224,13 @@ rg -n "validate|validator" src/utils
 rg -n "ErrorWithStatus|wrapRequestHandler" src/utils
 
 # Find JWT utilities
-rg -n "signToken|verifyToken" src/utils
+rg -n "signToken|verifyToken|verifyAccessToken" src/utils
+
+# Find socket initialization
+rg -n "initSocket|export default initSocket" src/utils/socket.ts
+
+# Find socket authentication middleware
+rg -n "io\.use" src/utils/socket.ts
 ```
 
 ## Common Gotchas

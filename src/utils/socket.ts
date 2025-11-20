@@ -71,7 +71,7 @@ const initSocket = (httpServer: ServerHttp) => {
       socket.data.access_token = access_token
       return next()
     } catch (error) {
-      return next({ message: 'Unauthorized', name: 'UnauthorizedError', data: error })
+      return next(new Error('Unauthorized'))
     }
   })
 
