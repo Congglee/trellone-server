@@ -1,7 +1,7 @@
 import express from 'express'
 import { validationResult, ValidationChain } from 'express-validator'
 import { RunnableValidationChains } from 'express-validator/lib/middlewares/schema'
-import HTTP_STATUS from '~/constants/httpStatus'
+import HTTP_STATUS from '~/constants/http-status'
 import { EntityError, ErrorWithStatus } from '~/models/Errors'
 
 export const validate = (validation: RunnableValidationChains<ValidationChain>) => {

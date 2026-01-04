@@ -11,81 +11,81 @@ To ensure consistency and maintainability across the backend, all error handling
 
 ## Rules
 
-1.  **No Local Error Handling**:
+1. **No Local Error Handling**:
 
-    - **Strictly Prohibited**: Do NOT use `try-catch` blocks inside `Controllers` or `Services`.
-    - **Strictly Prohibited**: Do NOT handle errors, return error objects, or send error responses (e.g., `res.status(500).json(...)`) directly within these layers.
+- **Strictly Prohibited**: Do NOT use `try-catch` blocks inside `Controllers` or `Services`.
+- **Strictly Prohibited**: Do NOT handle errors, return error objects, or send error responses (e.g., `res.status(500).json(...)`) directly within these layers.
 
-2.  **Strict Separation of Concerns**:
+2. **Strict Separation of Concerns**:
 
-    - **Middleware Layer**: MUST handle all validation and pre-checks (e.g., Schema validation, Database existence checks, Business constraints). Errors should be thrown here (or via validation libraries) to be caught by the global error handler.
-    - **Service Layer**: MUST focus ONLY on business logic execution (CRUD, calculations).
-      - **Prohibited**: Do NOT throw `ErrorWithStatus` or any HTTP-related errors in Services.
-      - **Prohibited**: Do NOT perform validation checks (e.g., checking if a user exists) inside the Service. Assume input is valid and pre-checked by Middleware.
-    - **Controller Layer**: Acts strictly as a bridge. Calls the Service and returns the response.
+- **Middleware Layer**: MUST handle all validation and pre-checks (e.g., Schema validation, Database existence checks, Business constraints). Errors should be thrown here (or via validation libraries) to be caught by the global error handler.
+- **Service Layer**: MUST focus ONLY on business logic execution (CRUD, calculations).
+  - **Prohibited**: Do NOT throw `ErrorWithStatus` or any HTTP-related errors in Services.
+  - **Prohibited**: Do NOT perform validation checks (e.g., checking if a user exists) inside the Service. Assume input is valid and pre-checked by Middleware.
+- **Controller Layer**: Acts strictly as a bridge. Calls the Service and returns the response.
 
-3.  **Implementation Pattern**:
+3. **Implementation Pattern**:
 
-    **❌ BAD (Do Not Use - Service handling errors):**
+**❌ BAD (Do Not Use - Service handling errors):**
 
-    ```typescript
-    // src/services/user.services.ts
-    export const register = async (payload: RegisterReqBody) => {
-      const exist = await db.users.findOne({ email: payload.email })
-      if (exist) {
-        // VIOLATION: Service should not throw HTTP errors or perform validation
-        throw new ErrorWithStatus({ message: 'Email already exists', status: 422 })
-      }
-      return await db.users.insertOne(payload)
-    }
-    ```
+```typescript
+// src/services/user.services.ts
+export const register = async (payload: RegisterReqBody) => {
+  const exist = await db.users.findOne({ email: payload.email })
+  if (exist) {
+    // VIOLATION: Service should not throw HTTP errors or perform validation
+    throw new ErrorWithStatus({ message: 'Email already exists', status: 422 })
+  }
+  return await db.users.insertOne(payload)
+}
+```
 
-    **✅ GOOD (Middleware - Handles Validation & Errors):**
+**✅ GOOD (Middleware - Handles Validation & Errors):**
 
-    ```typescript
-    // src/middlewares/user.middlewares.ts
-    import { checkSchema } from 'express-validator'
-    import { validate } from '~/utils/validation'
+```typescript
+// src/middlewares/user.middlewares.ts
+import { checkSchema } from 'express-validator'
+import { validate } from '~/utils/validation'
 
-    export const registerValidator = validate(
-      checkSchema({
-        email: {
-          custom: {
-            options: async (value) => {
-              const user = await databaseService.users.findOne({ email: value })
-              if (user) {
-                // Validation logic belongs here.
-                // The 'validate' wrapper or global handler will manage the error.
-                throw new Error('Email already exists')
-              }
-              return true
-            }
+export const registerValidator = validate(
+  checkSchema({
+    email: {
+      custom: {
+        options: async (value) => {
+          const user = await databaseService.users.findOne({ email: value })
+          if (user) {
+            // Validation logic belongs here.
+            // The 'validate' wrapper or global handler will manage the error.
+            throw new Error('Email already exists')
           }
+          return true
         }
-      })
-    )
-    ```
-
-    **✅ GOOD (Service Layer - Pure Logic):**
-
-    ```typescript
-    // src/services/user.services.ts
-    export const register = async (payload: RegisterReqBody) => {
-      // Pure logic: Just execute.
-      // Validation (email existence) is guaranteed by Middleware.
-      const result = await databaseService.users.insertOne(payload)
-      return result
+      }
     }
-    ```
+  })
+)
+```
 
-    **✅ GOOD (Controller Layer - Bridge):**
+**✅ GOOD (Service Layer - Pure Logic):**
 
-    ```typescript
-    // src/controllers/user.controller.ts
-    import { wrapRequestHandler } from '~/utils/handlers'
+```typescript
+// src/services/user.services.ts
+export const register = async (payload: RegisterReqBody) => {
+  // Pure logic: Just execute.
+  // Validation (email existence) is guaranteed by Middleware.
+  const result = await databaseService.users.insertOne(payload)
+  return result
+}
+```
 
-    export const registerController = wrapRequestHandler(async (req, res) => {
-      const result = await userService.register(req.body)
-      return res.json({ message: 'Success', result })
-    })
-    ```
+**✅ GOOD (Controller Layer - Bridge):**
+
+```typescript
+// src/controllers/user.controller.ts
+import { wrapRequestHandler } from '~/utils/handlers'
+
+export const registerController = wrapRequestHandler(async (req, res) => {
+  const result = await userService.register(req.body)
+  return res.json({ message: 'Success', result })
+})
+```

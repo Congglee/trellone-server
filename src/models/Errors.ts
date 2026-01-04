@@ -1,4 +1,4 @@
-import HTTP_STATUS from '~/constants/httpStatus'
+import HTTP_STATUS from '~/constants/http-status'
 import { COMMON_MESSAGES } from '~/constants/messages'
 
 type ErrorsType = Record<

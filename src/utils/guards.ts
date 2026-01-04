@@ -1,4 +1,4 @@
-import HTTP_STATUS from '~/constants/httpStatus'
+import HTTP_STATUS from '~/constants/http-status'
 import { BOARDS_MESSAGES, CARDS_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
 import Board from '~/models/schemas/Board.schema'

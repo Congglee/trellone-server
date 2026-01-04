@@ -4,6 +4,8 @@
 
 Business logic layer for Trellone API. Contains all business logic, data transformation, and database operations. Class-based services with singleton pattern.
 
+**CRITICAL**: Services are pure business logic only. See [centralized-error-handling.mdc](../../.cursor/rules/centralized-error-handling.mdc) for full policy.
+
 ## Setup & Run
 
 Services are imported and used in controllers. No separate build step needed.
@@ -22,6 +24,7 @@ import boardsService from '~/services/boards.services'
 - **Exports**: Default export of service instance
 
 ✅ **DO**: Follow `src/services/boards.services.ts` pattern
+
 - Define ES6 class with descriptive name ending in "Service"
 - Instantiate once and export as default
 - Use `databaseService` for all database operations
@@ -29,6 +32,7 @@ import boardsService from '~/services/boards.services'
 ### Class Structure
 
 ✅ **DO**: Use class-based architecture with singleton pattern
+
 ```typescript
 class BoardsService {
   async createBoard(user_id: string, body: CreateBoardReqBody) {
@@ -41,12 +45,13 @@ export default boardsService
 ```
 
 ✅ **DO**: Use `private` keyword for internal methods
+
 ```typescript
 class BoardsService {
-  private async validateBoardAccess(user_id: string, board_id: string) {
+  private async calculateBoardStats(board_id: string) {
     // internal helper method
   }
-  
+
   async getBoard(board_id: string) {
     // public method
   }
@@ -56,6 +61,7 @@ class BoardsService {
 ### Database Integration
 
 ✅ **DO**: Use `databaseService` for all database operations
+
 ```typescript
 import databaseService from '~/services/database.services'
 
@@ -64,16 +70,22 @@ const board = await databaseService.boards.findOne({ _id: boardId })
 ```
 
 ✅ **DO**: Use MongoDB aggregation for complex queries
+
 ```typescript
 const boards = await databaseService.boards
   .aggregate([
     { $match: { workspace_id: new ObjectId(workspace_id) } },
-    { $lookup: { /* join with users */ } }
+    {
+      $lookup: {
+        /* join with users */
+      }
+    }
   ])
   .toArray()
 ```
 
 ✅ **DO**: Convert string IDs to ObjectId
+
 ```typescript
 import { ObjectId } from 'mongodb'
 
@@ -85,6 +97,7 @@ const board = await databaseService.boards.findOne({
 ### Schema Usage
 
 ✅ **DO**: Use schema classes when creating new documents
+
 ```typescript
 import Board from '~/models/schemas/Board.schema'
 
@@ -97,51 +110,100 @@ const newBoard = new Board({
 await databaseService.boards.insertOne(newBoard)
 ```
 
-### Error Handling
+### Error Handling - CRITICAL POLICY
 
-✅ **DO**: Throw `ErrorWithStatus` for HTTP-specific errors
+**⚠️ STRICTLY PROHIBITED**: Do NOT use try-catch blocks in Services
+
+**⚠️ STRICTLY PROHIBITED**: Do NOT throw `ErrorWithStatus` or any HTTP-related errors in Services
+
+**⚠️ STRICTLY PROHIBITED**: Do NOT perform validation checks in Services
+
+✅ **DO**: Assume all input is valid (pre-checked by Middleware layer)
+
+✅ **DO**: Let errors bubble up naturally to `wrapRequestHandler`
+
 ```typescript
-import { ErrorWithStatus } from '~/models/Errors'
-
-if (!board) {
-  throw new ErrorWithStatus({
-    message: BOARDS_MESSAGES.BOARD_NOT_FOUND,
-    status: HTTP_STATUS.NOT_FOUND
+// ✅ GOOD - Pure business logic, no validation
+async createBoard(user_id: string, body: CreateBoardReqBody) {
+  const board = new Board({
+    ...body,
+    workspace_id: new ObjectId(body.workspace_id),
+    owner_id: new ObjectId(user_id)
   })
+
+  await databaseService.boards.insertOne(board)
+  return board
 }
 ```
 
-✅ **DO**: Let errors bubble up to controllers
 ```typescript
-// No try-catch in services
-// Errors caught by wrapRequestHandler in controllers
+// ❌ BAD - Service throwing HTTP errors (VIOLATION!)
+async createBoard(user_id: string, body: CreateBoardReqBody) {
+  const workspace = await databaseService.workspaces.findOne({ _id: new ObjectId(body.workspace_id) })
+  if (!workspace) {
+    // VIOLATION: This belongs in Middleware, not Service!
+    throw new ErrorWithStatus({
+      message: 'Workspace not found',
+      status: HTTP_STATUS.NOT_FOUND
+    })
+  }
+  // ...
+}
 ```
+
+```typescript
+// ❌ BAD - Service using try-catch (VIOLATION!)
+async getBoard(board_id: string) {
+  try {
+    const board = await databaseService.boards.findOne({ _id: new ObjectId(board_id) })
+    return board
+  } catch (error) {
+    // VIOLATION: Error handling belongs in wrapRequestHandler!
+    throw new ErrorWithStatus({ message: 'Error fetching board', status: 500 })
+  }
+}
+```
+
+### Validation Responsibility
+
+| Responsibility             | Layer      | Example                                |
+| -------------------------- | ---------- | -------------------------------------- |
+| Input validation           | Middleware | `checkSchema({ title: { notEmpty } })` |
+| Resource existence checks  | Middleware | `boardIdValidator` finds board         |
+| Business constraint checks | Middleware | Check if user is member of board       |
+| Permission checks          | Middleware | `requireBoardPermission(...)`          |
+| Pure data operations       | Service    | Insert, update, delete, aggregate      |
+| Data transformation        | Service    | Convert ObjectId to string             |
 
 ### Business Logic Encapsulation
 
 ✅ **DO**: Keep all business logic in services
+
 ```typescript
 // ✅ Good - business logic in service
 async updateBoard(board_id: string, updates: UpdateBoardReqBody) {
-  // Validate permissions
-  // Update board
-  // Update related entities
-  // Return updated board
+  // Pure update logic - validation already done by Middleware
+  const result = await databaseService.boards.findOneAndUpdate(
+    { _id: new ObjectId(board_id) },
+    { $set: { ...updates, updated_at: new Date() } },
+    { returnDocument: 'after' }
+  )
+  return result
 }
-
-// ❌ Bad - business logic in controller
 ```
 
 ✅ **DO**: Break complex operations into private helper methods
+
 ```typescript
 class BoardsService {
-  private async validateMemberAccess(user_id: string, board_id: string) {
-    // validation logic
+  private buildBoardAggregation(options: GetBoardsOptions) {
+    // Build aggregation pipeline
+    return [{ $match: { workspace_id: new ObjectId(options.workspace_id) } }, { $lookup: { from: 'users' /* ... */ } }]
   }
-  
-  async addMember(board_id: string, user_id: string) {
-    await this.validateMemberAccess(user_id, board_id)
-    // add member logic
+
+  async getBoards(options: GetBoardsOptions) {
+    const pipeline = this.buildBoardAggregation(options)
+    return await databaseService.boards.aggregate(pipeline).toArray()
   }
 }
 ```
@@ -149,6 +211,7 @@ class BoardsService {
 ### Service Interdependencies
 
 ✅ **DO**: Import and use other services when needed
+
 ```typescript
 import usersService from '~/services/users.services'
 import workspacesService from '~/services/workspaces.services'
@@ -157,7 +220,8 @@ import workspacesService from '~/services/workspaces.services'
 const user = await usersService.getUser(user_id)
 ```
 
-✅ **DO**: Avoid circular dependencies
+❌ **DON'T**: Create circular dependencies
+
 ```typescript
 // ❌ Bad - circular dependency
 // boards.services.ts imports cards.services.ts
@@ -167,10 +231,15 @@ const user = await usersService.getUser(user_id)
 ### Async Operations
 
 ✅ **DO**: Use `Promise.all()` for parallel operations
+
 ```typescript
 const [board, members, columns] = await Promise.all([
   databaseService.boards.findOne({ _id: boardId }),
-  databaseService.users.find({ /* members query */ }).toArray(),
+  databaseService.users
+    .find({
+      /* members query */
+    })
+    .toArray(),
   databaseService.columns.find({ board_id: boardId }).toArray()
 ])
 ```
@@ -178,6 +247,7 @@ const [board, members, columns] = await Promise.all([
 ### Data Transformation
 
 ✅ **DO**: Transform database documents in services
+
 ```typescript
 // Convert ObjectId to string for API response
 const board = await databaseService.boards.findOne({ _id: boardId })
@@ -191,7 +261,7 @@ return {
 ## Touch Points / Key Files
 
 - **Database Service**: `src/services/database.services.ts` - MongoDB connection and collections
-- **Auth Service**: `src/services/auth.services.ts` - Authentication and token management (login, register, OAuth, password reset)
+- **Auth Service**: `src/services/auth.services.ts` - Authentication and token management
 - **Boards Service**: `src/services/boards.services.ts` - Board business logic
 - **Cards Service**: `src/services/cards.services.ts` - Card operations
 - **Columns Service**: `src/services/columns.services.ts` - Column management
@@ -205,6 +275,7 @@ return {
 ### Token Management
 
 ✅ **DO**: Use private methods for token signing
+
 ```typescript
 class AuthService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
@@ -232,6 +303,7 @@ class AuthService {
 ```
 
 ✅ **DO**: Store refresh tokens in database
+
 ```typescript
 async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
   const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
@@ -250,6 +322,7 @@ async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) 
 ```
 
 ✅ **DO**: Rotate refresh tokens on refresh
+
 ```typescript
 async refreshToken({ user_id, verify, refresh_token }: { user_id: string; verify: UserVerifyStatus; refresh_token: string }) {
   const [new_access_token, new_refresh_token] = await Promise.all([
@@ -257,7 +330,7 @@ async refreshToken({ user_id, verify, refresh_token }: { user_id: string; verify
     this.signRefreshToken({ user_id, verify }),
     databaseService.refreshTokens.deleteOne({ token: refresh_token }) // Delete old token
   ])
-  
+
   const decoded_refresh_token = await this.decodeRefreshToken(new_refresh_token)
 
   await databaseService.refreshTokens.insertOne(
@@ -274,6 +347,7 @@ async refreshToken({ user_id, verify, refresh_token }: { user_id: string; verify
 ```
 
 ✅ **DO**: Handle OAuth user creation and linking
+
 ```typescript
 async oauth(userInfo: GoogleUserInfo) {
   // Check for existing user by google_id or email
@@ -287,7 +361,7 @@ async oauth(userInfo: GoogleUserInfo) {
     if (!user.auth_providers.includes('google')) {
       await databaseService.users.updateOne(
         { _id: user._id },
-        { $set: { auth_providers: [...user.auth_providers, 'google'] } }
+        { $set: { auth_providers: [...user.auth_providers, 'google'], google_id: userInfo.id } }
       )
     }
     // Generate tokens for existing user
@@ -297,7 +371,7 @@ async oauth(userInfo: GoogleUserInfo) {
     })
     return { access_token, refresh_token, newUser: 0, verify: UserVerifyStatus.Verified }
   } else {
-    // Create new user
+    // Create new user and generate tokens
     const user_id = new ObjectId()
     await databaseService.users.insertOne(
       new User({
@@ -306,14 +380,13 @@ async oauth(userInfo: GoogleUserInfo) {
         auth_providers: ['google'],
         google_id: userInfo.id,
         verify: UserVerifyStatus.Verified
+        // ... other fields
       })
     )
-    // Generate tokens and create workspace
     const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Verified
     })
-    await workspacesService.createWorkspace(user_id.toString(), { /* workspace data */ })
     return { access_token, refresh_token, newUser: 1, verify: UserVerifyStatus.Verified }
   }
 }
@@ -328,19 +401,23 @@ rg -n "class.*Service" src/services
 # Find database operations
 rg -n "databaseService\." src/services
 
-# Find ErrorWithStatus usage
-rg -n "ErrorWithStatus" src/services
-
 # Find aggregation pipelines
 rg -n "aggregate\(\[" src/services
+
+# Verify NO ErrorWithStatus in services (should return 0 results!)
+rg -n "ErrorWithStatus" src/services
+
+# Verify NO try-catch in services (should return 0 results!)
+rg -n "try\s*\{" src/services
 ```
 
 ## Common Gotchas
 
+- **NO ErrorWithStatus** - Services are pure business logic. Validation errors belong in Middleware
+- **NO try-catch** - Let errors bubble up to `wrapRequestHandler`
+- **NO validation** - Assume input is valid (pre-checked by Middleware)
 - **Always use databaseService** - Never create direct MongoDB connections
 - **ObjectId conversion** - Convert string IDs to ObjectId before queries
-- **ErrorWithStatus required** - Use for HTTP-specific errors
-- **No try-catch** - Let errors bubble up to controllers
 - **Singleton pattern** - Export instance, not class
 
 ## Pre-PR Checks
@@ -352,7 +429,12 @@ npm run build
 # Lint services
 npm run lint
 
+# Verify NO ErrorWithStatus in services
+rg -n "ErrorWithStatus" src/services
+
+# Verify NO try-catch in services
+rg -n "try\s*\{" src/services
+
 # Verify databaseService usage
 rg -n "databaseService\." src/services
 ```
-

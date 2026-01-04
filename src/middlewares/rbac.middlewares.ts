@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { ObjectId } from 'mongodb'
-import HTTP_STATUS from '~/constants/httpStatus'
+import HTTP_STATUS from '~/constants/http-status'
 import {
   AUTH_MESSAGES,
   BOARDS_MESSAGES,

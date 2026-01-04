@@ -176,11 +176,14 @@ rg -n "export default class.*extends" src/models/schemas
 # Find a request type
 rg -n "export interface.*ReqBody|export interface.*ReqParams" src/models/requests
 
-# Find ErrorWithStatus usage (should only be in middlewares/utils)
+# Find ErrorWithStatus usage (should only be in middlewares/utils/models)
 rg -n "ErrorWithStatus" src
 
 # Find try-catch blocks (should NOT be in controllers/services)
 rg -n "try\s*\{" src/controllers src/services
+
+# Find enums
+rg -n "export enum" src/constants/enums.ts
 ```
 
 ### Project Rules

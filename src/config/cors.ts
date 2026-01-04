@@ -1,7 +1,7 @@
 import { CorsOptions } from 'cors'
 import { environment } from '~/config/environment'
 import { WHITELIST_DOMAINS } from '~/constants/domains'
-import HTTP_STATUS from '~/constants/httpStatus'
+import HTTP_STATUS from '~/constants/http-status'
 
 export const corsOptions: CorsOptions = {
   origin: (origin, callback) => {

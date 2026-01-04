@@ -2,7 +2,7 @@
 
 ## Package Identity
 
-Utility functions for Trellone API. Pure functions for common operations like validation, error handling, JWT management, and data manipulation.
+Utility functions for Trellone API. Pure functions for common operations like validation, error handling, JWT management, socket initialization, RBAC, and data manipulation.
 
 ## Setup & Run
 
@@ -12,6 +12,8 @@ Utils are imported directly. No separate build step needed.
 import { validate } from '~/utils/validation'
 import { hashPassword } from '~/utils/crypto'
 import { wrapRequestHandler } from '~/utils/handlers'
+import { signToken, verifyToken, verifyAccessToken } from '~/utils/jwt'
+import initSocket from '~/utils/socket'
 ```
 
 ## Patterns & Conventions
@@ -19,61 +21,51 @@ import { wrapRequestHandler } from '~/utils/handlers'
 ### File Organization
 
 - **One file per domain**: Each utility domain has its own file
-- **Naming**: Use descriptive names in camelCase (e.g., `validation.ts`, `crypto.ts`)
-- **Exports**: Named exports for individual functions
+- **Naming**: Use kebab-case (e.g., `validation.ts`, `crypto.ts`)
+- **Exports**: Named exports for individual functions, default export for `socket.ts`
 
 ✅ **DO**: Follow `src/utils/validation.ts` pattern
+
 - Export individual utility functions
 - Use explicit TypeScript types
 - Keep functions pure (no side effects)
 
-### Function Structure
-
-✅ **DO**: Use named exports
-```typescript
-export const validate = (validations: any[]) => {
-  // implementation
-}
-```
-
-✅ **DO**: Use explicit TypeScript types
-```typescript
-export const hashPassword = (password: string): Promise<string> => {
-  // implementation
-}
-```
-
-### Pure Functions
-
-✅ **DO**: Keep functions pure (no side effects)
-```typescript
-// ✅ Good - pure function
-export const formatDate = (date: Date): string => {
-  return format(date, 'yyyy-MM-dd')
-}
-
-// ❌ Bad - side effect
-export const formatDate = (date: Date): string => {
-  console.log(date) // Side effect!
-  return format(date, 'yyyy-MM-dd')
-}
-```
-
 ### Validation Utilities
 
 ✅ **DO**: Create validation wrapper for express-validator
+
 ```typescript
 // utils/validation.ts
-export const validate = (validations: any[]) => {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    await Promise.all(validations.map(validation => validation.run(req)))
+import express from 'express'
+import { validationResult, ValidationChain } from 'express-validator'
+import { RunnableValidationChains } from 'express-validator/lib/middlewares/schema'
+import HTTP_STATUS from '~/constants/http-status'
+import { EntityError, ErrorWithStatus } from '~/models/Errors'
+
+export const validate = (validation: RunnableValidationChains<ValidationChain>) => {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    await validation.run(req)
+
     const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      return res.status(HTTP_STATUS.UNPROCESSABLE_ENTITY).json({
-        message: errors.array()[0].msg
-      })
+    if (errors.isEmpty()) {
+      return next()
     }
-    next()
+
+    const errorsObject = errors.mapped()
+    const entityError = new EntityError({ errors: {} })
+
+    for (const key in errorsObject) {
+      const { msg } = errorsObject[key]
+
+      // If error is ErrorWithStatus with non-422 status, pass it to error handler
+      if (msg instanceof ErrorWithStatus && msg.status !== HTTP_STATUS.UNPROCESSABLE_ENTITY) {
+        return next(msg)
+      }
+
+      entityError.errors[key] = errorsObject[key]
+    }
+
+    next(entityError)
   }
 }
 ```
@@ -81,13 +73,18 @@ export const validate = (validations: any[]) => {
 ### Error Handling Utilities
 
 ✅ **DO**: Create error handler wrapper
+
 ```typescript
 // utils/handlers.ts
-export const wrapRequestHandler = (
-  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
-) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next)
+import { NextFunction, Request, RequestHandler, Response } from 'express'
+
+export const wrapRequestHandler = <P>(func: RequestHandler<P, any, any, any>) => {
+  return async (req: Request<P>, res: Response, next: NextFunction) => {
+    try {
+      await func(req, res, next)
+    } catch (error) {
+      next(error)
+    }
   }
 }
 ```
@@ -95,43 +92,252 @@ export const wrapRequestHandler = (
 ### JWT Utilities
 
 ✅ **DO**: Encapsulate JWT operations
+
 ```typescript
 // utils/jwt.ts
-export const signToken = (payload: TokenPayload, secret: string, expiresIn: string): string => {
-  return jwt.sign(payload, secret, { expiresIn })
+import jwt, { SignOptions } from 'jsonwebtoken'
+import { ErrorWithStatus } from '~/models/Errors'
+import HTTP_STATUS from '~/constants/http-status'
+
+export const signToken = ({
+  payload,
+  privateKey,
+  options = { algorithm: 'HS256' }
+}: {
+  payload: string | Buffer | object
+  privateKey: string
+  options?: SignOptions
+}) => {
+  return new Promise<string>((resolve, reject) => {
+    jwt.sign(payload, privateKey, options, (error, token) => {
+      if (error) {
+        throw reject(error)
+      }
+      resolve(token as string)
+    })
+  })
 }
 
-export const verifyToken = (token: string, secret: string): TokenPayload => {
-  return jwt.verify(token, secret) as TokenPayload
+export const verifyToken = <T>({
+  token,
+  secretOrPublicKey
+}: {
+  token: string
+  secretOrPublicKey: string
+}) => {
+  return new Promise<T>((resolve, reject) => {
+    jwt.verify(token, secretOrPublicKey, (error, decoded) => {
+      if (error) {
+        throw reject(error)
+      }
+      resolve(decoded as T)
+    })
+  })
+}
+
+export const verifyAccessToken = async (access_token: string, req?: Request) => {
+  if (!access_token) {
+    throw new ErrorWithStatus({
+      message: AUTH_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
+      status: HTTP_STATUS.UNAUTHORIZED
+    })
+  }
+
+  try {
+    const decoded_authorization = await verifyToken({
+      token: access_token,
+      secretOrPublicKey: envConfig.jwtSecretAccessToken as string
+    })
+
+    if (req) {
+      req.decoded_authorization = decoded_authorization
+      return true
+    }
+
+    return decoded_authorization
+  } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      throw new ErrorWithStatus({
+        message: capitalize(error.message),
+        status: HTTP_STATUS.UNAUTHORIZED,
+        error_code: AUTH_ERROR_CODES.TOKEN_EXPIRED
+      })
+    }
+
+    throw new ErrorWithStatus({
+      message: capitalize((error as JsonWebTokenError).message),
+      status: HTTP_STATUS.UNAUTHORIZED
+    })
+  }
 }
 ```
 
 ### Crypto Utilities
 
-✅ **DO**: Use bcrypt for password hashing
+✅ **DO**: Use SHA256 for password hashing (with salt)
+
 ```typescript
 // utils/crypto.ts
-import bcrypt from 'bcrypt'
+import { createHash } from 'crypto'
+import { envConfig } from '~/config/environment'
 
-export const hashPassword = async (password: string): Promise<string> => {
-  return bcrypt.hash(password, 10)
-}
-
-export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
-  return bcrypt.compare(password, hashedPassword)
+export const hashPassword = (password: string) => {
+  return createHash('sha256').update(password + envConfig.passwordSecret).digest('hex')
 }
 ```
 
-### File Utilities
+### Socket Utilities
 
-✅ **DO**: Handle file operations
+✅ **DO**: Initialize Socket.IO server in `src/utils/socket.ts`
+
 ```typescript
-// utils/file.ts
-export const validateFile = (file: File): void => {
-  if (file.size > MAX_FILE_SIZE) {
+// src/utils/socket.ts
+import { Server as ServerHttp } from 'http'
+import { Server } from 'socket.io'
+import { corsOptions } from '~/config/cors'
+import { TokenPayload } from '~/models/requests/User.requests'
+import { verifyAccessToken } from '~/utils/jwt'
+
+const initSocket = (httpServer: ServerHttp) => {
+  const io = new Server(httpServer, {
+    cors: corsOptions,
+    pingInterval: 20000,
+    pingTimeout: 25000
+  })
+
+  // User tracking map
+  const users: { [key: string]: { socket_id: string } } = {}
+
+  // Authentication middleware
+  io.use(async (socket, next) => {
+    // Prefer cookie (HTTP-only), fall back to auth header
+    const cookieHeader = socket.handshake.headers.cookie
+    let access_token: string | undefined
+
+    if (cookieHeader) {
+      const cookies: { [key: string]: string } = {}
+      cookieHeader.split(';').forEach((cookie) => {
+        const parts = cookie.split('=')
+        if (parts.length === 2) {
+          cookies[parts[0].trim()] = parts[1].trim()
+        }
+      })
+      access_token = cookies['access_token']
+    }
+
+    if (!access_token) {
+      const authHeader = (socket.handshake.auth?.Authorization || '') as string
+      if (authHeader.startsWith('Bearer ')) {
+        access_token = authHeader.slice(7)
+      }
+    }
+
+    if (!access_token) {
+      return next(new Error('Unauthorized'))
+    }
+
+    try {
+      const decoded_authorization = await verifyAccessToken(access_token)
+      socket.data.decoded_authorization = decoded_authorization
+      socket.data.access_token = access_token
+      return next()
+    } catch (error) {
+      return next(new Error('Unauthorized'))
+    }
+  })
+
+  // Connection handler
+  io.on('connection', (socket) => {
+    const { user_id } = socket.data.decoded_authorization as TokenPayload
+    users[user_id] = { socket_id: socket.id }
+
+    // Error handling
+    socket.on('error', (error) => {
+      if (error.message === 'Unauthorized') {
+        socket.disconnect()
+      }
+    })
+
+    // Register all socket event handlers
+    inviteUserToWorkspaceSocket(io, socket, users)
+    inviteUserToBoardSocket(io, socket, users)
+    manageWorkspaceSocketEvents(io, socket)
+    manageBoardSocketEvents(socket)
+    updateWorkspaceSocket(io, socket)
+    createWorkspaceBoardSocket(socket)
+    updateBoardSocket(socket)
+    acceptBoardInvitationSocket(socket)
+    deleteBoardSocket(socket)
+    updateCardSocket(socket)
+
+    // Cleanup on disconnect
+    socket.on('disconnect', () => {
+      delete users[user_id]
+    })
+  })
+}
+
+export default initSocket
+```
+
+### RBAC Utilities
+
+✅ **DO**: Implement permission checking functions
+
+```typescript
+// utils/rbac.ts
+import { ObjectId } from 'mongodb'
+import { BoardPermission, WorkspacePermission } from '~/constants/permissions'
+import { BoardRole, WorkspaceRole } from '~/constants/enums'
+import Board from '~/models/schemas/Board.schema'
+import Workspace from '~/models/schemas/Workspace.schema'
+
+export const hasBoardPermission = (
+  userId: ObjectId,
+  board: Board,
+  permission: BoardPermission,
+  workspace?: Workspace | null
+): boolean => {
+  // Implementation checks user role in board.members
+  // and permission mapping
+}
+
+export const hasWorkspacePermission = (
+  userId: ObjectId,
+  workspace: Workspace,
+  permission: WorkspacePermission
+): boolean => {
+  // Implementation checks user role in workspace.members
+  // and permission mapping
+}
+```
+
+### Guard Utilities
+
+✅ **DO**: Implement assertion functions for state checks
+
+```typescript
+// utils/guards.ts
+import { ErrorWithStatus } from '~/models/Errors'
+import HTTP_STATUS from '~/constants/http-status'
+import { BOARDS_MESSAGES, CARDS_MESSAGES } from '~/constants/messages'
+import Board from '~/models/schemas/Board.schema'
+import Card from '~/models/schemas/Card.schema'
+
+export const assertBoardIsOpen = (board: Board): void => {
+  if (board._destroy) {
     throw new ErrorWithStatus({
-      message: 'File size exceeds limit',
-      status: HTTP_STATUS.BAD_REQUEST
+      message: BOARDS_MESSAGES.BOARD_IS_CLOSED_REOPEN_REQUIRED,
+      status: HTTP_STATUS.FORBIDDEN
+    })
+  }
+}
+
+export const assertCardIsOpen = (card: Card): void => {
+  if (card._destroy) {
+    throw new ErrorWithStatus({
+      message: CARDS_MESSAGES.CARD_IS_ARCHIVED_REOPEN_REQUIRED,
+      status: HTTP_STATUS.FORBIDDEN
     })
   }
 }
@@ -140,8 +346,11 @@ export const validateFile = (file: File): void => {
 ### Type Guards
 
 ✅ **DO**: Create type guards for error checking
+
 ```typescript
-// utils/guards.ts
+// utils/guards.ts (or type-guards.ts)
+import { ErrorWithStatus } from '~/models/Errors'
+
 export const isErrorWithStatus = (error: unknown): error is ErrorWithStatus => {
   return error instanceof ErrorWithStatus
 }
@@ -151,65 +360,13 @@ export const isErrorWithStatus = (error: unknown): error is ErrorWithStatus => {
 
 - **Validation**: `src/utils/validation.ts` - Express-validator wrapper
 - **Handlers**: `src/utils/handlers.ts` - Request handler wrapper
-- **Crypto**: `src/utils/crypto.ts` - Password hashing and security
-- **JWT**: `src/utils/jwt.ts` - Token signing and verification
-- **File**: `src/utils/file.ts` - File processing and validation
+- **Crypto**: `src/utils/crypto.ts` - Password hashing
+- **JWT**: `src/utils/jwt.ts` - Token signing, verification, verifyAccessToken
+- **Socket**: `src/utils/socket.ts` - Socket.IO server initialization with auth middleware
 - **Commons**: `src/utils/commons.ts` - General utilities
-- **Socket**: `src/utils/socket.ts` - Socket.IO server initialization and authentication middleware
-- **RBAC**: `src/utils/rbac.ts` - Role-based access control utilities
-- **Guards**: `src/utils/guards.ts` - Type guards
-
-### Socket Utilities
-
-✅ **DO**: Initialize Socket.IO server in `src/utils/socket.ts`
-```typescript
-// src/utils/socket.ts
-import { Server as ServerHttp } from 'http'
-import { Server } from 'socket.io'
-
-const initSocket = (httpServer: ServerHttp) => {
-  const io = new Server(httpServer, {
-    cors: corsOptions,
-    pingInterval: 20000,
-    pingTimeout: 25000
-  })
-
-  // Authentication middleware
-  io.use(async (socket, next) => {
-    // Verify JWT token from cookie or auth header
-    const access_token = getTokenFromCookieOrAuth(socket)
-    const decoded = await verifyAccessToken(access_token)
-    socket.data.decoded_authorization = decoded
-    next()
-  })
-
-  // Connection handler
-  io.on('connection', (socket) => {
-    const { user_id } = socket.data.decoded_authorization
-    users[user_id] = { socket_id: socket.id }
-
-    // Register all event handlers
-    manageBoardSocketEvents(socket)
-    manageWorkspaceSocketEvents(io, socket)
-    // ... other handlers
-
-    socket.on('disconnect', () => {
-      delete users[user_id]
-    })
-  })
-}
-```
-
-✅ **DO**: Handle authentication in middleware (not in handlers)
-- Prefer cookie-based token (from httpOnly cookie)
-- Fall back to auth header if cookie not available
-- Store decoded token in `socket.data.decoded_authorization`
-- Track connected users in `users` map for targeted notifications
-
-✅ **DO**: Configure Socket.IO for stability
-- Set `pingInterval` and `pingTimeout` for connection health checks
-- Enable CORS with proper configuration
-- Consider WebSocket-only transport if infrastructure supports it
+- **RBAC**: `src/utils/rbac.ts` - Permission checking functions
+- **Guards**: `src/utils/guards.ts` - Assertion functions, type guards
+- **File**: `src/utils/file.ts` - File processing and folder initialization
 
 ## JIT Index Hints
 
@@ -218,10 +375,10 @@ const initSocket = (httpServer: ServerHttp) => {
 rg -n "export const" src/utils
 
 # Find validation utilities
-rg -n "validate|validator" src/utils
+rg -n "validate" src/utils
 
 # Find error handling utilities
-rg -n "ErrorWithStatus|wrapRequestHandler" src/utils
+rg -n "wrapRequestHandler" src/utils
 
 # Find JWT utilities
 rg -n "signToken|verifyToken|verifyAccessToken" src/utils
@@ -231,14 +388,18 @@ rg -n "initSocket|export default initSocket" src/utils/socket.ts
 
 # Find socket authentication middleware
 rg -n "io\.use" src/utils/socket.ts
+
+# Find RBAC utilities
+rg -n "hasBoardPermission|hasWorkspacePermission" src/utils/rbac.ts
 ```
 
 ## Common Gotchas
 
-- **Named exports only** - Never use default exports for utilities
+- **Named exports** - Use named exports for most utilities
+- **Default export** - Only `socket.ts` uses default export
 - **Pure functions** - Avoid side effects (no console.log, no mutations)
 - **Type safety** - Always use explicit TypeScript types
-- **Error handling** - Use `ErrorWithStatus` for HTTP-specific errors
+- **Error handling** - ErrorWithStatus used in JWT utils for auth errors
 - **Async operations** - Use async/await consistently
 
 ## Pre-PR Checks
@@ -251,6 +412,5 @@ npm run build
 npm run lint
 
 # Verify functions are pure (no side effects)
-rg -n "console\.|process\.|global\." src/utils
+rg -n "console\." src/utils
 ```
-

@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb'
 import ms from 'ms'
 import { envConfig } from '~/config/environment'
 import { UserVerifyStatus } from '~/constants/enums'
-import HTTP_STATUS from '~/constants/httpStatus'
+import HTTP_STATUS from '~/constants/http-status'
 import { AUTH_MESSAGES } from '~/constants/messages'
 import { GoogleUserInfo } from '~/models/Extensions'
 import {
